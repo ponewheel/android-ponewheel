@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">POWheel</string>
+    <string name="action_settings">Settings</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="invalid_device_data">Invalid Device Data!</string>
+    <string name="no_data">No data</string>
+    <string name="not_supported">Not supported</string>
+    <string name="off">Off</string>
+    <string name="on">On</string>
+    <string name="supported">Supported</string>
+    <string name="eula">"This application is not affiliated with OneWheel in any way. Use at your own risk! Send all questions, feedback, etc to kwatkins@gmail.com. Hit \'scan\' to connect to the OneWheel and look for logs on the sdcard. It\'s still on the rough side so watch yourself out there.")
+          </string>
+    <string name="formatter_item_count">Items: %s</string>
+
+    <string name="menu_about">About</string>
+    <string name="menu_connect">Connect</string>
+    <string name="menu_disconnect">Disconnect</string>
+    <string name="menu_scan">Scan</string>
+    <string name="menu_stop">Stop</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_share">Share</string>
+
+    <string-array name="ow_ridemode_array">
+        <item>Classic</item>
+        <item>Extreme</item>
+        <item>Elevated</item>
+    </string-array>
+    <string-array name="ow_connectstate_array">
+        <item>CONNECTED</item>
+        <item>DISCONNECTED</item>
+    </string-array>
+    <string-array name="ow_lights_array">
+        <item>OFF</item>
+        <item>FRONT</item>
+        <item>BACK</item>
+    </string-array>
+</resources>

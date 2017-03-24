@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+    <data xmlns:android="http://schemas.android.com/apk/res/android">
+        <import type="android.view.View"/>
+        <import type="net.kwatts.powtools.OWDevice"/>
+        <variable name="owdevice" type="net.kwatts.powtools.OWDevice" />
+    </data>
+    <android.support.percent.PercentRelativeLayout
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:mstb="http://schemas.android.com/apk/res-auto"
+        tools:context=".MainActivity">
+
+        <android.support.v7.widget.SwitchCompat
+            android:id="@+id/custom_light_switch"
+            app:theme="@style/MySwitchCompat"
+            android:layout_alignParentRight="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_widthPercent="50%"
+            android:checked="false"
+            android:text="Custom"
+            android:textOn=""
+            android:textOff=""
+            app:showText="true"
+            android:enabled="@{owdevice.isConnected ? true : false}"/>
+
+    <android.support.v7.widget.SwitchCompat
+        android:id="@+id/master_light_switch"
+        app:theme="@style/MySwitchCompat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_widthPercent="50%"
+        android:layout_toLeftOf="@id/custom_light_switch"
+        android:layout_alignParentLeft="true"
+        android:checked="false"
+        android:text="Lights"
+        android:textOn=""
+        android:textOff=""
+        app:showText="true"
+        android:enabled="@{owdevice.isConnected ? true : false}"
+        />
+
+
+
+    <android.support.v7.widget.SwitchCompat
+        android:id="@+id/back_bright_switch"
+        app:theme="@style/MySwitchCompat"
+        android:layout_below="@id/master_light_switch"
+        android:layout_alignParentRight="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_widthPercent="50%"
+        android:checked="false"
+        android:text="Back Bright"
+        android:textOn=""
+        android:textOff=""
+        app:showText="true"
+        android:enabled="@{owdevice.isConnected ? true : false}"/>
+
+    <android.support.v7.widget.SwitchCompat
+        android:id="@+id/front_bright_switch"
+        app:theme="@style/MySwitchCompat"
+        android:layout_below="@id/master_light_switch"
+        android:layout_toLeftOf="@id/back_bright_switch"
+        android:layout_alignParentLeft="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_widthPercent="50%"
+        android:checked="false"
+        android:text="Front Bright"
+        android:textOn=""
+        android:textOff=""
+        app:showText="true"
+        android:enabled="@{owdevice.isConnected ? true : false}"/>
+
+
+    <android.support.v7.widget.SwitchCompat
+        android:id="@+id/back_blink_switch"
+        app:theme="@style/MySwitchCompat"
+        android:layout_below="@id/back_bright_switch"
+        android:layout_alignParentRight="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_widthPercent="50%"
+        android:checked="false"
+        android:text="Back Blink"
+        android:textOn=""
+        android:textOff=""
+        app:showText="true"
+        android:enabled="@{owdevice.isConnected ? true : false}"/>
+
+    <android.support.v7.widget.SwitchCompat
+        android:id="@+id/front_blink_switch"
+        app:theme="@style/MySwitchCompat"
+        android:layout_toLeftOf="@id/back_blink_switch"
+        android:layout_below="@id/back_bright_switch"
+        android:layout_alignParentLeft="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_widthPercent="50%"
+        android:checked="false"
+        android:text="Front Blink"
+        android:textOn=""
+        android:textOff=""
+        app:showText="true"
+        android:enabled="@{owdevice.isConnected ? true : false}"/>
+
+
+
+
+    <org.honorato.multistatetogglebutton.MultiStateToggleButton
+        android:id="@+id/mstb_multi_ridemodes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        mstb:values="@array/ow_ridemode_array"
+        mstb:mstbPrimaryColor="?attr/colorPrimary"
+        mstb:mstbSecondaryColor="@color/white"
+        android:layout_below="@id/front_blink_switch"
+        android:enabled="@{owdevice.isConnected ? true : false}"/>
+
+</android.support.percent.PercentRelativeLayout>
+    </layout>

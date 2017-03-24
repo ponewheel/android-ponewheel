@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HOW TO USE:
+<ListView
+    android:id="@id/android:list"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/border_ui" />
+    -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle" >
+    <solid android:color="#FFF" />
+    <stroke android:width="2dip" android:color="@drawable/on_color" />
+</shape>
