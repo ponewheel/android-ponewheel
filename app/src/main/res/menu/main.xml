@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<menu xmlns:android=
+    "http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools" tools:context="onewheeltools.kwatts.net.powtools.MainActivity">
+ <!--   <item android:id="@+id/menu_ow_light_on" android:icon="@drawable/ic_lightbulb_outline_white_24px" android:orderInCategory="1" app:showAsAction="always" android:title="Lights"/>
+    <item android:id="@+id/menu_ow_ridemode" android:icon="@drawable/ic_directions_run_white_24px" android:orderInCategory="2" app:showAsAction="always" android:title="RideMode"/>
+   -->
+
+    <item android:id="@id/menu_refresh" android:orderInCategory="5" android:checkable="false" app:showAsAction="ifRoom"/>
+<item android:id="@id/menu_scan" android:orderInCategory="100" android:title="@string/menu_scan" app:showAsAction="ifRoom" />
+<item android:id="@id/menu_stop" android:orderInCategory="101" android:title="@string/menu_stop" app:showAsAction="ifRoom" />
+<item android:id="@id/menu_disconnect" android:orderInCategory="102" android:icon="@drawable/ic_close_white_24px" android:title="@string/menu_disconnect" app:showAsAction="always" />
+    <item android:id="@id/menu_settings" android:orderInCategory="103" android:title="@string/menu_settings" app:showAsAction="never" />
+ <item android:id="@id/menu_about" android:orderInCategory="104" android:title="@string/menu_about" app:showAsAction="never" />
+
+</menu>

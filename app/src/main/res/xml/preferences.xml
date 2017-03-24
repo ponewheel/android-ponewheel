@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+  <!-- <EditTextPreference android:title="Your Name"
+                      android:key="username"
+                      android:summary="Please provide your username"></EditTextPreference> -->
+  <CheckBoxPreference android:title="Low Battery Alerts"
+                      android:defaultValue="true"
+                      android:summary="This option will vibrate multiple times depending on OneWheel battery levels: 75% (1 time), 50% (2 times), 25% (3 times), 5% (and 4)"
+                      android:key="lowBatteryAlerts"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+  <CheckBoxPreference android:title="Metric Units"
+      android:defaultValue="false"
+      android:summary="This option uses metric units (kilometers, celsius, etc). Currently requires a reconnect if changed."
+      android:key="metricUnits"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+  <CheckBoxPreference android:title="Trip logging"
+      android:defaultValue="true"
+      android:summary="This option enables continous (every second) dump of stats to CSV file on the sdcard (under /owlogs)."
+      android:key="tripLogging"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+  <CheckBoxPreference android:title="Reconnect"
+      android:defaultValue="true"
+      android:summary="This option attempts to reconnect to device if it gets disconnected."
+      android:key="deviceReconnect"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+    <CheckBoxPreference android:title="Day and Night Theme"
+        android:defaultValue="true"
+        android:summary="This option uses night mode when it is determined that it is night or not. May require restart to take effect."
+        android:key="dayNightMode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+  <CheckBoxPreference android:title="Night Theme"
+      android:defaultValue="false"
+      android:summary="This option switches to the night theme. May require restart to take effect."
+      android:key="darkNightMode"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+    <CheckBoxPreference android:title="Debugging"
+        android:defaultValue="true"
+        android:summary="This option turns on the debugging and log window."
+        android:key="debugWindow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+
+
+
+
+  <!-- <ListPreference     android:title="Download Details"
+                      android:summary="Select the kind of data that you would like to download"
+                      android:key="downloadType"
+                      android:defaultValue="1"
+                      android:entries="@array/listArray"
+                      android:entryValues="@array/listValues" /> -->
+</PreferenceScreen>
