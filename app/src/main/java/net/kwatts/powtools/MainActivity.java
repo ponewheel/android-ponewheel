@@ -105,7 +105,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     Map<String, String> mScanResults = new HashMap<>();
     JSONObject mCurrentDevice = new JSONObject();
 
-
+    // defaults from preferences
+    int mLoggingFrequency = 1000;
 
     //ArrayList<Integer> mColors;
     //ArrayList<String> mLabels;
@@ -321,8 +322,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         mSharedPref.registerOnSharedPreferenceChangeListener(this);
 
-
-
+        String loggingFrequencyString = mSharedPref.getString("loggingFrequency","1000");
+        //TODO check for int
+        try {
+            mLoggingFrequency = Integer.parseInt(loggingFrequencyString);
+        } catch (Exception e) {
+            Log.d(TAG,"Use a number for polling frequency already! Going with the default for now.");
+        }
 
         EventBus.getDefault().register(this);
         bindService(new Intent(this, VibrateService.class), mVibrateConnection, Context.BIND_AUTO_CREATE);
@@ -708,7 +714,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                                 if (isCharacteristicNotifiable(c)) {
                                     mGatt.setCharacteristicNotification(c, true);
                                     BluetoothGattDescriptor descriptor = c.getDescriptor(UUID.fromString(mOWDevice.OnewheelConfigUUID));
-                                    Log.i(TAG, "descriptorWriteQueue.size:" + descriptorWriteQueue.size());
+                                    Log.d(TAG, "descriptorWriteQueue.size:" + descriptorWriteQueue.size());
                                     if (descriptor == null) {
                                         Log.e(TAG, dc.uuid.get() + " has a null descriptor!");
                                     } else {
@@ -717,7 +723,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                                         if (descriptorWriteQueue.size() == 1) {
                                             mGatt.writeDescriptor(descriptor);
                                         }
-                                        Log.i(TAG, dc.uuid.get()+ " has been set for notifications");
+                                        Log.d(TAG, dc.uuid.get()+ " has been set for notifications");
                                     }
                                 }
 
@@ -774,22 +780,22 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             mOWDevice.processUUID(c);
 
-            /*
-            byte[] v_bytes = c.getValue();
+            if (BuildConfig.DEBUG) {
+                byte[] v_bytes = c.getValue();
 
 
-            StringBuilder sb = new StringBuilder();
-            for (byte b : c.getValue()) {
-                sb.append(String.format("%02x", b));
+                StringBuilder sb = new StringBuilder();
+                for (byte b : c.getValue()) {
+                    sb.append(String.format("%02x", b));
+                }
+
+                Log.d(TAG, "HEX %02x: " + sb);
+                Log.d(TAG, "Arrays.toString() value: " + Arrays.toString(v_bytes));
+                Log.d(TAG, "String value: " + c.getStringValue(0));
+                Log.d(TAG, "Unsigned short: " + unsignedShort(v_bytes));
+                Log.d(TAG, "getIntValue(FORMAT_UINT8,0) " + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0));
+                Log.d(TAG, "getIntValue(FORMAT_UINT8,1) " + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
             }
-
-            Log.i(TAG, "HEX %02x: " + sb);
-            Log.i(TAG, "Arrays.toString() value: " + Arrays.toString(v_bytes));
-            Log.i(TAG, "String value: " + c.getStringValue(0));
-            Log.i(TAG, "Unsigned short: " + unsignedShort(v_bytes));
-            Log.i(TAG, "getIntValue(FORMAT_UINT8,0) " + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0));
-            Log.i(TAG, "getIntValue(FORMAT_UINT8,1) " + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-            */
             // Callback to make sure the queue is drained
             if(characteristicReadQueue.size() > 0) {
                 gatt.readCharacteristic(characteristicReadQueue.element());
@@ -875,10 +881,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                             }
                         }
                     }
-                    mLoggingHandler.postDelayed(this, ONEWHEEL_LOGGING_DELAY);
+                    mLoggingHandler.postDelayed(this, mLoggingFrequency);
                 }
             };
-            mLoggingHandler.postDelayed(deviceFileLogger, ONEWHEEL_LOGGING_DELAY);
+            mLoggingHandler.postDelayed(deviceFileLogger, mLoggingFrequency);
 
         }
     }
@@ -1061,10 +1067,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     MultiStateToggleButton mRideModeToggleButton;
+    MultiStateToggleButton mRideModeToggleButtonOWplus;
     public void initRideModeButtons(View v) {
 
 
         mRideModeToggleButton = (MultiStateToggleButton) this.findViewById(R.id.mstb_multi_ridemodes);
+        mRideModeToggleButtonOWplus = (MultiStateToggleButton) this.findViewById(R.id.mstb_multi_ridemodes_owplus);
+
+
         mRideModeToggleButton.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
             @Override
             public void onValueChanged(int position) {
@@ -1077,6 +1087,19 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 }
             }
         });
+        mRideModeToggleButtonOWplus.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
+            @Override
+            public void onValueChanged(int position) {
+                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("SetRideMode").setLabel(Integer.toString(position + 4)).build());
+                if (mOWConnected) {
+                    mOWDevice.setRideMode(owGatService, mGatt, position + 4);
+                } else {
+                    Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+
 
     }
 
