@@ -3,7 +3,7 @@ apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    buildToolsVersion '25.0.0'
     // https://developer.android.com/tools/data-binding/guide.html
     dataBinding {
         enabled = true
@@ -20,6 +20,11 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+            minifyEnabled false
+            //buildConfigField 'boolean', 'ENABLE_BLUETOOTH_EXTENDED', 'false'
         }
     }
 

@@ -26,6 +26,14 @@
         <item>Extreme</item>
         <item>Elevated</item>
     </string-array>
+    <string-array name="ow_ridemode_owplus_array">
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+    </string-array>
     <string-array name="ow_connectstate_array">
         <item>CONNECTED</item>
         <item>DISCONNECTED</item>
