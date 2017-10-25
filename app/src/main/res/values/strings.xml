@@ -27,12 +27,11 @@
         <item>Elevated</item>
     </string-array>
     <string-array name="ow_ridemode_owplus_array">
-        <item>4</item>
-        <item>5</item>
-        <item>6</item>
-        <item>7</item>
-        <item>8</item>
-        <item>9</item>
+        <item>SEQUOIA</item>
+        <item>CRUZ</item>
+        <item>MISSION</item>
+        <item>ELEVATE</item>
+        <item>DELIRIUM</item>
     </string-array>
     <string-array name="ow_connectstate_array">
         <item>CONNECTED</item>

@@ -5,6 +5,12 @@
   <!-- <EditTextPreference android:title="Your Name"
                       android:key="username"
                       android:summary="Please provide your username"></EditTextPreference> -->
+  <CheckBoxPreference android:title="Default to OW+"
+      android:defaultValue="true"
+      android:summary="This option will set the default board to OneWheel+"
+      android:key="oneWheelPlus"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
   <CheckBoxPreference android:title="Low Battery Alerts"
                       android:defaultValue="true"
                       android:summary="This option will vibrate multiple times depending on OneWheel battery levels: 75% (1 time), 50% (2 times), 25% (3 times), 5% (and 4)"

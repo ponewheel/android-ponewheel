@@ -176,7 +176,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mRideModeToggleButton.setValue(ridemode -1);
+//                mRideModeToggleButton.setValue(ridemode - 1);
+                mRideModeToggleButtonOWplus.setValue(ridemode);
             }
         });
 
@@ -380,6 +381,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             mOWDevice.showDebugWindow.set(false);
         }
 
+        if (mSharedPref.getBoolean("oneWheelPlus", false)) {
+            mOWDevice.isOneWheelPlus.set(true);
+        } else {
+            mOWDevice.isOneWheelPlus.set(false);
+        }
+
+
         mOWDevice.refresh();
         mOWConnected = false;
         mOWDevice.isConnected.set(false);
@@ -495,6 +503,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 this.mScanResults.clear();
                 descriptorWriteQueue.clear();
                 this.invalidateOptionsMenu();
+
+                // Added stuff 10/23 to clean fix
+                owGatService = null;
+
+
+
                 break;
             case R.id.menu_disconnect:
                 scanLeDevice(false);
@@ -511,6 +525,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 deviceConnectedTimer(false);
                 sendAnalyticsStats();
                 this.invalidateOptionsMenu();
+                // Added stuff 10/23 to clean fix
+                owGatService = null;
                 break;
             case R.id.menu_about:
                 mAboutDialog.show();
@@ -598,10 +614,18 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private void scanLeDevice(final boolean enable) {
         if (enable) {
             mScanning = true;
-            mBluetoothLeScanner.startScan(filters, settings, mScanCallback);
+            List<ScanFilter> filters_v2 = new ArrayList<>();
+            ScanFilter scanFilter = new ScanFilter.Builder()
+                    .setServiceUuid(ParcelUuid.fromString(OWDevice.OnewheelServiceUUID))
+                    .build();
+            filters_v2.add(scanFilter);
+            //c03f7c8d-5e96-4a75-b4b6-333d36230365
+            mBluetoothLeScanner.startScan(filters_v2, settings, mScanCallback);
         } else {
             mScanning = false;
             mBluetoothLeScanner.stopScan(mScanCallback);
+            // added 10/23 to try cleanup
+            mBluetoothLeScanner.flushPendingScanResults(mScanCallback);
         }
         this.invalidateOptionsMenu();
     }
@@ -621,7 +645,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 } else {
                     updateLog("Found " + deviceAddress + " (" + deviceName + ")");
                 }
-                connectToDevice(result.getDevice());
+
+                if (deviceName != null) {
+                    if (deviceName.startsWith("ow")) {
+                        updateLog("Looks like we found our OW device (" + deviceName + ") discovering services!");
+                        connectToDevice(result.getDevice());
+                    }
+                }
+
             }
 
 
@@ -687,12 +718,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status){
-
+            Log.d(TAG, "Only should be here if connecting to OW:" + gatt.getDevice().getAddress());
                 BluetoothGattService checkGattService = gatt.getService(UUID.fromString(OWDevice.OnewheelServiceUUID));
                 if (checkGattService != null) {
                     owGatService = checkGattService;
                     mGatt = gatt;
-                    updateLog("Hey, I found the OneWheel!");
+                    updateLog("Hey, I found the OneWheel Service: " + checkGattService.getUuid().toString());
                     deviceConnectedTimer(true);
                     mOWConnected = true;
                     mOWDevice.isConnected.set(true);
@@ -1081,6 +1112,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("SetRideMode").setLabel(Integer.toString(position + 1)).build());
 
                 if (mOWConnected) {
+                    Log.d(TAG, "OW old ridemode mOWDevice.setRideMode updated via button position + 1: " + position);
                     mOWDevice.setRideMode(owGatService, mGatt, position + 1);
                 } else {
                     Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
@@ -1090,8 +1122,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mRideModeToggleButtonOWplus.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
             @Override
             public void onValueChanged(int position) {
-                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("SetRideMode").setLabel(Integer.toString(position + 4)).build());
+                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("SetRideMode").setLabel(Integer.toString(position)).build());
                 if (mOWConnected) {
+                    Log.d(TAG, "OWPlus ridemode mOWDevice.setRideMode updated via button position: " + position + 4);
                     mOWDevice.setRideMode(owGatService, mGatt, position + 4);
                 } else {
                     Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();

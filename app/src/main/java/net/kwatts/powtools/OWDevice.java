@@ -30,7 +30,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public final ObservableField<Boolean> isConnected = new ObservableField<>();
     public final ObservableField<Boolean> showDebugWindow = new ObservableField<>();
 
-
+    public final ObservableField<Boolean> isOneWheelPlus = new ObservableField<>();
 
     public static final ObservableBoolean metricUnits = new ObservableBoolean();
     public static final ObservableDouble maxSpeed = new ObservableDouble();
@@ -493,17 +493,25 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         break;
                     case OnewheelCharacteristicRidingMode:
                         switch (c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1)) {
+                            case 0:
+                                dc.value.set("0 (SEQUOIA/Classic)");
+                                EventBus.getDefault().post(new RideModeEvent(0));
+                                break;
                             case 1:
-                                dc.value.set("1 (Classic)");
+                                dc.value.set("1 (CRUZ/Extreme)");
                                 EventBus.getDefault().post(new RideModeEvent(1));
                                 break;
                             case 2:
-                                dc.value.set("2 (Extreme)");
+                                dc.value.set("2 (MISSION/Elevated)");
                                 EventBus.getDefault().post(new RideModeEvent(2));
                                 break;
                             case 3:
-                                dc.value.set("3 (Elevated)");
+                                dc.value.set("3 (ELEVATE)");
                                 EventBus.getDefault().post(new RideModeEvent(3));
+                                break;
+                            case 4:
+                                dc.value.set("4 (DELIRIUM)");
+                                EventBus.getDefault().post(new RideModeEvent(4));
                                 break;
                         }
                         break;
@@ -901,15 +909,22 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             lc.setValue(var2.array());
             lc.setWriteType(2);
             gatt.writeCharacteristic(lc);
+            Log.d(TAG,"Ridemode set to change, setting it in UI: " + ridemode);
             switch (ridemode) {
+                case 0:
+                    setDeviceCharacteristicDisplay("ride_mode","0 (SEQUOIA/Classic)");
+                    break;
                 case 1:
-                    setDeviceCharacteristicDisplay("ride_mode","1 (Classic)");
+                    setDeviceCharacteristicDisplay("ride_mode","1 (CRUZ/Extreme)");
                     break;
                 case 2:
-                    setDeviceCharacteristicDisplay("ride_mode","2 (Extreme)");
+                    setDeviceCharacteristicDisplay("ride_mode","2 (MISSION/Elevated)");
                     break;
                 case 3:
-                    setDeviceCharacteristicDisplay("ride_mode","3 (Elevated)");
+                    setDeviceCharacteristicDisplay("ride_mode","3 (ELEVATE)");
+                    break;
+                case 4:
+                    setDeviceCharacteristicDisplay("ride_mode","4 (DELIRIUM)");
                     break;
 
             }
