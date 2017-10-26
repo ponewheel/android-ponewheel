@@ -16,6 +16,8 @@ out/
 # Gradle files
 .gradle/
 build/
+/.gradletasknamecache
+
 
 # Local configuration file (sdk path, etc)
 local.properties
@@ -39,6 +41,11 @@ captures/
 .idea/gradle.xml
 .idea/dictionaries
 .idea/libraries
+.idea/vcs.xml
+.idea/modules.xml
+.idea/misc.xml
+.idea/fileTemplates/internal
+.idea/markdown-*
 
 # Keystore files
 *.jks
@@ -53,3 +60,6 @@ google-services.json
 freeline.py
 freeline/
 freeline_project_description.json
+
+# MacOS
+.DS_Store
