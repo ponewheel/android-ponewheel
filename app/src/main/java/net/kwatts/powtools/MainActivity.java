@@ -19,10 +19,8 @@ import android.widget.*;
 import android.os.*;
 import android.os.PowerManager.*;
 import android.view.*;
-import android.text.method.*;
 import android.databinding.*;
 import android.preference.PreferenceManager;
-import android.preference.Preference;
 
 import com.afollestad.materialdialogs.*;
 import org.greenrobot.eventbus.*;
@@ -34,6 +32,8 @@ import net.kwatts.powtools.events.*;
 import net.kwatts.powtools.loggers.*;
 import net.kwatts.powtools.services.*;
 import com.github.mikephil.charting.charts.*;
+import com.github.mikephil.charting.components.Description;
+import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.PieData;
@@ -65,7 +65,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private static final boolean POWER_USER = false;
     private static final boolean ONEWHEEL = true;
     private static final boolean ONEWHEEL_LOGGING = true;
-    private static final String ONEWHEEL_LOGGING_PATH = "powlogs";
     private static final int ONEWHEEL_LOGGING_DELAY = 1000;
     private static final int REQUEST_ENABLE_BT = 1;
 
@@ -196,21 +195,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 try {
                     //mBatteryPieData.removeDataSet(0);
                     updateLog("Got battery event with " + perc + " remaining!");
-                    ArrayList<Entry> entries = new ArrayList<>();
-                    entries.add(new Entry(perc, 0));
-                    entries.add(new Entry(100 - perc, 1));
+                    ArrayList<PieEntry> entries = new ArrayList<>();
+                    entries.add(new PieEntry(perc, 0));
+                    entries.add(new PieEntry(100 - perc, 1));
                     PieDataSet dataSet = new PieDataSet(entries, "battery percentage");
                     ArrayList<Integer> mColors = new ArrayList<>();
                     mColors.add(ColorTemplate.rgb("#2E7D32")); //green
                     mColors.add(ColorTemplate.rgb("#C62828")); //red
                     dataSet.setColors(mColors);
 
-                    ArrayList<String> labels = new ArrayList<>();
-                    labels.add("");
-                    labels.add("");
-
-
-                    PieData newPieData = new PieData(labels, dataSet);
+                    PieData newPieData = new PieData( dataSet);
                     mBatteryChart.setCenterText(perc + "%");
                     mBatteryChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
                     mBatteryChart.setCenterTextColor(ColorTemplate.rgb("#616161"));
@@ -277,9 +271,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         });
     }
 
-
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "Starting...");
@@ -319,8 +310,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 recreate();
             }
         }
-
-
 
         mAboutDialog = new MaterialDialog.Builder(this).title("WARNING").content(R.string.eula).positiveText("AGREE")
                 .onPositive(new MaterialDialog.SingleButtonCallback() {
@@ -386,7 +375,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mBatteryChart = (PieChart) findViewById(R.id.batteryPieChart);
         // configure pie chart
         mBatteryChart.setUsePercentValues(true);
-        mBatteryChart.setDescription("");
+        mBatteryChart.setDescription(new Description());
         // enable hole and configure
         mBatteryChart.setDrawHoleEnabled(true);
         Legend legend = mBatteryChart.getLegend();
@@ -450,6 +439,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.menu_logs:
+                startActivity(new Intent(MainActivity.this, RidesListActivity.class));
+                break;
             case R.id.menu_scan:
                 //mLeDeviceListAdapter.clear();
 //                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("Scan").build());
@@ -858,10 +850,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     public void initLogging() {
         if (ONEWHEEL_LOGGING) {
-            String dateTimeString = new SimpleDateFormat("yyyy-MM-dd_HH_mm").format(new Date());
-            String logPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + ONEWHEEL_LOGGING_PATH;
-            PlainTextFileLogger.createDirIfNotExists(logPath);
-            File owLogFile = new File(logPath + "/owlogs_" + dateTimeString + ".csv");
+            String dateTimeString = new SimpleDateFormat("yyyy-MM-dd_HH_mm", Locale.US).format(new Date());
+
+            File owLogFile = new File( PlainTextFileLogger.getLoggingPath() + "/owlogs_" + dateTimeString + ".csv");
             updateLog("Logging device to " + owLogFile.getAbsolutePath());
             Toast.makeText(mContext, "All OW activity will be logging to " + owLogFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
             mTextFileLogger = new PlainTextFileLogger(owLogFile);
