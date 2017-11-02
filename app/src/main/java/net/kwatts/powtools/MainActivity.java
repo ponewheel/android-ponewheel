@@ -39,7 +39,6 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.components.Legend;
-import com.google.android.gms.analytics.HitBuilders;
 
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
 // https://github.com/alt236/Bluetooth-LE-Library---Android
@@ -177,25 +176,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             public void run() {
 //                mRideModeToggleButton.setValue(ridemode - 1);
                 mRideModeToggleButtonOWplus.setValue(ridemode);
-            }
-        });
-
-    }
-
-
-    public void sendAnalyticsStats() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-
-                    double max_speed_revs = OWDevice.rpmToMilesPerHour(mOWDevice.maxSpeed.get());
-                    String speed_max_mph = Double.toString(max_speed_revs);
-                    String lifetime_odometer = Integer.toString(mOWDevice.lifetimeOdometer.get());
-                    String max_tilt_angle_pitch = Integer.toString(mOWDevice.maxTiltAnglePitch.get());
-                    String max_tilt_angle_roll = Integer.toString(mOWDevice.maxTiltAngleRoll.get());
-                } catch (Exception e) {
-                }
             }
         });
 
@@ -510,7 +490,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 descriptorWriteQueue.clear();
                 updateLog("Disconnected from device by user.");
                 deviceConnectedTimer(false);
-                sendAnalyticsStats();
                 this.invalidateOptionsMenu();
                 // Added stuff 10/23 to clean fix
                 owGatService = null;

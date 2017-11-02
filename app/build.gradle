@@ -79,6 +79,5 @@ dependencies {
     compile 'com.github.PhilJay:MPAndroidChart:v2.2.5'
     compile 'com.github.rey5137:material:1.2.2' // https://github.com/rey5137/material
     compile 'org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.1'
-    compile 'com.google.android.gms:play-services-analytics:9.0.0'
 
 }
