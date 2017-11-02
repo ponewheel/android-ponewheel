@@ -974,7 +974,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         mOWDevice.setLights(owGatService, mGatt, 0);
                     }
                 }
-//                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("Lights").setLabel((isChecked) ? "on" : "off").build());
             }
         });
 
@@ -991,7 +990,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                     }
                 }
-//                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("CustomLights").setLabel((isChecked) ? "on" : "off").build());
             }
         });
 
@@ -1006,7 +1004,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         mOWDevice.setCustomLights(owGatService, mGatt, 0,0,30);
                      }
                 }
-//                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("CustomLightsFrontBright").setLabel((isChecked) ? "on" : "off").build());
 
             }
         });
@@ -1022,7 +1019,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                     }
                 }
-//                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("CustomLightsBackBright").setLabel((isChecked) ? "on" : "off").build());
 
             }
         });
@@ -1050,7 +1046,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     }
 
                 }
-//                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("CustomLightsFrontBlink").setLabel((isChecked) ? "on" : "off").build());
 
             }
         });
@@ -1077,7 +1072,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     }
 
                 }
-//                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("CustomLightsBackBlink").setLabel((isChecked) ? "on" : "off").build());
             }
         });
 
@@ -1096,7 +1090,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mRideModeToggleButton.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
             @Override
             public void onValueChanged(int position) {
-//                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("SetRideMode").setLabel(Integer.toString(position + 1)).build());
 
                 if (mOWConnected) {
                     Log.d(TAG, "OW old ridemode mOWDevice.setRideMode updated via button position + 1: " + position);
@@ -1109,7 +1102,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mRideModeToggleButtonOWplus.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
             @Override
             public void onValueChanged(int position) {
-                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("SetRideMode").setLabel(Integer.toString(position)).build());
                 if (mOWConnected) {
                     Log.d(TAG, "OWPlus ridemode mOWDevice.setRideMode updated via button position: " + position + 4);
                     mOWDevice.setRideMode(owGatService, mGatt, position + 4);
