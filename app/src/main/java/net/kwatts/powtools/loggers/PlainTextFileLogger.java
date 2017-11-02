@@ -1,4 +1,7 @@
 package net.kwatts.powtools.loggers;
+import android.os.Environment;
+import android.support.annotation.NonNull;
+
 import net.kwatts.powtools.DeviceInterface;
 import net.kwatts.powtools.OWDevice;
 
@@ -14,6 +17,8 @@ public class PlainTextFileLogger  {
 
     private File file;
     protected final String name = "TXT";
+    private static final String ONEWHEEL_LOGGING_PATH = "powlogs";
+
 
     public PlainTextFileLogger(File file) {
         this.file = file;
@@ -29,7 +34,6 @@ public class PlainTextFileLogger  {
             output.write(dev.getCSVHeader().getBytes());
             output.flush();
             output.close();
-
         }
 
         FileOutputStream writer = new FileOutputStream(file, true);
@@ -60,5 +64,12 @@ public class PlainTextFileLogger  {
             }
         }
         return ret;
+    }
+
+    @NonNull
+    public static String getLoggingPath() {
+        String logPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + ONEWHEEL_LOGGING_PATH;
+        PlainTextFileLogger.createDirIfNotExists(logPath);
+        return logPath;
     }
 }

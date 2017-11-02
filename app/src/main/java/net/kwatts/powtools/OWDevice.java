@@ -24,7 +24,7 @@ import net.kwatts.powtools.model.DeviceStatus;
 public class OWDevice extends BaseObservable implements DeviceInterface {
     private static final String TAG = "OWTOOLS";
     private static final String NAME = "ONEWHEEL";
-
+    public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
 
 
     public final ObservableField<Boolean> isConnected = new ObservableField<>();
@@ -943,7 +943,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
     @Override
     public String toCSV() {
-        String dateTimeString = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date());
+        String dateTimeString = SIMPLE_DATE_FORMAT.format(new Date());
         String header = String.format(Locale.US, "%s", dateTimeString);
         StringBuilder values = new StringBuilder();
         for(OWDevice.DeviceCharacteristic dc : this.deviceNotifyCharacteristics) {

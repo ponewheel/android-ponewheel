@@ -76,8 +76,9 @@ dependencies {
         transitive = true
     }
     compile 'com.android.support:percent:23.1.1'
-    compile 'com.github.PhilJay:MPAndroidChart:v2.2.5'
-    compile 'com.github.rey5137:material:1.2.2' // https://github.com/rey5137/material
+    compile 'com.github.PhilJay:MPAndroidChart:v3.0.2'
+    compile 'com.github.rey5137:material:1.2.2'
+    // https://github.com/rey5137/material
     compile 'org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.1'
-
 }
+
