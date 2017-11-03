@@ -1,44 +1,89 @@
 package net.kwatts.powtools;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.databinding.DataBindingUtil;
 import android.graphics.Typeface;
+import android.os.Bundle;
+import android.os.IBinder;
+import android.os.ParcelUuid;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
+import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
-import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.ArrayAdapter;
+import android.widget.Chronometer;
+import android.widget.CompoundButton;
+import android.widget.ScrollView;
+import android.widget.Spinner;
+import android.widget.Toast;
 
-import java.text.SimpleDateFormat;
-import java.util.*;
-
-import android.util.*;
-import android.bluetooth.*;
-import android.bluetooth.le.*;
-import android.content.*;
-import android.widget.*;
-import android.os.*;
-import android.os.PowerManager.*;
-import android.view.*;
-import android.databinding.*;
-import android.preference.PreferenceManager;
-
-import com.afollestad.materialdialogs.*;
-import org.greenrobot.eventbus.*;
-import org.honorato.multistatetogglebutton.MultiStateToggleButton;
-
-import java.io.*;
-import org.json.JSONObject;
-import net.kwatts.powtools.events.*;
-import net.kwatts.powtools.loggers.*;
-import net.kwatts.powtools.services.*;
-import com.github.mikephil.charting.charts.*;
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
+import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Description;
-import com.github.mikephil.charting.data.PieEntry;
-import com.github.mikephil.charting.utils.ColorTemplate;
-import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
-import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.utils.ColorTemplate;
+
+import net.kwatts.powtools.events.DeviceBatteryRemainingEvent;
+import net.kwatts.powtools.events.DeviceCrashEvent;
+import net.kwatts.powtools.events.DeviceStatusEvent;
+import net.kwatts.powtools.events.NotificationEvent;
+import net.kwatts.powtools.events.RideModeEvent;
+import net.kwatts.powtools.events.VibrateEvent;
+import net.kwatts.powtools.loggers.PlainTextFileLogger;
+import net.kwatts.powtools.services.VibrateService;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+import org.honorato.multistatetogglebutton.MultiStateToggleButton;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.UUID;
 
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
 // https://github.com/alt236/Bluetooth-LE-Library---Android
@@ -174,7 +219,19 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             @Override
             public void run() {
 //                mRideModeToggleButton.setValue(ridemode - 1);
-                mRideModeToggleButtonOWplus.setValue(ridemode);
+                //updateLog("Got updateRideMode:" + ridemode);
+                Log.d(TAG, "Got updateRideMode for:" + ridemode);
+                if (ridemode >= 0 && ridemode <= 1) {
+                    mRideModeToggleButton.setValue(ridemode);
+                }
+                if (ridemode >= 2 && ridemode <= 6) {
+                    mRideModeToggleButtonOWplus.setValue(ridemode - 4);
+                }
+                if (ridemode >= 7 && ridemode <= 8) {
+                    mRideModeToggleButtonOWplus2.setValue(ridemode - 7);
+                }
+
+
             }
         });
 
@@ -764,6 +821,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
                 updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
             } else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicRidingMode)) {
+
+                Log.d(TAG, "Setting ride mode from the main UI thread to:" + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
                 updateRideMode(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
             }
 
@@ -1050,12 +1109,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     MultiStateToggleButton mRideModeToggleButton;
     MultiStateToggleButton mRideModeToggleButtonOWplus;
+    MultiStateToggleButton mRideModeToggleButtonOWplus2;
     public void initRideModeButtons(View v) {
 
 
         mRideModeToggleButton = (MultiStateToggleButton) this.findViewById(R.id.mstb_multi_ridemodes);
         mRideModeToggleButtonOWplus = (MultiStateToggleButton) this.findViewById(R.id.mstb_multi_ridemodes_owplus);
-
+        mRideModeToggleButtonOWplus2 = (MultiStateToggleButton) this.findViewById(R.id.mstb_multi_ridemodes_owplus2);
 
         mRideModeToggleButton.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
             @Override
@@ -1073,8 +1133,19 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             @Override
             public void onValueChanged(int position) {
                 if (mOWConnected) {
-                    Log.d(TAG, "OWPlus ridemode mOWDevice.setRideMode updated via button position: " + position + 4);
+                    Log.d(TAG, "OWPlus ridemode mOWDevice.setRideMode updated via button position: " + position);
                     mOWDevice.setRideMode(owGatService, mGatt, position + 4);
+                } else {
+                    Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        mRideModeToggleButtonOWplus2.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
+            @Override
+            public void onValueChanged(int position) {
+                if (mOWConnected) {
+                    Log.d(TAG, "OWPlus2 ridemode mOWDevice.setRideMode updated via button position: " + position);
+                    mOWDevice.setRideMode(owGatService, mGatt, position + 7);
                 } else {
                     Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
                 }
@@ -1082,124 +1153,5 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         });
 
 
-
     }
-
-    /* Took this out, t'was ahead of its time ;) */
-    /*
-    Switch mMasterLightSwitch;
-    Switch mCustomLightSwitch;
-    Slider mFrontLightWhiteSlider;
-    Slider mFrontLightRedSlider;
-    Slider mBackLightRedSlider;
-    Slider mBackLightWhiteSlider;
-
-    public void initLightDialog(View v) {
-
-        mMasterLightSwitch = (Switch) v.findViewById(R.id.master_light_switch);
-        mMasterLightSwitch.setOnCheckedChangeListener(new com.rey.material.widget.Switch.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(com.rey.material.widget.Switch buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
-                        mCustomLightSwitch.setVisibility(View.VISIBLE);
-                        mOWDevice.setLights(owGatService, mGatt, 1);
-                    } else {
-                        mCustomLightSwitch.setVisibility(View.INVISIBLE);
-                        mFrontLightWhiteSlider.setVisibility(View.INVISIBLE);
-                        mFrontLightRedSlider.setVisibility(View.INVISIBLE);
-                        mBackLightRedSlider.setVisibility(View.INVISIBLE);
-                        mBackLightWhiteSlider.setVisibility(View.INVISIBLE);
-                        mCustomLightSwitch.setChecked(false);
-                        mOWDevice.setLights(owGatService, mGatt, 0);
-                    }
-                }
-
-            }
-
-        });
-
-
-
-        mCustomLightSwitch = (Switch) v.findViewById(R.id.custom_light_switch);
-        final Handler handler = new Handler();
-
-        mCustomLightSwitch.setOnCheckedChangeListener(new com.rey.material.widget.Switch.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(com.rey.material.widget.Switch buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
-                        Runnable task = new Runnable() {
-                            @Override
-                            public void run() {
-                                mCount1++;
-                                if ( ( mCount1 % 2 ) == 0 ) {
-                                    mOWDevice.setCustomLights(owGatService, mGatt,0,0,50);
-                                } else {
-                                    mOWDevice.setCustomLights(owGatService, mGatt,0,0,0);
-                                }
-
-                                handler.postDelayed(this, 1000);
-                            }
-                        };
-                        handler.post(task);
-
-
-                    }
-
-                }
-
-                if (isChecked == false)  {
-                    handler.removeCallbacksAndMessages(null);
-                }
-
-            }
-
-        });
-
-
-        mFrontLightWhiteSlider  = (Slider) v.findViewById(R.id.white_front_lights_slider);
-        mFrontLightWhiteSlider.setOnPositionChangeListener(new Slider.OnPositionChangeListener() {
-            @Override
-            public void onPositionChanged(Slider view, boolean fromUser, float oldPos, float newPos, int oldValue, int newValue) {
-                //Toast.makeText(mContext, String.format("pos=%.1f value=%d", newPos, newValue), Toast.LENGTH_SHORT).show();
-                if (mOWConnected) {
-                    mOWDevice.setCustomLights(owGatService, mGatt, 0,0,newValue);
-                }
-            }
-        });
-
-        mFrontLightRedSlider = (Slider) v.findViewById(R.id.red_front_lights_slider);
-        mFrontLightRedSlider.setOnPositionChangeListener(new Slider.OnPositionChangeListener() {
-            @Override
-            public void onPositionChanged(Slider view, boolean fromUser, float oldPos, float newPos, int oldValue, int newValue) {
-                if (mOWConnected) {
-                    mOWDevice.setCustomLights(owGatService, mGatt, 0,1,newValue);
-                }
-            }
-        });
-
-        mBackLightWhiteSlider = (Slider) v.findViewById(R.id.white_back_lights_slider);
-        mBackLightWhiteSlider.setOnPositionChangeListener(new Slider.OnPositionChangeListener() {
-            @Override
-            public void onPositionChanged(Slider view, boolean fromUser, float oldPos, float newPos, int oldValue, int newValue) {
-                if (mOWConnected) {
-                    mOWDevice.setCustomLights(owGatService, mGatt, 1,0,newValue);
-                }
-            }
-        });
-
-        mBackLightRedSlider = (Slider) v.findViewById(R.id.red_back_lights_slider);
-        mBackLightRedSlider.setOnPositionChangeListener(new Slider.OnPositionChangeListener() {
-            @Override
-            public void onPositionChanged(Slider view, boolean fromUser, float oldPos, float newPos, int oldValue, int newValue) {
-                if (mOWConnected) {
-                    mOWDevice.setCustomLights(owGatService, mGatt, 1,1,newValue);
-                }
-            }
-        });
-
-    }
-
-*/
 }
