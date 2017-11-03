@@ -22,7 +22,6 @@ android {
         debug {
             debuggable true
             minifyEnabled false
-            //buildConfigField 'boolean', 'ENABLE_BLUETOOTH_EXTENDED', 'false'
         }
     }
 

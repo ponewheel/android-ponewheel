@@ -119,6 +119,7 @@
         mstb:values= "@array/ow_ridemode_array"
         mstb:mstbPrimaryColor="?attr/colorPrimary"
         mstb:mstbSecondaryColor="@color/white"
+        android:visibility="@{owdevice.isOneWheelPlus ? View.GONE : View.VISIBLE}"
         android:layout_below="@id/front_blink_switch"
         android:enabled="@{owdevice.isConnected ? true : false}"
         />
@@ -130,8 +131,19 @@
             mstb:values= "@array/ow_ridemode_owplus_array"
             mstb:mstbPrimaryColor="?attr/colorPrimary"
             mstb:mstbSecondaryColor="@color/white"
-            android:layout_below="@id/mstb_multi_ridemodes"
+            android:layout_below="@id/front_blink_switch"
+            android:visibility="@{owdevice.isOneWheelPlus ? View.VISIBLE : View.GONE}"
+            android:enabled="@{owdevice.isConnected ? true : false}" />
+        <org.honorato.multistatetogglebutton.MultiStateToggleButton
+            android:id="@+id/mstb_multi_ridemodes_owplus2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            mstb:values= "@array/ow_ridemode_owplus_array2"
+            mstb:mstbPrimaryColor="?attr/colorPrimary"
+            mstb:mstbSecondaryColor="@color/white"
+            android:layout_below="@id/mstb_multi_ridemodes_owplus"
+            android:visibility="@{owdevice.isOneWheelPlus ? View.VISIBLE : View.GONE}"
             android:enabled="@{owdevice.isConnected ? true : false}"
- />
+            />
 </android.support.percent.PercentRelativeLayout>
     </layout>

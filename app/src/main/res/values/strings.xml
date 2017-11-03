@@ -32,12 +32,10 @@
         <item>SEQUOIA</item>
         <item>CRUZ</item>
         <item>MISSION</item>
+    </string-array>
+    <string-array name="ow_ridemode_owplus_array2">
         <item>ELEVATE</item>
         <item>DELIRIUM</item>
-    </string-array>
-    <string-array name="ow_connectstate_array">
-        <item>CONNECTED</item>
-        <item>DISCONNECTED</item>
     </string-array>
     <string-array name="ow_lights_array">
         <item>OFF</item>

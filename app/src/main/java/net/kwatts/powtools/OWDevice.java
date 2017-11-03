@@ -492,6 +492,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         }
                         break;
                     case OnewheelCharacteristicRidingMode:
+                        Log.d(TAG, "Got the ridemode from BLE:" + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
                         switch (c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1)) {
                             case 0:
                                 dc.value.set("0 (SEQUOIA/Classic)");
