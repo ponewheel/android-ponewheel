@@ -40,7 +40,6 @@ public class RideDetailActivity extends AppCompatActivity {
 
         LineChart lineChart = (LineChart) findViewById(R.id.ride_detail_speed_chart);
 
-
         String fileName = getIntent().getStringExtra(FILE_NAME);
 
         String logFileLocation = PlainTextFileLogger.getLoggingPath() + "/" + fileName;
@@ -85,9 +84,7 @@ public class RideDetailActivity extends AppCompatActivity {
                     fileReader.close();
 
             } catch (IOException ex) {
-
                 ex.printStackTrace();
-
             }
 
         }
@@ -104,12 +101,9 @@ public class RideDetailActivity extends AppCompatActivity {
         dataSet.setHighLightColor(Color.rgb(244, 117, 117));
         dataSet.setDrawCircleHole(false);
 
-
         LineData lineData = new LineData(dataSet);
         lineChart.setData(lineData);
         lineChart.notifyDataSetChanged();
-
-
 
         lineChart.getDescription().setEnabled(false);
 

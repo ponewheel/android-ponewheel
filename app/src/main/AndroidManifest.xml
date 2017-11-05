@@ -17,6 +17,10 @@
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <meta-data
+        android:name="com.google.android.gms.version"
+        android:value="@integer/google_play_services_version" />
+
     <application
         android:name=".App"
         android:allowBackup="true"
@@ -40,7 +44,12 @@
             android:enabled="true" />
 
         <activity android:name=".RidesListActivity" />
-        <activity android:name=".RideDetailActivity"></activity>
+        <activity android:name=".RideDetailActivity" />
+        <activity android:name=".MapActivity" />
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyA6IHQG42JTIvwcVh5Cxb_IvW-K_56QqWc"/>
     </application>
 
 </manifest>
