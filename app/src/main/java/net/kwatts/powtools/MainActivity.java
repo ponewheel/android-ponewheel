@@ -1,5 +1,6 @@
 package net.kwatts.powtools;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -54,6 +55,9 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.google.android.gms.location.LocationRequest;
+import com.patloew.rxlocation.RxLocation;
+import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import net.kwatts.powtools.events.DeviceBatteryRemainingEvent;
 import net.kwatts.powtools.events.DeviceCrashEvent;
@@ -85,6 +89,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
+import io.reactivex.Single;
+
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
 // https://github.com/alt236/Bluetooth-LE-Library---Android
 // https://github.com/Fakher-Hakim/android-BluetoothLeGatt
@@ -111,6 +117,15 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private static final int REQUEST_ENABLE_BT = 1;
 
     MultiStateToggleButton mRideModeToggleButton;
+
+    public static final String SHARED_PREF_METRIC_UNITS = "metricUnits";
+    public static final String SHARED_PREF_DARK_NIGHT_MODE = "darkNightMode";
+    public static final String SHARED_PREF_EULA_AGREE = "eula_agree";
+    public static final String SHARED_PREF_DEBUG_WINDOW = "debugWindow";
+    public static final String SHARED_PREF_ONE_WHEEL_PLUS = "oneWheelPlus";
+    public static final String SHARED_PREF_TRIP_LOGGING = "tripLogging";
+    public static final String SHARED_PREF_LOG_LOCATIONS = "logLocations";
+
 
     public VibrateService mVibrateService;
     private android.os.Handler mLoggingHandler = new android.os.Handler();
@@ -348,7 +363,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 recreate();
             }
         }
-        if (mSharedPref.getBoolean("darkNightMode", false)) {
+        if (mSharedPref.getBoolean(SHARED_PREF_DARK_NIGHT_MODE, false)) {
             if (savedInstanceState == null) {
                 getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_YES);
                 recreate();
@@ -360,12 +375,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     @Override
                     public void onClick(MaterialDialog dialog, DialogAction which) {
                         SharedPreferences.Editor editor = mSharedPref.edit();
-                        editor.putBoolean("eula_agree", true);
+                        editor.putBoolean(SHARED_PREF_EULA_AGREE, true);
                         editor.commit();
                     }
                 });
 
-        if ((mSharedPref.getBoolean("eula_agree", false)) == false) {
+        if ((mSharedPref.getBoolean(SHARED_PREF_EULA_AGREE, false)) == false) {
             mAboutDialog.show();
         }
 
@@ -375,17 +390,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mOWDevice = new OWDevice();
         mBinding.setOwdevice(mOWDevice);
 
-        if (mSharedPref.getBoolean("debugWindow", false)) {
-            mOWDevice.showDebugWindow.set(true);
-        } else {
-            mOWDevice.showDebugWindow.set(false);
-        }
-
-        if (mSharedPref.getBoolean("oneWheelPlus", false)) {
-            mOWDevice.isOneWheelPlus.set(true);
-        } else {
-            mOWDevice.isOneWheelPlus.set(false);
-        }
+        mOWDevice.showDebugWindow.set(mSharedPref.getBoolean(SHARED_PREF_DEBUG_WINDOW, false));
+        mOWDevice.isOneWheelPlus.set(mSharedPref.getBoolean(SHARED_PREF_ONE_WHEEL_PLUS, false));
 
 
         mOWDevice.refresh();
@@ -408,7 +414,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mScrollView = (ScrollView) findViewById(R.id.logScroller);
 
 
-        if ((mSharedPref.getBoolean("tripLogging", false)) == true) {
+        if ((mSharedPref.getBoolean(SHARED_PREF_TRIP_LOGGING, false))) {
             initLogging();
         }
 
@@ -491,6 +497,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
                 filters = new ArrayList<ScanFilter>();
                 scanLeDevice(true);
+
+                // TODO move this to where we're actually connected to device? (or maybe its better here so we can achieve a location lock before logging)
+                if (mSharedPref.getBoolean(SHARED_PREF_LOG_LOCATIONS, false)) {
+                    startLocationScan();
+                }
                 break;
             case R.id.menu_stop:
                 scanLeDevice(false);
@@ -540,6 +551,29 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         return true;
     }
 
+    private void startLocationScan() {
+
+        RxLocation rxLocation = new RxLocation(this);
+
+        LocationRequest locationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(1000); // TODO figure out a good interval
+
+        rxLocation.location().updates(locationRequest)
+                .flatMap(location -> rxLocation.geocoding().fromLocation(location).toObservable())
+                .subscribe(address -> mOWDevice.setLocation(address.getLongitude() + "," + address.getLatitude()));
+    }
+
+    private Single<Boolean> getPermissions() {
+        // TODO I think this is necessary since changing the target api
+        RxPermissions rxPermissions = new RxPermissions(this);
+        return rxPermissions
+                .request(
+                        Manifest.permission.ACCESS_FINE_LOCATION)
+                .firstOrError();
+    }
+
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -566,16 +600,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Log.i(TAG, "onSharedPreferenceChanged callback");
         switch (key) {
-            case "metricUnits":
-                boolean metricUnitsState = sharedPreferences.getBoolean("metricUnits",false);
+            case SHARED_PREF_METRIC_UNITS:
+                boolean metricUnitsState = sharedPreferences.getBoolean(SHARED_PREF_METRIC_UNITS,false);
                 mOWDevice.metricUnits.set(metricUnitsState);
                 mOWDevice.refresh();
 //                mTracker.send(new HitBuilders.EventBuilder().setCategory("SharedPreferences").setAction("metricUnits")
 //                        .setLabel((metricUnitsState) ? "on" : "off").build());
                 break;
 
-            case "darkNightMode":
-                boolean checkDarkNightMode = mSharedPref.getBoolean("darkNightMode", false);
+            case SHARED_PREF_DARK_NIGHT_MODE:
+                boolean checkDarkNightMode = mSharedPref.getBoolean(SHARED_PREF_DARK_NIGHT_MODE, false);
                 if (checkDarkNightMode) {
                     getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_YES);
                 } else {
@@ -587,14 +621,24 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 //                        .setLabel((checkDarkNightMode) ? "on" : "off").build());
                 break;
 
+            case SHARED_PREF_LOG_LOCATIONS:
+                boolean checkLogLocations = mSharedPref.getBoolean(SHARED_PREF_LOG_LOCATIONS, false);
+                if (!checkLogLocations && mOWDevice != null) {
+                    mOWDevice.setLocation(null);
+                }
+                break;
+
             default:
                 //XXX right now, all preferences are bools, but this could change in the future
               try {
                   boolean checkState = sharedPreferences.getBoolean(key, false);
+                  Log.d(TAG, "onSharedPreferenceChanged: sharedPref changed:" + key);
 //                  mTracker.send(new HitBuilders.EventBuilder().setCategory("SharedPreferences").setAction(key)
 //                          .setLabel((checkState) ? "on" : "off").build());
                   break;
-              } catch (Exception e) {}
+              } catch (Exception e) {
+                  Log.e(TAG, "onSharedPreferenceChanged: ", e);
+              }
 
         }
 

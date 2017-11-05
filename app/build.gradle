@@ -26,8 +26,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     lintOptions {
@@ -80,5 +80,12 @@ dependencies {
     compile 'com.github.rey5137:material:1.2.2'
     // https://github.com/rey5137/material
     compile 'org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.1'
+
+    // RxJava
+    implementation 'com.patloew.rxlocation:rxlocation:1.0.3'
+    implementation 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.4@aar'
+    implementation 'io.reactivex.rxjava2:rxjava:2.1.5'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
+
 }
 
