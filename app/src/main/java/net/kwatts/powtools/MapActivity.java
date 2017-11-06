@@ -4,6 +4,7 @@ package net.kwatts.powtools;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.ArrayMap;
 import android.util.Log;
 import android.view.View;
 
@@ -14,6 +15,8 @@ import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -21,12 +24,15 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -37,8 +43,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public static final String FILE_NAME = "EXTRA_DATA_FILE_NAME";
 
 
-    ArrayList<LatLng> latLongs = new ArrayList<>();
+    ArrayMap<Long, LatLng> timeLocationMap = new ArrayMap<>();
     private SupportMapFragment mapFragment;
+    private GoogleMap googleMap;
+    private HashSet<Marker> mapMarkers = new HashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,13 +56,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         String fileName = getIntent().getStringExtra(FILE_NAME);
 
-        ArrayList<Entry> values = new ArrayList<>();
+        ArrayList<Entry> timeSpeedMap = new ArrayList<>();
 
-        latLongs.clear();
+        timeLocationMap.clear();
         // TODO convert to async
-        PlainTextFileLogger.getEntriesFromFile(fileName, values, latLongs);
+        PlainTextFileLogger.getEntriesFromFile(fileName, timeSpeedMap, timeLocationMap);
 
-        setupChart(values);
+        setupChart(timeSpeedMap);
 
         // Get the SupportMapFragment and request notification
         // when the map is ready to be used.
@@ -74,20 +82,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        // Add a marker in Sydney, Australia,
-        // and move the map's camera to the same location.
+        this.googleMap = googleMap;
 
         Polyline polyline1 = googleMap.addPolyline(new PolylineOptions()
                 .clickable(true)
-                .add( latLongs.toArray(new LatLng[latLongs.size()]) )
+                .add( timeLocationMap.values().toArray(new LatLng[timeLocationMap.size()]) )
         );
         LatLngBounds.Builder latLongBoundsBuilder = new LatLngBounds.Builder();
-        for (LatLng latLng : latLongs) {
+        for (LatLng latLng : timeLocationMap.values()) {
             latLongBoundsBuilder.include(latLng);
         }
 
         View mapFragmentView = mapFragment.getView();
-        if (latLongs.size() != 0) {
+        if (timeLocationMap.size() != 0) {
             LatLngBounds latLngBounds = latLongBoundsBuilder.build();
             double width = latLngBounds.southwest.longitude - latLngBounds.northeast.longitude;
             Log.d(TAG, "onMapReady: mapWidth" + width);
@@ -125,6 +132,27 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         // enable touch gestures
         lineChart.setTouchEnabled(true);
+        lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @Override
+            public void onValueSelected(Entry entry, Highlight h) {
+                Log.d(TAG, "onValueSelected: " + entry.getX());
+                Long entryX = (long) entry.getX();
+                if (timeLocationMap.containsKey(entryX)) {
+                    for (Marker mapMarker : mapMarkers) {
+                        mapMarker.remove();
+                    }
+                    LatLng latLng = timeLocationMap.get(entryX);
+                    mapMarkers.add(googleMap.addMarker(new MarkerOptions().position(latLng)));
+                }
+            }
+
+            @Override
+            public void onNothingSelected() {
+                for (Marker mapMarker : mapMarkers) {
+                    mapMarker.remove();
+                }
+            }
+        });
 
         lineChart.setDragDecelerationFrictionCoef(0.9f);
 

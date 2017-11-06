@@ -1,11 +1,10 @@
 package net.kwatts.powtools.loggers;
 import android.os.Environment;
 import android.support.annotation.NonNull;
-import android.util.Log;
+import android.util.ArrayMap;
 
 import com.github.mikephil.charting.data.Entry;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 
 import net.kwatts.powtools.DeviceInterface;
 import net.kwatts.powtools.MapActivity;
@@ -86,7 +85,7 @@ public class PlainTextFileLogger  {
         return logPath;
     }
 
-    public static void getEntriesFromFile(String fileName, ArrayList<Entry> values, ArrayList<LatLng> latLngs) {
+    public static void getEntriesFromFile(String fileName, ArrayList<Entry> timeSpeedMap, ArrayMap<Long, LatLng> latLngs) {
         String logFileLocation = PlainTextFileLogger.getLoggingPath() + "/" + fileName;
         System.out.println("logFile = " + logFileLocation);
 
@@ -115,7 +114,7 @@ public class PlainTextFileLogger  {
                     referenceTime = time;
                 }
                 time = time - referenceTime;
-                values.add(new Entry(time, Float.valueOf(speed)));
+                timeSpeedMap.add(new Entry(time, Float.valueOf(speed)));
 
                 if (currentLine.contains("LOC=(")) {
                     int startLocation = currentLine.indexOf("LOC=(") + "LOC=(".length();
@@ -124,7 +123,7 @@ public class PlainTextFileLogger  {
                     String longLocation = currentLine.substring(commaLocation + 1, endParenLocation);
                     String latLocation = currentLine.substring(startLocation, commaLocation);
                     LatLng latLng = new LatLng(Double.parseDouble(longLocation), Double.parseDouble(latLocation));
-                    latLngs.add(latLng);
+                    latLngs.put(time, latLng);
                 }
             }
         } catch (Exception e) {

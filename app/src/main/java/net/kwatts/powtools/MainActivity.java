@@ -90,6 +90,17 @@ import java.util.TimerTask;
 import java.util.UUID;
 
 import io.reactivex.Single;
+import io.reactivex.MaybeObserver;
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.Single;
+import io.reactivex.SingleObserver;
+import io.reactivex.SingleSource;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
+import io.reactivex.schedulers.Schedulers;
 
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
 // https://github.com/alt236/Bluetooth-LE-Library---Android
@@ -349,6 +360,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
 
         EventBus.getDefault().register(this);
+        // TODO unbind in onPause or whatever is recommended by goog
         bindService(new Intent(this, VibrateService.class), mVibrateConnection, Context.BIND_AUTO_CREATE);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -559,7 +571,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(1000); // TODO figure out a good interval
 
-        rxLocation.location().updates(locationRequest)
+        rxLocation
+                .location()
+                .observeOn(Schedulers.io())
+                .updates(locationRequest)
                 .flatMap(location -> rxLocation.geocoding().fromLocation(location).toObservable())
                 .subscribe(address -> mOWDevice.setLocation(address.getLongitude() + "," + address.getLatitude()));
     }
