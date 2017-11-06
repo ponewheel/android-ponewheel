@@ -1,32 +1,43 @@
 package net.kwatts.powtools;
 
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
 
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 /**
  * An activity that displays a Google map with a marker (pin) to indicate a particular location.
  */
-public class MapActivity extends AppCompatActivity
-        implements OnMapReadyCallback {
+public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
     public static final String TAG = MapActivity.class.getSimpleName();
-    ArrayList<LatLng> latLngs = new ArrayList<>();
+    public static final String FILE_NAME = "EXTRA_DATA_FILE_NAME";
+
+
+    ArrayList<LatLng> latLongs = new ArrayList<>();
     private SupportMapFragment mapFragment;
 
     @Override
@@ -35,14 +46,15 @@ public class MapActivity extends AppCompatActivity
         // Retrieve the content view that renders the map.
         setContentView(R.layout.maps_activity);
 
-        String fileName = getIntent().getStringExtra(RideDetailActivity.FILE_NAME);
+        String fileName = getIntent().getStringExtra(FILE_NAME);
 
         ArrayList<Entry> values = new ArrayList<>();
 
+        latLongs.clear();
         // TODO convert to async
-        PlainTextFileLogger.getEntriesFromFile(fileName, values, latLngs);
+        PlainTextFileLogger.getEntriesFromFile(fileName, values, latLongs);
 
-
+        setupChart(values);
 
         // Get the SupportMapFragment and request notification
         // when the map is ready to be used.
@@ -67,19 +79,99 @@ public class MapActivity extends AppCompatActivity
 
         Polyline polyline1 = googleMap.addPolyline(new PolylineOptions()
                 .clickable(true)
-                .add( latLngs.toArray(new LatLng[latLngs.size()]) )
+                .add( latLongs.toArray(new LatLng[latLongs.size()]) )
         );
-        LatLngBounds.Builder latLongBounds = new LatLngBounds.Builder();
-        for (LatLng latLng : latLngs) {
-            latLongBounds.include(latLng);
+        LatLngBounds.Builder latLongBoundsBuilder = new LatLngBounds.Builder();
+        for (LatLng latLng : latLongs) {
+            latLongBoundsBuilder.include(latLng);
         }
 
-        // TODO convert dp to px
-        LatLngBounds latLngBounds = latLongBounds.build();
-        Log.d(TAG, "onMapReady: latLngBounds.northeast" + latLngBounds.northeast);
-        Log.d(TAG, "onMapReady: latLngBounds.southwest" + latLngBounds.southwest);
+        View mapFragmentView = mapFragment.getView();
+        if (latLongs.size() != 0) {
+            LatLngBounds latLngBounds = latLongBoundsBuilder.build();
+            double width = latLngBounds.southwest.longitude - latLngBounds.northeast.longitude;
+            Log.d(TAG, "onMapReady: mapWidth" + width);
 
-        mapFragment.getView().post(() -> googleMap.moveCamera(
-                CameraUpdateFactory.newLatLngBounds(latLngBounds, 150)));
+            // TODO apply a min width
+
+            assert mapFragmentView != null;
+            mapFragmentView.post(() -> googleMap.moveCamera(
+                    // TODO convert dp to px
+                    CameraUpdateFactory.newLatLngBounds(latLngBounds, 150)));
+        }
     }
+
+
+    private void setupChart(ArrayList<Entry> values) {
+        LineChart lineChart = (LineChart) findViewById(R.id.ride_detail_speed_chart);
+        assert lineChart != null;
+        LineDataSet dataSet = new LineDataSet(values, "Label");
+        dataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+        dataSet.setColor(ColorTemplate.getHoloBlue());
+        dataSet.setValueTextColor(ColorTemplate.getHoloBlue());
+        dataSet.setLineWidth(1.5f);
+        dataSet.setDrawCircles(false);
+        dataSet.setDrawValues(false);
+        dataSet.setFillAlpha(65);
+        dataSet.setFillColor(ColorTemplate.getHoloBlue());
+        dataSet.setHighLightColor(Color.rgb(244, 117, 117));
+        dataSet.setDrawCircleHole(false);
+
+        LineData lineData = new LineData(dataSet);
+        lineChart.setData(lineData);
+        lineChart.notifyDataSetChanged();
+
+        lineChart.getDescription().setEnabled(false);
+
+        // enable touch gestures
+        lineChart.setTouchEnabled(true);
+
+        lineChart.setDragDecelerationFrictionCoef(0.9f);
+
+        // enable scaling and dragging
+        lineChart.setDragEnabled(true);
+        lineChart.setScaleEnabled(true);
+        lineChart.setDrawGridBackground(false);
+        lineChart.setHighlightPerDragEnabled(true);
+
+        // set an alternative background color
+        lineChart.setBackgroundColor(Color.WHITE);
+        lineChart.setViewPortOffsets(0f, 0f, 0f, 0f);
+
+        // add data
+        lineChart.invalidate();
+
+        // get the legend (only possible after setting data)
+        Legend l = lineChart.getLegend();
+        l.setEnabled(false);
+
+        XAxis xAxis = lineChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.TOP_INSIDE);
+//        xAxis.setTypeface(mTfLight);
+        xAxis.setTextSize(10f);
+        xAxis.setTextColor(Color.WHITE);
+        xAxis.setDrawAxisLine(false);
+        xAxis.setDrawGridLines(true);
+        xAxis.setTextColor(Color.rgb(255, 192, 56));
+        xAxis.setCenterAxisLabels(true);
+//        xAxis.setGranularity(1f); // one hour
+        xAxis.setValueFormatter((value, axis) -> {
+            long minutes = TimeUnit.MILLISECONDS.toMinutes((long) value);
+            return minutes +"m";
+        });
+
+        YAxis leftAxis = lineChart.getAxisLeft();
+        leftAxis.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);
+//        leftAxis.setTypeface(mTfLight);
+        leftAxis.setTextColor(ColorTemplate.getHoloBlue());
+        leftAxis.setDrawGridLines(true);
+//        leftAxis.setGranularityEnabled(true);
+        leftAxis.setAxisMinimum(0f);
+//        leftAxis.setYOffset(-9f);
+        leftAxis.setTextColor(Color.rgb(255, 192, 56));
+
+        YAxis rightAxis = lineChart.getAxisRight();
+        rightAxis.setEnabled(false);
+    }
+
 }

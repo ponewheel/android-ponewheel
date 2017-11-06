@@ -1,12 +1,14 @@
 package net.kwatts.powtools.loggers;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import com.github.mikephil.charting.data.Entry;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 
 import net.kwatts.powtools.DeviceInterface;
+import net.kwatts.powtools.MapActivity;
 import net.kwatts.powtools.OWDevice;
 
 import java.io.BufferedOutputStream;
@@ -24,6 +26,7 @@ import java.util.StringTokenizer;
  */
 
 public class PlainTextFileLogger  {
+    public static final String TAG = MapActivity.class.getSimpleName();
 
     private File file;
     protected final String name = "TXT";
@@ -114,13 +117,15 @@ public class PlainTextFileLogger  {
                 time = time - referenceTime;
                 values.add(new Entry(time, Float.valueOf(speed)));
 
-                int startLocation = currentLine.indexOf("LOC=(") + "LOC=(".length();
-                int commaLocation = currentLine.indexOf(',', startLocation);
-                int endParenLoctation = currentLine.indexOf(')', commaLocation);
-                String longLocation = currentLine.substring(commaLocation + 1, endParenLoctation);
-                String latLocation = currentLine.substring(startLocation, commaLocation);
-                LatLng latLng = new LatLng(Double.parseDouble(longLocation), Double.parseDouble(latLocation));
-                latLngs.add(latLng);
+                if (currentLine.contains("LOC=(")) {
+                    int startLocation = currentLine.indexOf("LOC=(") + "LOC=(".length();
+                    int commaLocation = currentLine.indexOf(',', startLocation);
+                    int endParenLocation = currentLine.indexOf(')', commaLocation);
+                    String longLocation = currentLine.substring(commaLocation + 1, endParenLocation);
+                    String latLocation = currentLine.substring(startLocation, commaLocation);
+                    LatLng latLng = new LatLng(Double.parseDouble(longLocation), Double.parseDouble(latLocation));
+                    latLngs.add(latLng);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
