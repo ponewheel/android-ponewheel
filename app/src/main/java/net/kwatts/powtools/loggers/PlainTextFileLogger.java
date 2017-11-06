@@ -2,12 +2,22 @@ package net.kwatts.powtools.loggers;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 
+import com.github.mikephil.charting.data.Entry;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+
 import net.kwatts.powtools.DeviceInterface;
 import net.kwatts.powtools.OWDevice;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.StringTokenizer;
 
 /**
  * Created by kwatts on 4/21/16.
@@ -71,5 +81,63 @@ public class PlainTextFileLogger  {
         String logPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + ONEWHEEL_LOGGING_PATH;
         PlainTextFileLogger.createDirIfNotExists(logPath);
         return logPath;
+    }
+
+    public static void getEntriesFromFile(String fileName, ArrayList<Entry> values, ArrayList<LatLng> latLngs) {
+        String logFileLocation = PlainTextFileLogger.getLoggingPath() + "/" + fileName;
+        System.out.println("logFile = " + logFileLocation);
+
+        BufferedReader bufferedReader = null;
+        FileReader fileReader = null;
+
+        try {
+
+            fileReader = new FileReader(logFileLocation);
+            bufferedReader = new BufferedReader(fileReader);
+
+            String currentLine;
+
+            bufferedReader.readLine(); // ignore
+
+            Long referenceTime = null;
+            while ((currentLine = bufferedReader.readLine()) != null) {
+//                System.out.println(currentLine);
+                StringTokenizer stringTokenizer = new StringTokenizer(currentLine, ",");
+
+                Date date = OWDevice.SIMPLE_DATE_FORMAT.parse(stringTokenizer.nextToken());
+
+                String speed = stringTokenizer.nextToken();
+                long time = date.getTime();
+                if (referenceTime == null) {
+                    referenceTime = time;
+                }
+                time = time - referenceTime;
+                values.add(new Entry(time, Float.valueOf(speed)));
+
+                int startLocation = currentLine.indexOf("LOC=(") + "LOC=(".length();
+                int commaLocation = currentLine.indexOf(',', startLocation);
+                int endParenLoctation = currentLine.indexOf(')', commaLocation);
+                String longLocation = currentLine.substring(commaLocation + 1, endParenLoctation);
+                String latLocation = currentLine.substring(startLocation, commaLocation);
+                LatLng latLng = new LatLng(Double.parseDouble(longLocation), Double.parseDouble(latLocation));
+                latLngs.add(latLng);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+
+            try {
+
+                if (bufferedReader != null)
+                    bufferedReader.close();
+
+                if (fileReader != null)
+                    fileReader.close();
+
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+
+        }
     }
 }

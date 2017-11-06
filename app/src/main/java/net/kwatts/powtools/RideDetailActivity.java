@@ -6,27 +6,17 @@ import android.os.Bundle;
 
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
-import java.util.Date;
-import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 
 public class RideDetailActivity extends AppCompatActivity {
@@ -38,57 +28,19 @@ public class RideDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ride_detail);
 
-        LineChart lineChart = (LineChart) findViewById(R.id.ride_detail_speed_chart);
-
         String fileName = getIntent().getStringExtra(FILE_NAME);
-
-        String logFileLocation = PlainTextFileLogger.getLoggingPath() + "/" + fileName;
-        System.out.println("logFile = " + logFileLocation);
-
-        BufferedReader bufferedReader = null;
-        FileReader fileReader = null;
         ArrayList<Entry> values = new ArrayList<>();
 
-        try {
 
-            fileReader = new FileReader(logFileLocation);
-            bufferedReader = new BufferedReader(fileReader);
-
-            String currentLine;
-
-            String headerLine = bufferedReader.readLine();
-            Long referenceTime = null;
-            while ((currentLine = bufferedReader.readLine()) != null) {
-//                System.out.println(currentLine);
-                StringTokenizer stringTokenizer = new StringTokenizer(currentLine, ",");
-                Date date = OWDevice.SIMPLE_DATE_FORMAT.parse(stringTokenizer.nextToken());
-
-                String speed = stringTokenizer.nextToken();
-                long time = date.getTime();
-                if (referenceTime == null) {
-                    referenceTime = time;
-                }
-                time = time - referenceTime;
-                values.add(new Entry(time, Float.valueOf(speed)));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-
-            try {
-
-                if (bufferedReader != null)
-                    bufferedReader.close();
-
-                if (fileReader != null)
-                    fileReader.close();
-
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-
-        }
+        // TODO convert to async
+        PlainTextFileLogger.getEntriesFromFile(fileName, values, null);
         System.out.println("values.size() = " + values.size());
+        setupChart(values);
+    }
+
+    private void setupChart(ArrayList<Entry> values) {
+        LineChart lineChart = (LineChart) findViewById(R.id.ride_detail_speed_chart);
+        assert lineChart != null;
         LineDataSet dataSet = new LineDataSet(values, "Label");
         dataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
         dataSet.setColor(ColorTemplate.getHoloBlue());
@@ -139,14 +91,9 @@ public class RideDetailActivity extends AppCompatActivity {
         xAxis.setTextColor(Color.rgb(255, 192, 56));
         xAxis.setCenterAxisLabels(true);
 //        xAxis.setGranularity(1f); // one hour
-        xAxis.setValueFormatter(new IAxisValueFormatter() {
-
-            @Override
-            public String getFormattedValue(float value, AxisBase axis) {
-
-                long minutes = TimeUnit.MILLISECONDS.toMinutes((long) value);
-                return minutes +"m";
-            }
+        xAxis.setValueFormatter((value, axis) -> {
+            long minutes = TimeUnit.MILLISECONDS.toMinutes((long) value);
+            return minutes +"m";
         });
 
         YAxis leftAxis = lineChart.getAxisLeft();
@@ -162,4 +109,6 @@ public class RideDetailActivity extends AppCompatActivity {
         YAxis rightAxis = lineChart.getAxisRight();
         rightAxis.setEnabled(false);
     }
+
+
 }
