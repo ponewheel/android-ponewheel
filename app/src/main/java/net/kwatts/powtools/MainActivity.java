@@ -100,6 +100,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
+import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
@@ -505,6 +506,20 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             case R.id.menu_scan:
                 //mLeDeviceListAdapter.clear();
 //                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("Scan").build());
+
+                getPermissions().subscribe(new DisposableSingleObserver<Boolean>() {
+                           @Override
+                           public void onSuccess(Boolean aBoolean) {
+
+                           }
+
+                           @Override
+                           public void onError(Throwable e) {
+                                e.printStackTrace();
+                           }
+               });
+
+
                 mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
                 settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
                 filters = new ArrayList<ScanFilter>();
@@ -573,9 +588,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         rxLocation
                 .location()
-                .observeOn(Schedulers.io())
                 .updates(locationRequest)
+                .subscribeOn(Schedulers.io())
                 .flatMap(location -> rxLocation.geocoding().fromLocation(location).toObservable())
+                .observeOn(Schedulers.io())
                 .subscribe(address -> mOWDevice.setLocation(address.getLongitude() + "," + address.getLatitude()));
     }
 
