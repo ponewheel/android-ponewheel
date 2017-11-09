@@ -24,16 +24,14 @@
     <string name="logged_rides">Logged Rides</string>
 
     <string-array name="ow_ridemode_array">
-        <item>Classic</item>
-        <item>Extreme</item>
-        <item>Elevated</item>
+        <item>CLASSIC</item>
+        <item>XTREME</item>
+        <item>ELEVATE</item>
     </string-array>
-    <string-array name="ow_ridemode_owplus_array">
+    <string-array name="owplus_ridemode_array">
         <item>SEQUOIA</item>
         <item>CRUZ</item>
         <item>MISSION</item>
-    </string-array>
-    <string-array name="ow_ridemode_owplus_array2">
         <item>ELEVATE</item>
         <item>DELIRIUM</item>
     </string-array>

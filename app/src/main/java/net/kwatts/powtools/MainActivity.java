@@ -106,13 +106,11 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = "POWTOOLS";
-    private static final boolean SCANNER = false;
-    private static final boolean POWER_USER = false;
-    private static final boolean ONEWHEEL = true;
+
     private static final boolean ONEWHEEL_LOGGING = true;
-    private static final int ONEWHEEL_LOGGING_DELAY = 1000;
     private static final int REQUEST_ENABLE_BT = 1;
 
+    MultiStateToggleButton mRideModeToggleButton;
 
     public VibrateService mVibrateService;
     private android.os.Handler mLoggingHandler = new android.os.Handler();
@@ -170,8 +168,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onEvent(RideModeEvent event){
-        updateRideMode(event.rideMode);
+    public void onEvent(RideModeEvent event) {
+        Log.d(TAG, "OW onEvent for rideevent: "+ event.rideMode + " and button " +  mRideModeToggleButton.isPressed());
+        //TODO: update the UI
     }
 
 
@@ -192,6 +191,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         new NotificationCompat.Builder(mContext)
                                 .setSmallIcon(R.mipmap.ic_launcher)
                                 .setContentTitle(t)
+                                .setColor(0x008000)
                                 .setContentText(m);
                 android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 mNotifyMgr.notify(m,0, mBuilder.build());
@@ -212,30 +212,18 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     }
 
+/*
 
+    public void setCurrentRideMode(int rm) {
+        if (mOWConnected) {
+            Log.d(TAG, "Setting ridemode to : " + rm);
+            updateLog("ridemode changed to:" + rm);
+            mOWDevice.setRideMode(owGatService, mGatt,rm);
+        } else {
+            Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
+        }
+    } */
 
-    public void updateRideMode(final int ridemode) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-//                mRideModeToggleButton.setValue(ridemode - 1);
-                //updateLog("Got updateRideMode:" + ridemode);
-                Log.d(TAG, "Got updateRideMode for:" + ridemode);
-                if (ridemode >= 0 && ridemode <= 1) {
-                    mRideModeToggleButton.setValue(ridemode);
-                }
-                if (ridemode >= 2 && ridemode <= 6) {
-                    mRideModeToggleButtonOWplus.setValue(ridemode - 4);
-                }
-                if (ridemode >= 7 && ridemode <= 8) {
-                    mRideModeToggleButtonOWplus2.setValue(ridemode - 7);
-                }
-
-
-            }
-        });
-
-    }
 
     //battery level alerts
     public static Map<Integer, Boolean> batteryAlertLevels = new HashMap<>();
@@ -251,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             public void run() {
                 try {
                     //mBatteryPieData.removeDataSet(0);
-                    updateLog("Got battery event with " + perc + " remaining!");
+                    //updateLog("Got battery event with " + perc + " remaining!");
                     ArrayList<PieEntry> entries = new ArrayList<>();
                     entries.add(new PieEntry(perc, 0));
                     entries.add(new PieEntry(100 - perc, 1));
@@ -437,8 +425,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mBatteryChart.setDrawHoleEnabled(true);
         Legend legend = mBatteryChart.getLegend();
         legend.setEnabled(false);
-       // mBatteryChart.setHoleRadius(7);
-       // mBatteryChart.setTransparentCircleRadius(10);
 
 
         initLightSettings(getWindow().getDecorView().getRootView());
@@ -701,6 +687,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             Log.d(TAG, "BluetoothGattCallback.nConnectionStateChange: status=" + status + " newState=" + newState);
+            updateLog("Bluetooth connection state change: status="+ status + " newState=" + newState);
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 gatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -820,11 +807,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             //XXX until we figure out what's going on
             if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
                 updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-            } else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicRidingMode)) {
-
-                Log.d(TAG, "Setting ride mode from the main UI thread to:" + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-                updateRideMode(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-            }
+            } /* else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicRidingMode)) {
+                Log.d(TAG, "Got ride mode from the main UI thread:" + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+            } */
 
             mOWDevice.processUUID(c);
 
@@ -1107,51 +1092,32 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
 
-    MultiStateToggleButton mRideModeToggleButton;
-    MultiStateToggleButton mRideModeToggleButtonOWplus;
-    MultiStateToggleButton mRideModeToggleButtonOWplus2;
+
     public void initRideModeButtons(View v) {
-
-
         mRideModeToggleButton = (MultiStateToggleButton) this.findViewById(R.id.mstb_multi_ridemodes);
-        mRideModeToggleButtonOWplus = (MultiStateToggleButton) this.findViewById(R.id.mstb_multi_ridemodes_owplus);
-        mRideModeToggleButtonOWplus2 = (MultiStateToggleButton) this.findViewById(R.id.mstb_multi_ridemodes_owplus2);
+        if (mOWDevice.isOneWheelPlus.get()) {
+            mRideModeToggleButton.setElements(getResources().getStringArray(R.array.owplus_ridemode_array));
+        } else {
+            mRideModeToggleButton.setElements(getResources().getStringArray(R.array.ow_ridemode_array));
+        }
 
         mRideModeToggleButton.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
             @Override
             public void onValueChanged(int position) {
-
                 if (mOWConnected) {
-                    Log.d(TAG, "OW old ridemode mOWDevice.setRideMode updated via button position + 1: " + position);
-                    mOWDevice.setRideMode(owGatService, mGatt, position + 1);
+                    Log.d(TAG, "mOWDevice.setRideMode button pressed:" + position);
+                    if (mOWDevice.isOneWheelPlus.get()) {
+                        updateLog("Ridemode changed to:" + position + 4);
+                        mOWDevice.setRideMode(owGatService, mGatt,position + 4); // ow+ ble value for ridemode 4,5,6,7,8 (delirium)
+                    } else {
+                        updateLog("Ridemode changed to:" + position + 1);
+                        mOWDevice.setRideMode(owGatService, mGatt,position + 1); // ow uses 1,2,3 (expert)
+                    }
                 } else {
                     Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
-        mRideModeToggleButtonOWplus.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
-            @Override
-            public void onValueChanged(int position) {
-                if (mOWConnected) {
-                    Log.d(TAG, "OWPlus ridemode mOWDevice.setRideMode updated via button position: " + position);
-                    mOWDevice.setRideMode(owGatService, mGatt, position + 4);
-                } else {
-                    Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-        mRideModeToggleButtonOWplus2.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
-            @Override
-            public void onValueChanged(int position) {
-                if (mOWConnected) {
-                    Log.d(TAG, "OWPlus2 ridemode mOWDevice.setRideMode updated via button position: " + position);
-                    mOWDevice.setRideMode(owGatService, mGatt, position + 7);
-                } else {
-                    Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-
 
     }
 }
