@@ -78,11 +78,11 @@
             </android.support.v7.widget.CardView>
         </android.support.percent.PercentRelativeLayout>
 
-        <android.support.percent.PercentRelativeLayout android:layout_width="match_parent" android:layout_height="280dp"
+        <android.support.percent.PercentRelativeLayout android:layout_width="match_parent" android:layout_height="120dp"
             xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"  xmlns:card_view="http://schemas.android.com/apk/res-auto">
             <android.support.v7.widget.CardView
                 android:id="@+id/card_view3"  style="@style/CardView.DayNight"
-                app:layout_heightPercent="20%" app:layout_widthPercent="100%" android:layout_margin="5dp"
+                app:layout_heightPercent="100%" app:layout_widthPercent="20%" android:layout_margin="5dp"
                 card_view:cardCornerRadius="2dp" card_view:contentPadding="10dp">
                 <android.support.percent.PercentRelativeLayout  android:id="@+id/header_ow_pads" android:layout_width="fill_parent" android:layout_height="wrap_content" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
                     android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/border_ui_green : (owdevice.isConnected ? @drawable/border_ui_red : @drawable/border_ui)}'>
@@ -112,8 +112,8 @@
 
             <android.support.v7.widget.CardView
                 android:id="@+id/card_view4" android:layout_gravity="right"  style="@style/CardView.DayNight"
-                app:layout_heightPercent="80%" app:layout_widthPercent="100%" android:layout_margin="5dp"
-                card_view:cardCornerRadius="2dp" card_view:contentPadding="10dp" android:layout_below="@id/card_view3">
+                app:layout_heightPercent="100%" app:layout_widthPercent="80%" android:layout_margin="5dp"
+                card_view:cardCornerRadius="2dp" card_view:contentPadding="10dp" android:layout_toRightOf="@id/card_view3">
 
                 <include
                     android:id="@+id/device_settings"
@@ -161,6 +161,27 @@
 
         </android.support.percent.PercentRelativeLayout>
 
+        <android.support.v7.widget.CardView android:id="@+id/card_ridemode"
+            style="@style/CardView.DayNight"
+            android:layout_gravity="center"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_margin="5dp"
+            card_view:cardCornerRadius="2dp"
+            card_view:contentPadding="5dp">
+
+            <org.honorato.multistatetogglebutton.MultiStateToggleButton
+                xmlns:mstb="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/mstb_multi_ridemodes"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                mstb:values= "@array/ow_ridemode_array"
+                mstb:mstbPrimaryColor="?attr/colorPrimary"
+                mstb:mstbSecondaryColor="@color/white"
+                android:layout_below="@id/front_blink_switch"
+                android:enabled="@{owdevice.isConnected ? true : false}"/>
+        </android.support.v7.widget.CardView>
+
         <android.support.v7.widget.CardView android:id="@+id/card_detailed_stats"
             style="@style/CardView.DayNight"
             android:layout_gravity="center"
@@ -184,8 +205,9 @@
             <TextView android:text='@{owdevice.deviceReadCharacteristics.get(2).value}' android:layout_row="50" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
             <TextView android:text="@{owdevice.deviceReadCharacteristics.get(4).ui_name}" android:layout_row="51" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <TextView android:text='@{owdevice.deviceReadCharacteristics.get(4).value}' android:layout_row="51" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text="@{owdevice.deviceReadCharacteristics.get(6).ui_name}" android:layout_row="52" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<!--            <TextView android:text="@{owdevice.deviceReadCharacteristics.get(6).ui_name}" android:layout_row="52" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <TextView android:text='@{owdevice.deviceReadCharacteristics.get(6).value}' android:layout_row="52" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
+-->
             <!-- NOTIFY AND UPDATING CHARACTERISTICS, 0-50 -->
             <TextView android:text="TRIP CONNECTED TIME" android:layout_row="0" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <Chronometer android:layout_row="0" android:layout_column="1" android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  android:id="@+id/chronometer"/>
@@ -212,18 +234,17 @@
             <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(15).value}' android:layout_row="35" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
             <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(16).ui_name}' android:layout_row="36" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(16).value}' android:layout_row="36" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-
             <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(17).ui_name}' android:layout_row="37" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(17).value}' android:layout_row="37" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-<!--
+            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(18).ui_name}' android:layout_row="38" android:layout_column="0"  android:textSize="12.0sp" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(18).value}' android:layout_row="38" android:layout_column="1"   android:textSize="12.0sp" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
+            <!--
             <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(1).ui_name}' android:layout_row="39" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(1).value}' android:layout_row="39" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
  -->
         </GridLayout>
-
-
-
         </android.support.v7.widget.CardView>
+
         <android.support.v7.widget.CardView android:id="@+id/card_deviceEventView"
             style="@style/CardView.DayNight"
             android:layout_gravity="center"
@@ -232,7 +253,7 @@
             android:layout_margin="5dp"
             android:visibility="@{owdevice.showDebugWindow ? View.VISIBLE : View.GONE}"
             card_view:cardCornerRadius="2dp"
-            card_view:contentPadding="10dp">
+            card_view:contentPadding="5dp">
             <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 android:orientation="vertical"
                 android:layout_width="fill_parent"

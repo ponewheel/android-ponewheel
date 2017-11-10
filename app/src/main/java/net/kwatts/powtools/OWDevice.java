@@ -1,18 +1,26 @@
 package net.kwatts.powtools;
-import android.databinding.*;
-import android.bluetooth.BluetoothGattCharacteristic;
+
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
+import android.databinding.BaseObservable;
+import android.databinding.ObservableArrayList;
+import android.databinding.ObservableBoolean;
+import android.databinding.ObservableDouble;
+import android.databinding.ObservableField;
+import android.databinding.ObservableInt;
 import android.util.Log;
+
+import net.kwatts.powtools.events.DeviceStatusEvent;
+import net.kwatts.powtools.model.DeviceStatus;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import org.greenrobot.eventbus.*;
-
-import net.kwatts.powtools.events.DeviceStatusEvent;
-import net.kwatts.powtools.events.RideModeEvent;
-import net.kwatts.powtools.model.DeviceStatus;
+import java.util.Date;
+import java.util.Locale;
+import java.util.UUID;
 
 /**
  * Created by kwatts on 3/23/16.
@@ -79,10 +87,39 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public static final String OnewheelCharacteristicUNKNOWN3 = "e659f31f-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicUNKNOWN4 = "e659f320-ea98-11e3-ac10-0800200c9a66";
 /*
-0x0045 = e659f30c-ea98-11e3-ac10-0800200c9a66
-0x0049 = e659f30d-ea98-11e3-ac10-0800200c9a66
-0x004d = e659f30e-ea98-11e3-ac10-0800200c9a66
-
+0x0000 = e659F301-ea98-11e3-ac10-0800200c9a66 (OnewheelServiceUUID)
+0x001a = e659F301-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicSerialNumber)
+0x001d = e659f302-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicRidingMode)
+0x0021 = e659f303-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicBatteryRemaining)
+0x0025 = e659f304-ea98-11e3-ac10-0800200c9a66
+0x0029 = e659f305-ea98-11e3-ac10-0800200c9a66
+0x003d = e659f306-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicBatterySerial)
+0x0041 = 659f307-ea98-11e3-ac10-0800200c9a66
+0x0045 = e659f308-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicTiltAngleRoll)
+0x0049 = e659f309-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicTiltAngleYaw)
+0x003e = e659f30a-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicOdometer)
+0x0041 = e659f30b-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicSpeed)
+0x0045 = e659f30c-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicLightingMode)
+0x0049 = e659f30d-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicLightsFront)
+0x004d = e659f30e-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicLightsBack)
+0x0051 = e659f30f-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicStatusError)
+0x0055 = e659f310-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicTemperature)
+0x0059 = e659f311-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicFirmwareRevision)
+0x005d = e659f312-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicCurrentAmps)
+0x0061 = e659f313-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicTripTotalAmpHours)
+0x0065 = e659f314-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicTripRegenAmpHours)
+0x0069 = e659f315-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicBatteryTemp)
+0x006d = e659f316-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicBatteryVoltage)
+0x0071 = e659f317-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicSafetyHeadroom)
+0x0075 = e659f318-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicHardwareRevision)
+0x0079 = e659f319-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicLifetimeOdometer)
+0x007d = e659f31a-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicLifetimeAmpHours)
+0x0081 = e659f31b-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicBatteryCells)
+0x0085 = e659f31c-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicLastErrorCode)
+0x0089 = e659f31d-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicUNKNOWN1)
+0x009d = e659f31e-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicUNKNOWN2)
+0x0101 = e659f31f-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicUNKNOWN3)
+0x0105 = e659f320-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicUNKNOWN4)
 0x0045=00 then lights are OFF
 0x0045=01 is default lights
 0x0045=02 is manual mode for lights
@@ -192,14 +229,14 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                     value.set("");
                     ui_name.set("LIGHTS");
                     ui_enabled.set(true);
-                }});
+                }}); /*
                 deviceReadCharacteristics.add(new DeviceCharacteristic() {{
                     uuid.set(OnewheelCharacteristicRidingMode);
                     key.set("ride_mode");
                     value.set("");
                     ui_name.set("RIDING MODE");
-                    ui_enabled.set(true);
-                }});
+                    ui_enabled.set(false);
+                }}); */
                 deviceReadCharacteristics.add(new DeviceCharacteristic() {{
                     uuid.set(OnewheelCharacteristicBatteryRemaining);
                     key.set("battery_initial");
@@ -414,6 +451,18 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             enabled.set(true);
         }});
 
+
+
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic() {{
+            uuid.set(OnewheelCharacteristicRidingMode);
+            key.set("ride_mode");
+            value.set("");
+            ui_name.set("RIDING MODE");
+            ui_enabled.set(true);
+            enabled.set(true);
+        }});
+
+/*
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
         {{
             key.set("charging");
@@ -432,8 +481,6 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             enabled.set(true);
         }});
 
-
-/*
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
         {{
             uuid.set(OnewheelCharacteristicUartSerialRead);
@@ -491,30 +538,15 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                             dc.value.set(Integer.toString(i_lifetime));
                         }
                         break;
+                    /*
                     case OnewheelCharacteristicRidingMode:
-                        switch (c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1)) {
-                            case 0:
-                                dc.value.set("0 (SEQUOIA/Classic)");
-                                EventBus.getDefault().post(new RideModeEvent(0));
-                                break;
-                            case 1:
-                                dc.value.set("1 (CRUZ/Extreme)");
-                                EventBus.getDefault().post(new RideModeEvent(1));
-                                break;
-                            case 2:
-                                dc.value.set("2 (MISSION/Elevated)");
-                                EventBus.getDefault().post(new RideModeEvent(2));
-                                break;
-                            case 3:
-                                dc.value.set("3 (ELEVATE)");
-                                EventBus.getDefault().post(new RideModeEvent(3));
-                                break;
-                            case 4:
-                                dc.value.set("4 (DELIRIUM)");
-                                EventBus.getDefault().post(new RideModeEvent(4));
-                                break;
-                        }
-                        break;
+                        int ridemode = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+                        Log.d(TAG, "Got the ridemode from BLE:" + ridemode);
+                        dc.value.set("initial ridemode " + ridemode);
+                        // Let the UI know initial ridemode
+                        EventBus.getDefault().post(new DeviceStatusEvent("Initial ridemode set to: " + ridemode));
+                        EventBus.getDefault().post(new RideModeEvent(ridemode));
+                        break; */
                     case OnewheelCharacteristicBatterySerial:
                         // Battery: Lithium Iron Phosphate (LiFePo4) 48V
                         //batterySerialNumber.set(Integer.toString(unsignedShort(c_value)));
@@ -793,7 +825,13 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                     case OnewheelCharacteristicLifetimeAmpHours:
                         dc.value.set(Integer.toString(unsignedShort(c_value)));
                         break;
-
+                    case OnewheelCharacteristicRidingMode:
+                        int ridemode = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+                        dc.value.set(Integer.toString(ridemode));
+                        // Let the UI know initial ridemode
+                        EventBus.getDefault().post(new DeviceStatusEvent("Ridemode changed to: " + ridemode));
+                        //EventBus.getDefault().post(new RideModeEvent(ridemode));
+                        break;
 
                     default:
                         StringBuilder sb = new StringBuilder();
@@ -895,13 +933,10 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             }
 
         }
-
-
-
-
     }
 
     public void setRideMode(BluetoothGattService gattService,BluetoothGatt gatt,int ridemode) {
+        Log.d(TAG,"setRideMode() called for gatt:" + ridemode);
         BluetoothGattCharacteristic lc = gattService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicRidingMode));
         if (lc != null) {
             ByteBuffer var2 = ByteBuffer.allocate(2);
@@ -909,26 +944,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             lc.setValue(var2.array());
             lc.setWriteType(2);
             gatt.writeCharacteristic(lc);
-            Log.d(TAG,"Ridemode set to change, setting it in UI: " + ridemode);
-            switch (ridemode) {
-                case 0:
-                    setDeviceCharacteristicDisplay("ride_mode","0 (SEQUOIA/Classic)");
-                    break;
-                case 1:
-                    setDeviceCharacteristicDisplay("ride_mode","1 (CRUZ/Extreme)");
-                    break;
-                case 2:
-                    setDeviceCharacteristicDisplay("ride_mode","2 (MISSION/Elevated)");
-                    break;
-                case 3:
-                    setDeviceCharacteristicDisplay("ride_mode","3 (ELEVATE)");
-                    break;
-                case 4:
-                    setDeviceCharacteristicDisplay("ride_mode","4 (DELIRIUM)");
-                    break;
-
-            }
-            EventBus.getDefault().post(new DeviceStatusEvent("RIDEMODE SET TO:" + ridemode));
+            //setDeviceCharacteristicDisplay("ride_mode","ridemode: " + ridemode);
         }
     }
 
