@@ -88,6 +88,7 @@ import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Single;
 import io.reactivex.MaybeObserver;
@@ -584,7 +585,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         LocationRequest locationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setInterval(1000); // TODO figure out a good interval
+                .setInterval(TimeUnit.SECONDS.toMillis(5));
 
         rxLocation
                 .location()
