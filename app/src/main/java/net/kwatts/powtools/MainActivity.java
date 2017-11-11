@@ -511,25 +511,23 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 getPermissions().subscribe(new DisposableSingleObserver<Boolean>() {
                            @Override
                            public void onSuccess(Boolean aBoolean) {
+                               mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+                               settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
+                               filters = new ArrayList<ScanFilter>();
+                               scanLeDevice(true);
 
+                               // TODO move this to where we're actually connected to device? (or maybe its better here so we can achieve a location lock before logging)
+                               if (mSharedPref.getBoolean(SHARED_PREF_LOG_LOCATIONS, false)) {
+                                   startLocationScan();
+                               }
                            }
 
                            @Override
                            public void onError(Throwable e) {
                                 e.printStackTrace();
                            }
-               });
+                });
 
-
-                mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
-                settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
-                filters = new ArrayList<ScanFilter>();
-                scanLeDevice(true);
-
-                // TODO move this to where we're actually connected to device? (or maybe its better here so we can achieve a location lock before logging)
-                if (mSharedPref.getBoolean(SHARED_PREF_LOG_LOCATIONS, false)) {
-                    startLocationScan();
-                }
                 break;
             case R.id.menu_stop:
                 scanLeDevice(false);
