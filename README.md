@@ -1,5 +1,7 @@
 ![ponewheel logo](artwork/logo.png?raw=true)
 
+[![CircleCI](https://circleci.com/gh/ponewheel/android-ponewheel.svg?style=svg)](https://circleci.com/gh/ponewheel/android-ponewheel)
+
 This application is not officially endorsed by the [OneWheel] company.
 
 Looking for extended and hidden stats from your fancy new OneWheel? And what about logging of these stats to figure out where exactly did things go wrong and cause you to eat asphalt? 
