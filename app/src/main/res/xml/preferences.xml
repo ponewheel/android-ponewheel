@@ -47,7 +47,7 @@
       android:key="darkNightMode"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content" />
-    <EditTextPreference android:title="Logging Frequence"
+    <EditTextPreference android:title="Logging Frequency"
         android:defaultValue="1000"
         android:summary="Set the logging frequency (1000ms = 1 second)."
         android:key="loggingFrequency"
