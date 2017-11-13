@@ -904,6 +904,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 @Override
                 public void run() {
                     logging_seconds++;
+                    mLoggingHandler.postDelayed(this, mLoggingFrequency);
                     if (mOWConnected) {
                         if (mOWDevice != null) {
                             try {
@@ -913,7 +914,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                             }
                         }
                     }
-                    mLoggingHandler.postDelayed(this, mLoggingFrequency);
                 }
             };
             mLoggingHandler.postDelayed(deviceFileLogger, mLoggingFrequency);
