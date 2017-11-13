@@ -898,7 +898,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             File owLogFile = new File( PlainTextFileLogger.getLoggingPath() + "/owlogs_" + dateTimeString + ".csv");
             updateLog("Logging device to " + owLogFile.getAbsolutePath());
-            Toast.makeText(mContext, "All OW activity will be logging to " + owLogFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, String.format("All OW activity will be logged to %s every %d ms.", owLogFile.getAbsolutePath(), mLoggingFrequency), Toast.LENGTH_LONG).show();
             mTextFileLogger = new PlainTextFileLogger(owLogFile);
             deviceFileLogger = new Runnable() {
                 @Override
