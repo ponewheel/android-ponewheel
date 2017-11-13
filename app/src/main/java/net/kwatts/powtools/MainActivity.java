@@ -115,7 +115,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public VibrateService mVibrateService;
     private android.os.Handler mLoggingHandler = new android.os.Handler();
     private Runnable deviceFileLogger;
-    private int logging_seconds = 0;
     private PlainTextFileLogger mTextFileLogger;
     private android.bluetooth.BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mBluetoothLeScanner;
@@ -903,7 +902,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             deviceFileLogger = new Runnable() {
                 @Override
                 public void run() {
-                    logging_seconds++;
                     mLoggingHandler.postDelayed(this, mLoggingFrequency);
                     if (mOWConnected) {
                         if (mOWDevice != null) {
