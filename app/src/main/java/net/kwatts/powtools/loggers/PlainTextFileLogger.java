@@ -108,12 +108,12 @@ public class PlainTextFileLogger  {
                 StringTokenizer stringTokenizer = new StringTokenizer(currentLine, ",");
 
                 Date date;
-                System.out.println("now = " + OWDevice.SIMPLE_DATE_FORMAT.format(new Date()));
+                //System.out.println("now = " + OWDevice.SIMPLE_DATE_FORMAT.format(new Date()));
                 String dateString = stringTokenizer.nextToken();
                 try {
                     date = OWDevice.SIMPLE_DATE_FORMAT.parse(dateString);
                 } catch (ParseException e) {
-                    System.out.println("now (old)= " + OWDevice.OLD_SIMPLE_DATE_FORMAT.format(new Date()));
+                    //System.out.println("now (old)= " + OWDevice.OLD_SIMPLE_DATE_FORMAT.format(new Date()));
                     date = OWDevice.OLD_SIMPLE_DATE_FORMAT.parse(dateString);
 
                 }
