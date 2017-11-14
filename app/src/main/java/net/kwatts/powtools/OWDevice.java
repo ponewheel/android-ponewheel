@@ -34,6 +34,9 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     private static final String NAME = "ONEWHEEL";
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
 
+    @Deprecated
+    public static final SimpleDateFormat OLD_SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
+
 
     public final ObservableField<Boolean> isConnected = new ObservableField<>();
     public final ObservableField<Boolean> showDebugWindow = new ObservableField<>();
