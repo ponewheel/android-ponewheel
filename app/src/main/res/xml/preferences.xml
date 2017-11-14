@@ -60,6 +60,13 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content" />
 
+  <CheckBoxPreference android:title="Gather and log locations"
+      android:defaultValue="false"
+      android:summary="This option turns on location support to save to your routes. Your location is never shared."
+      android:key="logLocations"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+
 
 
 

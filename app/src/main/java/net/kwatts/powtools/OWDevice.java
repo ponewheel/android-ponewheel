@@ -34,6 +34,9 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     private static final String NAME = "ONEWHEEL";
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
 
+    @Deprecated
+    public static final SimpleDateFormat OLD_SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
+
 
     public final ObservableField<Boolean> isConnected = new ObservableField<>();
     public final ObservableField<Boolean> showDebugWindow = new ObservableField<>();
@@ -86,6 +89,11 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public static final String OnewheelCharacteristicUNKNOWN2 = "e659f31e-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicUNKNOWN3 = "e659f31f-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicUNKNOWN4 = "e659f320-ea98-11e3-ac10-0800200c9a66";
+    private String location;
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
 /*
 0x0000 = e659F301-ea98-11e3-ac10-0800200c9a66 (OnewheelServiceUUID)
 0x001a = e659F301-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicSerialNumber)
@@ -963,7 +971,11 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         String header = String.format(Locale.US, "%s", dateTimeString);
         StringBuilder values = new StringBuilder();
         for(OWDevice.DeviceCharacteristic dc : this.deviceNotifyCharacteristics) {
-            values.append(',' + dc.value.get());
+            values.append(',').append(dc.value.get());
+        }
+
+        if (location != null) {
+            values.append(",LOC=(").append(location).append(")");
         }
         return header + values.toString() + '\n';
     }

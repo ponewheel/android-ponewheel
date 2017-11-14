@@ -23,7 +23,6 @@ public class RidesListActivity extends AppCompatActivity {
 
         ListView listView = (ListView) findViewById(R.id.ride_list_view);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
-        listView.setAdapter(adapter);
 
         String loggingPath = PlainTextFileLogger.getLoggingPath();
         File owLogFileDir = new File(loggingPath);
@@ -31,16 +30,17 @@ public class RidesListActivity extends AppCompatActivity {
         for (String logFile : logFiles) {
             System.out.println("logFile = " + logFile);
         }
-        adapter.addAll(logFiles);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent = new Intent(RidesListActivity.this, RideDetailActivity.class);
+        if (listView != null) {
+            listView.setAdapter(adapter);
+            listView.setOnItemClickListener((parent, view, position, id) -> {
+                Intent intent = new Intent(RidesListActivity.this, MapActivity.class);
+//                Intent intent = new Intent(RidesListActivity.this, RideDetailActivity.class);
                 intent.putExtra(RideDetailActivity.FILE_NAME, logFiles[position]);
                 startActivity(intent);
-            }
-        });
+            });
+        }
 
+        adapter.addAll(logFiles);
     }
 
 
