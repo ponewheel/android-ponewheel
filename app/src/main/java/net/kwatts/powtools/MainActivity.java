@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
+import android.databinding.Observable;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -91,16 +92,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Single;
-import io.reactivex.MaybeObserver;
-import io.reactivex.Observable;
-import io.reactivex.Scheduler;
-import io.reactivex.Single;
-import io.reactivex.SingleObserver;
-import io.reactivex.SingleSource;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.functions.Predicate;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
@@ -153,7 +144,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private Context mContext;
     SharedPreferences mSharedPref;
     MaterialDialog.Builder mAboutDialog;
-    private boolean mOWConnected;
     private String mDeviceMacAddress;
     private String mDeviceMacName;
     private boolean mScanning;
@@ -239,17 +229,15 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     }
 
-/*
 
-    public void setCurrentRideMode(int rm) {
-        if (mOWConnected) {
-            Log.d(TAG, "Setting ridemode to : " + rm);
-            updateLog("ridemode changed to:" + rm);
-            mOWDevice.setRideMode(owGatService, mGatt,rm);
-        } else {
-            Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
-        }
-    } */
+//    public void setCurrentRideMode(int rm) {
+//        if (mowconnected) {
+//            Log.d(TAG, "Setting ridemode to : " + rm);
+//            updateLog("ridemode changed to:" + rm);
+//            mOWDevice.setRideMode(owGatService, mGatt,rm);
+//        } else {
+//            Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
+//        }
 
 
     //battery level alerts
@@ -406,10 +394,15 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mOWDevice.showDebugWindow.set(mSharedPref.getBoolean(SHARED_PREF_DEBUG_WINDOW, false));
         mOWDevice.isOneWheelPlus.set(mSharedPref.getBoolean(SHARED_PREF_ONE_WHEEL_PLUS, false));
-
+        mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+            @Override
+            public void onPropertyChanged(Observable observable, int i) {
+                Log.d(TAG, "onPropertyChanged: " + mOWDevice.isConnected.get());
+                Log.d(TAG, "onPropertyChanged: " + observable.toString() + "i" + i);
+            }
+        });
 
         mOWDevice.refresh();
-        mOWConnected = false;
         mOWDevice.isConnected.set(false);
 
         //mOWDevice.bluetoothLe.set("Off");
@@ -474,7 +467,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
 
-        if (mOWConnected == true) {
+        if (mOWDevice.isConnected.get()) {
             menu.findItem(R.id.menu_disconnect).setVisible(true);
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(false);
@@ -536,7 +529,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     mGatt.close();
                     mGatt = null;
                 }
-                mOWConnected = false;
                 mOWDevice.isConnected.set(false);
                 this.mScanResults.clear();
                 descriptorWriteQueue.clear();
@@ -555,7 +547,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     mGatt.close();
                     mGatt = null;
                 }
-                mOWConnected = false;
                 mOWDevice.isConnected.set(false);
                 this.mScanResults.clear();
                 descriptorWriteQueue.clear();
@@ -767,7 +758,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 if (gatt.getDevice().getAddress() == mDeviceMacAddress) {
                     updateLog("We got disconnected from our Device: " + gatt.getDevice().getAddress());
                     deviceConnectedTimer(false);
-                    mOWConnected = false;
                     mOWDevice.isConnected.set(false);
                     mWakeLock.release();
                     mScanResults.clear();
@@ -800,7 +790,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     mGatt = gatt;
                     updateLog("Hey, I found the OneWheel Service: " + checkGattService.getUuid().toString());
                     deviceConnectedTimer(true);
-                    mOWConnected = true;
                     mOWDevice.isConnected.set(true);
                     mWakeLock.acquire();
                     mDeviceMacAddress = mGatt.getDevice().toString();
@@ -863,7 +852,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     } else {
                         updateLog("--> " + gatt.getDevice().getName() + " not OW, moving on.");
                     }
-                    //mOWConnected = false;
+                    //mowconnected = false;
                 }
 
 
@@ -977,13 +966,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 @Override
                 public void run() {
                     mLoggingHandler.postDelayed(this, mLoggingFrequency);
-                    if (mOWConnected) {
-                        if (mOWDevice != null) {
-                            try {
-                                mTextFileLogger.write(mOWDevice);
-                            } catch (Exception e) {
-                                Log.e(TAG,"unable to write logs");
-                            }
+                    if (mOWDevice.isConnected.get()) {
+                        try {
+                            mTextFileLogger.write(mOWDevice);
+                        } catch (Exception e) {
+                            Log.e(TAG,"unable to write logs");
                         }
                     }
                 }
@@ -1051,8 +1038,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mMasterLight.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
+                if (mOWDevice.isConnected.get()) {
+                    if (isChecked) {
                         updateLog("LIGHTS ON");
                         mOWDevice.setLights(owGatService, mGatt, 1);
                     } else {
@@ -1066,8 +1053,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mCustomLight.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
+                if (mOWDevice.isConnected.get()) {
+                    if (isChecked) {
                         updateLog("CUSTOM LIGHTS ON");
                         mOWDevice.setLights(owGatService, mGatt, 2);
                     } else {
@@ -1083,8 +1070,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mFrontBright.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
+                if (mOWDevice.isConnected.get()) {
+                    if (isChecked) {
                         mOWDevice.setCustomLights(owGatService, mGatt, 0,0,60);
                      } else {
                         mOWDevice.setCustomLights(owGatService, mGatt, 0,0,30);
@@ -1097,8 +1084,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mBackBright.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
+                if (mOWDevice.isConnected.get()) {
+                    if (isChecked) {
                         mOWDevice.setCustomLights(owGatService, mGatt, 1,1,60);
                     } else {
                         mOWDevice.setCustomLights(owGatService, mGatt, 1,1,30);
@@ -1113,7 +1100,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mFrontBlink.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
+                if (mOWDevice.isConnected.get()) {
                     if (isChecked == true) {
                         mFrontBlinkTimerTask = new mFrontBlinkTaskTimerTask();
                         mFrontBlinkTimer = new Timer();
@@ -1139,7 +1126,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mBackBlink.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
+                if (mOWDevice.isConnected.get()) {
                     if (isChecked == true) {
                         mBackBlinkTimerTask = new mBackBlinkTaskTimerTask();
                         mBackBlinkTimer = new Timer();
@@ -1176,7 +1163,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mRideModeToggleButton.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
             @Override
             public void onValueChanged(int position) {
-                if (mOWConnected) {
+                if (mOWDevice.isConnected.get()) {
                     Log.d(TAG, "mOWDevice.setRideMode button pressed:" + position);
                     if (mOWDevice.isOneWheelPlus.get()) {
                         updateLog("Ridemode changed to:" + position + 4);
