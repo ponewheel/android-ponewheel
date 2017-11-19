@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <files-path path="owlogs/" name="powlogs" />
+    <external-path name="powlogs" path="powlogs/" />
 </paths>
