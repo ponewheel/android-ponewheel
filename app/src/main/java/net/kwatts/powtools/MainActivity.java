@@ -1,6 +1,7 @@
 package net.kwatts.powtools;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -28,25 +29,21 @@ import android.os.ParcelUuid;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
-import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
-import android.support.v7.app.NotificationCompat;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
 import android.widget.Chronometer;
-import android.widget.CompoundButton;
 import android.widget.ScrollView;
-import android.widget.Spinner;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Description;
@@ -59,11 +56,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.patloew.rxlocation.RxLocation;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
-import net.kwatts.powtools.events.DeviceBatteryRemainingEvent;
-import net.kwatts.powtools.events.DeviceCrashEvent;
-import net.kwatts.powtools.events.DeviceStatusEvent;
 import net.kwatts.powtools.events.NotificationEvent;
-import net.kwatts.powtools.events.RideModeEvent;
 import net.kwatts.powtools.events.VibrateEvent;
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
 import net.kwatts.powtools.services.VibrateService;
@@ -72,7 +65,6 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.honorato.multistatetogglebutton.MultiStateToggleButton;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -91,16 +83,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Single;
-import io.reactivex.MaybeObserver;
-import io.reactivex.Observable;
-import io.reactivex.Scheduler;
-import io.reactivex.Single;
-import io.reactivex.SingleObserver;
-import io.reactivex.SingleSource;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.functions.Predicate;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
@@ -131,216 +113,133 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     MultiStateToggleButton mRideModeToggleButton;
 
-    public static final String SHARED_PREF_METRIC_UNITS = "metricUnits";
-    public static final String SHARED_PREF_DARK_NIGHT_MODE = "darkNightMode";
-    public static final String SHARED_PREF_EULA_AGREE = "eula_agree";
-    public static final String SHARED_PREF_DEBUG_WINDOW = "debugWindow";
-    public static final String SHARED_PREF_ONE_WHEEL_PLUS = "oneWheelPlus";
-    public static final String SHARED_PREF_TRIP_LOGGING = "tripLogging";
-    public static final String SHARED_PREF_LOG_LOCATIONS = "logLocations";
-
-
     public VibrateService mVibrateService;
     private android.os.Handler mLoggingHandler = new android.os.Handler();
-    private Runnable deviceFileLogger;
     private PlainTextFileLogger mTextFileLogger;
     private android.bluetooth.BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mBluetoothLeScanner;
     private BluetoothGatt mGatt;
     private BluetoothGattService owGatService;
     private ScanSettings settings;
-    private List<ScanFilter> filters;
     private Context mContext;
-    SharedPreferences mSharedPref;
-    MaterialDialog.Builder mAboutDialog;
-    private boolean mOWConnected;
-    private String mDeviceMacAddress;
-    private String mDeviceMacName;
     private boolean mScanning;
-    private Toolbar mToolbar;
-    Spinner mKeySpinner;
-    Spinner mValueSpinner;
-    ArrayAdapter<String> mKeyAdapter;
-    ArrayAdapter<String> mValueAdapter;
     ScrollView mScrollView;
     Chronometer mChronometer;
-    MaterialDialog.Builder mDeviceLightDialog;
     WakeLock mWakeLock;
     private OWDevice mOWDevice;
     net.kwatts.powtools.databinding.ActivityMainBinding mBinding;
 
     Map<String, String> mScanResults = new HashMap<>();
-    JSONObject mCurrentDevice = new JSONObject();
 
-    // defaults from preferences
-    int mLoggingFrequency = 1000;
-
-    //ArrayList<Integer> mColors;
-    //ArrayList<String> mLabels;
     PieChart mBatteryChart;
-    //PieData mBatteryPieData;
-
-
-    int mCount1;
-
-    @Subscribe
-    public void onDeviceStatusEvent(DeviceStatusEvent event){
-        updateLog(event.message);
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onEvent(DeviceBatteryRemainingEvent event){
-        //updateLog("Got battery remaining event");
-        updateBatteryRemaining(event.percentage);
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onEvent(RideModeEvent event) {
-        Log.d(TAG, "OW onEvent for rideevent: "+ event.rideMode + " and button " +  mRideModeToggleButton.isPressed());
-        //TODO: update the UI
-    }
-
-
-    @Subscribe
-    public void onEvent(DeviceCrashEvent event){
-        //TODO: updateCrashEvent()
-    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event){
         Log.d(TAG, event.message + ":" + event.title);
         final String t = event.title;
         final String m = event.message;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                android.support.v4.app.NotificationCompat.Builder mBuilder =
-                        new NotificationCompat.Builder(mContext)
-                                .setSmallIcon(R.mipmap.ic_launcher)
-                                .setContentTitle(t)
-                                .setColor(0x008000)
-                                .setContentText(m);
-                android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                mNotifyMgr.notify(m,0, mBuilder.build());
-            }
+        runOnUiThread(() -> {
+            NotificationCompat.Builder mBuilder =
+                    new NotificationCompat.Builder(mContext, "ponewheel")
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setContentTitle(t)
+                            .setColor(0x008000)
+                            .setContentText(m);
+            android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            assert mNotifyMgr != null;
+            mNotifyMgr.notify(m,0, mBuilder.build());
         });
     }
 
     private void updateLog(final String msg) {
         Log.d(TAG, msg);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                //mBinding.owLog.setMovementMethod(new ScrollingMovementMethod());
-                mBinding.owLog.append("\n" + msg);
-                mScrollView.fullScroll(View.FOCUS_DOWN);
-            }
+        runOnUiThread(() -> {
+            //mBinding.owLog.setMovementMethod(new ScrollingMovementMethod());
+            mBinding.owLog.append("\n" + msg);
+            mScrollView.fullScroll(View.FOCUS_DOWN);
         });
 
     }
 
-/*
-
-    public void setCurrentRideMode(int rm) {
-        if (mOWConnected) {
-            Log.d(TAG, "Setting ridemode to : " + rm);
-            updateLog("ridemode changed to:" + rm);
-            mOWDevice.setRideMode(owGatService, mGatt,rm);
-        } else {
-            Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
-        }
-    } */
-
-
     //battery level alerts
-    public static Map<Integer, Boolean> batteryAlertLevels = new HashMap<>();
-    static {
-        batteryAlertLevels.put(75,false); //1
-        batteryAlertLevels.put(50, false); //2
-        batteryAlertLevels.put(25, false); //3
-        batteryAlertLevels.put(5, false); // 4
-    }
-    public void updateBatteryRemaining(final int perc) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    //mBatteryPieData.removeDataSet(0);
-                    //updateLog("Got battery event with " + perc + " remaining!");
-                    ArrayList<PieEntry> entries = new ArrayList<>();
-                    entries.add(new PieEntry(perc, 0));
-                    entries.add(new PieEntry(100 - perc, 1));
-                    PieDataSet dataSet = new PieDataSet(entries, "battery percentage");
-                    ArrayList<Integer> mColors = new ArrayList<>();
-                    mColors.add(ColorTemplate.rgb("#2E7D32")); //green
-                    mColors.add(ColorTemplate.rgb("#C62828")); //red
-                    dataSet.setColors(mColors);
+    public static SparseBooleanArray batteryAlertLevels = new SparseBooleanArray(){{
+        put(75,false); //1
+        put(50, false); //2
+        put(25, false); //3
+        put(5, false); // 4
+    }};
 
-                    PieData newPieData = new PieData( dataSet);
-                    mBatteryChart.setCenterText(perc + "%");
-                    mBatteryChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
-                    mBatteryChart.setCenterTextColor(ColorTemplate.rgb("#616161"));
-                    mBatteryChart.setCenterTextSize(20f);
+    public void updateBatteryRemaining(final int percent) {
+        runOnUiThread(() -> {
+            try {
+                //mBatteryPieData.removeDataSet(0);
+                //updateLog("Got battery event with " + percent + " remaining!");
+                ArrayList<PieEntry> entries = new ArrayList<>();
+                entries.add(new PieEntry(percent, 0));
+                entries.add(new PieEntry(100 - percent, 1));
+                PieDataSet dataSet = new PieDataSet(entries, "battery percentage");
+                ArrayList<Integer> mColors = new ArrayList<>();
+                mColors.add(ColorTemplate.rgb("#2E7D32")); //green
+                mColors.add(ColorTemplate.rgb("#C62828")); //red
+                dataSet.setColors(mColors);
 
-                    mBatteryChart.setData(newPieData);
-                    mBatteryChart.notifyDataSetChanged();
-                    mBatteryChart.invalidate();
+                PieData newPieData = new PieData( dataSet);
+                mBatteryChart.setCenterText(percent + "%");
+                mBatteryChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
+                mBatteryChart.setCenterTextColor(ColorTemplate.rgb("#616161"));
+                mBatteryChart.setCenterTextSize(20f);
+                mBatteryChart.setDescription(null);
+
+                mBatteryChart.setData(newPieData);
+                mBatteryChart.notifyDataSetChanged();
+                mBatteryChart.invalidate();
 
 
-                    if (batteryAlertLevels.containsKey(perc)) {
-                        if ((batteryAlertLevels.get(perc)) == false) {
-                            switch (perc) {
-                                case 75:
-                                    EventBus.getDefault().post(new VibrateEvent(1000,1));
-                                    onEvent(new NotificationEvent("OW Battery", "75%"));
-                                    break;
-                                case 50:
-                                    EventBus.getDefault().post(new VibrateEvent(1000,2));
-                                    onEvent(new NotificationEvent("OW Battery", "50%"));
-                                    break;
-                                case 25:
-                                    EventBus.getDefault().post(new VibrateEvent(1000,3));
-                                    onEvent(new NotificationEvent("OW Battery", "25%"));
-                                    break;
-                                case 5:
-                                    EventBus.getDefault().post(new VibrateEvent(1000,4));
-                                    onEvent(new NotificationEvent("OW Battery", "5%"));
-                                    break;
-                                default:
-                            }
-                            batteryAlertLevels.put(perc,true);
+                if (batteryAlertLevels.indexOfKey(percent) > -1) {
+                    if (!(batteryAlertLevels.get(percent))) {
+                        switch (percent) {
+                            case 75:
+                                EventBus.getDefault().post(new VibrateEvent(1000,1));
+                                onEvent(new NotificationEvent("OW Battery", "75%"));
+                                break;
+                            case 50:
+                                EventBus.getDefault().post(new VibrateEvent(1000,2));
+                                onEvent(new NotificationEvent("OW Battery", "50%"));
+                                break;
+                            case 25:
+                                EventBus.getDefault().post(new VibrateEvent(1000,3));
+                                onEvent(new NotificationEvent("OW Battery", "25%"));
+                                break;
+                            case 5:
+                                EventBus.getDefault().post(new VibrateEvent(1000,4));
+                                onEvent(new NotificationEvent("OW Battery", "5%"));
+                                break;
+                            default:
                         }
+                        batteryAlertLevels.put(percent,true);
                     }
-
-                } catch (Exception e) {
-                    updateLog("Got an exception updating battery:" + e.getMessage());
-
                 }
+
+            } catch (Exception e) {
+                updateLog("Got an exception updating battery:" + e.getMessage());
+
             }
         });
     }
     private void deviceConnectedTimer(final boolean start) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (start) {
-                    mChronometer.setBase(SystemClock.elapsedRealtime());
-                    mChronometer.start();
-                } else {
-                    mChronometer.stop();
-                }
+        runOnUiThread(() -> {
+            if (start) {
+                mChronometer.setBase(SystemClock.elapsedRealtime());
+                mChronometer.start();
+            } else {
+                mChronometer.stop();
             }
         });
 
 
     }
     private void updateOptionsMenu() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                invalidateOptionsMenu();
-            }
-        });
+        runOnUiThread(this::invalidateOptionsMenu);
     }
 
     @Override
@@ -350,93 +249,51 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mContext = this;
 
-        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        mSharedPref.registerOnSharedPreferenceChangeListener(this);
-
-        String loggingFrequencyString = mSharedPref.getString("loggingFrequency","1000");
-        //TODO check for int
-        try {
-            mLoggingFrequency = Integer.parseInt(loggingFrequencyString);
-        } catch (Exception e) {
-            Log.d(TAG,"Use a number for polling frequency already! Going with the default for now.");
-        }
 
         EventBus.getDefault().register(this);
         // TODO unbind in onPause or whatever is recommended by goog
         bindService(new Intent(this, VibrateService.class), mVibrateConnection, Context.BIND_AUTO_CREATE);
 
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-        mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "pOWToolsWakeLock");
+        initWakelock();
 
         mBinding = DataBindingUtil.setContentView(this, net.kwatts.powtools.R.layout.activity_main);
 
-        if (mSharedPref.getBoolean("dayNightMode", false)) {
-            if (savedInstanceState == null) {
-                getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_AUTO);
-                recreate();
-            }
-        }
-        if (mSharedPref.getBoolean(SHARED_PREF_DARK_NIGHT_MODE, false)) {
-            if (savedInstanceState == null) {
-                getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                recreate();
-            }
-        }
+        setupDarkModes(savedInstanceState);
 
-        mAboutDialog = new MaterialDialog.Builder(this).title("WARNING").content(R.string.eula).positiveText("AGREE")
-                .onPositive(new MaterialDialog.SingleButtonCallback() {
-                    @Override
-                    public void onClick(MaterialDialog dialog, DialogAction which) {
-                        SharedPreferences.Editor editor = mSharedPref.edit();
-                        editor.putBoolean(SHARED_PREF_EULA_AGREE, true);
-                        editor.commit();
-                    }
-                });
+        App.INSTANCE.getSharedPreferences().registerListener(this);
 
-        if ((mSharedPref.getBoolean(SHARED_PREF_EULA_AGREE, false)) == false) {
-            mAboutDialog.show();
+        if (!App.INSTANCE.getSharedPreferences().isEulaAgreed()) {
+            showEula();
         }
 
         startService(new Intent(getApplicationContext(), VibrateService.class));
 
+        setupOWDevice();
 
-        mOWDevice = new OWDevice();
-        mBinding.setOwdevice(mOWDevice);
+        setupToolbar();
 
-        mOWDevice.showDebugWindow.set(mSharedPref.getBoolean(SHARED_PREF_DEBUG_WINDOW, false));
-        mOWDevice.isOneWheelPlus.set(mSharedPref.getBoolean(SHARED_PREF_ONE_WHEEL_PLUS, false));
+        mScrollView = findViewById(R.id.logScroller);
 
-
-        mOWDevice.refresh();
-        mOWConnected = false;
-        mOWDevice.isConnected.set(false);
-
-        //mOWDevice.bluetoothLe.set("Off");
-        //mOWDevice.bluetoothStatus.set("Disconnected");
-
-
-        final BluetoothManager manager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        mBluetoothAdapter = manager.getAdapter();
-        mOWDevice.bluetoothLe.set("On");
-        mToolbar = (Toolbar) findViewById(R.id.tool_bar);
-        mToolbar.setTitle("POWheel");
-        mToolbar.setLogo(R.mipmap.ic_launcher);
-        setSupportActionBar(mToolbar);
-
-
-        mScrollView = (ScrollView) findViewById(R.id.logScroller);
-
-
-        if ((mSharedPref.getBoolean(SHARED_PREF_TRIP_LOGGING, false))) {
+        if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
             initLogging();
         }
 
+        mChronometer = findViewById(R.id.chronometer);
+        initBatteryChart();
+        initLightSettings(getWindow().getDecorView().getRootView());
+        initRideModeButtons(getWindow().getDecorView().getRootView());
 
-        mChronometer = (Chronometer)findViewById(R.id.chronometer);
+    }
 
+    private void initWakelock() {
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        assert powerManager != null;
+        mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "pOWToolsWakeLock");
+    }
 
-        mBatteryChart = (PieChart) findViewById(R.id.batteryPieChart);
+    private void initBatteryChart() {
+        mBatteryChart = findViewById(R.id.batteryPieChart);
         // configure pie chart
         mBatteryChart.setUsePercentValues(true);
         mBatteryChart.setDescription(new Description());
@@ -444,11 +301,66 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mBatteryChart.setDrawHoleEnabled(true);
         Legend legend = mBatteryChart.getLegend();
         legend.setEnabled(false);
+    }
+
+    private void setupToolbar() {
+        Toolbar mToolbar = findViewById(R.id.tool_bar);
+        mToolbar.setTitle("POWheel");
+        mToolbar.setLogo(R.mipmap.ic_launcher);
+        setSupportActionBar(mToolbar);
+    }
+
+    private void setupOWDevice() {
+        mOWDevice = new OWDevice();
+        mBinding.setOwdevice(mOWDevice);
+
+        mOWDevice.showDebugWindow.set(App.INSTANCE.getSharedPreferences().isDebugging());
+        mOWDevice.isOneWheelPlus.set(App.INSTANCE.getSharedPreferences().isOneWheelPlus());
+
+//        mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+//            @Override
+//            public void onPropertyChanged(Observable observable, int i) {
+//                Log.d(TAG, "onPropertyChanged: " + mOWDevice.isConnected.get());
+//                Log.d(TAG, "onPropertyChanged: " + observable.toString() + "i" + i);
+//            }
+//        });
+
+        mOWDevice.refresh();
+        mOWDevice.isConnected.set(false);
+
+        //mOWDevice.bluetoothLe.set("Off");
+        //mOWDevice.bluetoothStatus.set("Disconnected");
 
 
-        initLightSettings(getWindow().getDecorView().getRootView());
-        initRideModeButtons(getWindow().getDecorView().getRootView());
+        final BluetoothManager manager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        assert manager != null;
+        mBluetoothAdapter = manager.getAdapter();
+        mOWDevice.bluetoothLe.set("On");
+    }
 
+    private void showEula() {
+        new MaterialDialog.Builder(this)
+                .title("WARNING")
+                .content(R.string.eula)
+                .positiveText("AGREE")
+                .onPositive((dialog, which) ->
+                        App.INSTANCE.getSharedPreferences().setEulaAgreed(true))
+                .show();
+    }
+
+    private void setupDarkModes(Bundle savedInstanceState) {
+        if (App.INSTANCE.getSharedPreferences().isDayNightMode()) {
+            if (savedInstanceState == null) {
+                getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_AUTO);
+                recreate();
+            }
+        }
+        if (App.INSTANCE.getSharedPreferences().isDarkNightMode()) {
+            if (savedInstanceState == null) {
+                getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                recreate();
+            }
+        }
     }
 
     @Override
@@ -466,7 +378,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         if (mVibrateService != null) {
             unbindService(mVibrateConnection);
         }
-        mSharedPref.unregisterOnSharedPreferenceChangeListener(this);
+        App.INSTANCE.getSharedPreferences().removeListener(this);
         super.onDestroy();
     }
 
@@ -474,14 +386,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
 
-        if (mOWConnected == true) {
+        if (mOWDevice.isConnected.get()) {
             menu.findItem(R.id.menu_disconnect).setVisible(true);
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(false);
             //menu.findItem(R.id.menu_ow_light_on).setVisible(true);
             //menu.findItem(R.id.menu_ow_ridemode).setVisible(true);
-        }
-        else if (!mScanning) {
+        } else if (!mScanning) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
             menu.findItem(R.id.menu_disconnect).setVisible(false);
@@ -513,11 +424,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                            public void onSuccess(Boolean aBoolean) {
                                mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
                                settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
-                               filters = new ArrayList<ScanFilter>();
                                scanLeDevice(true);
 
                                // TODO move this to where we're actually connected to device? (or maybe its better here so we can achieve a location lock before logging)
-                               if (mSharedPref.getBoolean(SHARED_PREF_LOG_LOCATIONS, false)) {
+                               if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
                                    startLocationScan();
                                }
                            }
@@ -536,7 +446,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     mGatt.close();
                     mGatt = null;
                 }
-                mOWConnected = false;
                 mOWDevice.isConnected.set(false);
                 this.mScanResults.clear();
                 descriptorWriteQueue.clear();
@@ -555,7 +464,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     mGatt.close();
                     mGatt = null;
                 }
-                mOWConnected = false;
                 mOWDevice.isConnected.set(false);
                 this.mScanResults.clear();
                 descriptorWriteQueue.clear();
@@ -566,7 +474,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 owGatService = null;
                 break;
             case R.id.menu_about:
-                mAboutDialog.show();
+                showEula();
                 break;
             case R.id.menu_settings:
                 Intent i = new Intent(this, MainPreferencesActivity.class);
@@ -630,46 +538,35 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Log.i(TAG, "onSharedPreferenceChanged callback");
         switch (key) {
-            case SHARED_PREF_METRIC_UNITS:
-                boolean metricUnitsState = sharedPreferences.getBoolean(SHARED_PREF_METRIC_UNITS,false);
+            case SharedPreferencesUtil.METRIC_UNITS:
+                boolean metricUnitsState = sharedPreferences.getBoolean(key,false);
                 mOWDevice.metricUnits.set(metricUnitsState);
                 mOWDevice.refresh();
 //                mTracker.send(new HitBuilders.EventBuilder().setCategory("SharedPreferences").setAction("metricUnits")
 //                        .setLabel((metricUnitsState) ? "on" : "off").build());
                 break;
 
-            case SHARED_PREF_DARK_NIGHT_MODE:
-                boolean checkDarkNightMode = mSharedPref.getBoolean(SHARED_PREF_DARK_NIGHT_MODE, false);
-                if (checkDarkNightMode) {
-                    getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                } else {
-                    getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                }
+            case SharedPreferencesUtil.DARK_NIGHT_MODE:
+                boolean checkDarkNightMode = sharedPreferences.getBoolean(key, false);
+                getDelegate().setLocalNightMode(
+                        checkDarkNightMode ?
+                                AppCompatDelegate.MODE_NIGHT_YES
+                                : AppCompatDelegate.MODE_NIGHT_NO);
 
                 recreate();
 //                mTracker.send(new HitBuilders.EventBuilder().setCategory("SharedPreferences").setAction("darkNightMode")
 //                        .setLabel((checkDarkNightMode) ? "on" : "off").build());
                 break;
 
-            case SHARED_PREF_LOG_LOCATIONS:
-                boolean checkLogLocations = mSharedPref.getBoolean(SHARED_PREF_LOG_LOCATIONS, false);
+            case SharedPreferencesUtil.LOG_LOCATIONS:
+                boolean checkLogLocations = sharedPreferences.getBoolean(key, false);
                 if (!checkLogLocations && mOWDevice != null) {
                     mOWDevice.setLocation(null);
                 }
                 break;
 
             default:
-                //XXX right now, all preferences are bools, but this could change in the future
-              try {
-                  boolean checkState = sharedPreferences.getBoolean(key, false);
-                  Log.d(TAG, "onSharedPreferenceChanged: sharedPref changed:" + key);
-//                  mTracker.send(new HitBuilders.EventBuilder().setCategory("SharedPreferences").setAction(key)
-//                          .setLabel((checkState) ? "on" : "off").build());
-                  break;
-              } catch (Exception e) {
-                  Log.e(TAG, "onSharedPreferenceChanged: ", e);
-              }
-
+                Log.d(TAG, "onSharedPreferenceChanged: " + key);
         }
 
     }
@@ -764,25 +661,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 gatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                if (gatt.getDevice().getAddress() == mDeviceMacAddress) {
-                    updateLog("We got disconnected from our Device: " + gatt.getDevice().getAddress());
-                    deviceConnectedTimer(false);
-                    mOWConnected = false;
-                    mOWDevice.isConnected.set(false);
-                    mWakeLock.release();
-                    mScanResults.clear();
-
-                    if (mSharedPref.getBoolean("deviceReconnect",false)) {
-                        updateLog("Attempting to Reconnect to " + mDeviceMacAddress);
-                        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mDeviceMacAddress);
-                        connectToDevice(device);
-                        //scanLeDevice(true);
-                    } else {
-                        gatt.close();
-
-                    }
-                    updateOptionsMenu();
-
+                if (gatt.getDevice().getAddress().equals(mOWDevice.deviceMacAddress.get())) {
+                    onOWStateChangedToDisconnected(gatt);
                 }
                 updateLog("--> Closed " + gatt.getDevice().getAddress());
                 Log.d(TAG, "Disconnect:" + gatt.getDevice().getAddress());
@@ -791,84 +671,83 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
 
+        @SuppressLint("WakelockTimeout")
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status){
             Log.d(TAG, "Only should be here if connecting to OW:" + gatt.getDevice().getAddress());
-                BluetoothGattService checkGattService = gatt.getService(UUID.fromString(OWDevice.OnewheelServiceUUID));
-                if (checkGattService != null) {
-                    owGatService = checkGattService;
-                    mGatt = gatt;
-                    updateLog("Hey, I found the OneWheel Service: " + checkGattService.getUuid().toString());
-                    deviceConnectedTimer(true);
-                    mOWConnected = true;
-                    mOWDevice.isConnected.set(true);
-                    mWakeLock.acquire();
-                    mDeviceMacAddress = mGatt.getDevice().toString();
-                    mDeviceMacName    = mGatt.getDevice().getName();
-                    mOWDevice.deviceMacAddress.set(mDeviceMacAddress);
-                    mOWDevice.deviceMacName.set(mDeviceMacName);
-                    SharedPreferences.Editor editor = mSharedPref.edit();
-                    editor.putString("ow_mac_address", mDeviceMacAddress);
-                    editor.putString("ow_mac_name",mDeviceMacName);
-                    editor.commit();
-                    scanLeDevice(false); // We can stop scanning...
+            owGatService = gatt.getService(UUID.fromString(OWDevice.OnewheelServiceUUID));
 
-                    for(OWDevice.DeviceCharacteristic dc: mOWDevice.getNotifyCharacteristics()) {
-                        if (dc.uuid.get() != null && (dc.enabled.get() == true)) {
-                            BluetoothGattCharacteristic c = owGatService.getCharacteristic(UUID.fromString(dc.uuid.get()));
-                            if (c != null) {
-                                if (isCharacteristicNotifiable(c)) {
-                                    mGatt.setCharacteristicNotification(c, true);
-                                    BluetoothGattDescriptor descriptor = c.getDescriptor(UUID.fromString(mOWDevice.OnewheelConfigUUID));
-                                    Log.d(TAG, "descriptorWriteQueue.size:" + descriptorWriteQueue.size());
-                                    if (descriptor == null) {
-                                        Log.e(TAG, dc.uuid.get() + " has a null descriptor!");
-                                    } else {
-                                        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                                        descriptorWriteQueue.add(descriptor);
-                                        if (descriptorWriteQueue.size() == 1) {
-                                            mGatt.writeDescriptor(descriptor);
-                                        }
-                                        Log.d(TAG, dc.uuid.get()+ " has been set for notifications");
-                                    }
-                                }
-
-                            }
-
-                        }
-                    }
-
-                    for(OWDevice.DeviceCharacteristic dc : mOWDevice.getReadCharacteristics()) {
-                        if (dc.uuid.get() != null) {
-                            BluetoothGattCharacteristic c = owGatService.getCharacteristic(UUID.fromString(dc.uuid.get()));
-                            if (c != null) {
-                                if (isCharacteristicReadable(c)) {
-                                    characteristicReadQueue.add(c);
-                                    //Read if 1 in the queue, if > 1 then we handle asynchronously in the onCharacteristicRead callback
-                                    //GIVE PRECEDENCE to descriptor writes.  They must all finish first.
-                                    Log.i(TAG, "characteristicReadQueue.size =" + characteristicReadQueue.size() + " descriptorWriteQueue.size:" + descriptorWriteQueue.size());
-                                    if (characteristicReadQueue.size() == 1 && (descriptorWriteQueue.size() == 0)) {
-                                        Log.i(TAG, dc.uuid.get() + " is readable and added to queue");
-                                        mGatt.readCharacteristic(c);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-
+            if (owGatService == null) {
+                if (gatt.getDevice().getName() == null) {
+                    updateLog("--> " + gatt.getDevice().getAddress() + " not OW, moving on.");
                 } else {
-                    if (gatt.getDevice().getName() == null) {
-                        updateLog("--> " + gatt.getDevice().getAddress() + " not OW, moving on.");
-                    } else {
-                        updateLog("--> " + gatt.getDevice().getName() + " not OW, moving on.");
-                    }
-                    //mOWConnected = false;
+                    updateLog("--> " + gatt.getDevice().getName() + " not OW, moving on.");
                 }
+                return;
+            }
 
+            mGatt = gatt;
+            updateLog("Hey, I found the OneWheel Service: " + owGatService.getUuid().toString());
+            deviceConnectedTimer(true);
+            mOWDevice.isConnected.set(true);
+            mWakeLock.acquire();
+            mOWDevice.deviceMacAddress.set(mGatt.getDevice().toString());
+            mOWDevice.deviceMacName.set(mGatt.getDevice().getName());
+            App.INSTANCE.getSharedPreferences().saveMacAddress(
+                    mOWDevice.deviceMacAddress.get(),
+                    mOWDevice.deviceMacName.get()
+            );
+
+            scanLeDevice(false); // We can stop scanning...
+
+            for(OWDevice.DeviceCharacteristic deviceCharacteristic: mOWDevice.getNotifyCharacteristics()) {
+                String uuid = deviceCharacteristic.uuid.get();
+                if (uuid != null && deviceCharacteristic.enabled.get()) {
+                    BluetoothGattCharacteristic localCharacteristic = owGatService.getCharacteristic(UUID.fromString(uuid));
+                    if (localCharacteristic != null) {
+                        if (isCharacteristicNotifiable(localCharacteristic)) {
+                            mGatt.setCharacteristicNotification(localCharacteristic, true);
+                            BluetoothGattDescriptor descriptor = localCharacteristic.getDescriptor(UUID.fromString(mOWDevice.OnewheelConfigUUID));
+                            Log.d(TAG, "descriptorWriteQueue.size:" + descriptorWriteQueue.size());
+                            if (descriptor == null) {
+                                Log.e(TAG, uuid + " has a null descriptor!");
+                            } else {
+                                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                                descriptorWriteQueue.add(descriptor);
+                                if (descriptorWriteQueue.size() == 1) {
+                                    mGatt.writeDescriptor(descriptor);
+                                }
+                                Log.d(TAG, uuid + " has been set for notifications");
+                            }
+                        }
+
+                    }
+
+                }
+            }
+
+            for(OWDevice.DeviceCharacteristic dc : mOWDevice.getReadCharacteristics()) {
+                if (dc.uuid.get() != null) {
+                    BluetoothGattCharacteristic c = owGatService.getCharacteristic(UUID.fromString(dc.uuid.get()));
+                    if (c != null) {
+                        if (isCharacteristicReadable(c)) {
+                            characteristicReadQueue.add(c);
+                            //Read if 1 in the queue, if > 1 then we handle asynchronously in the onCharacteristicRead callback
+                            //GIVE PRECEDENCE to descriptor writes.  They must all finish first.
+                            Log.i(TAG, "characteristicReadQueue.size =" + characteristicReadQueue.size() + " descriptorWriteQueue.size:" + descriptorWriteQueue.size());
+                            if (characteristicReadQueue.size() == 1 && (descriptorWriteQueue.size() == 0)) {
+                                Log.i(TAG, dc.uuid.get() + " is readable and added to queue");
+                                mGatt.readCharacteristic(c);
+                            }
+                        }
+                    }
+                }
+            }
 
 
         }
+
+
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic c, int status) {
@@ -937,6 +816,25 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
     };
 
+    private void onOWStateChangedToDisconnected(BluetoothGatt gatt) {
+        updateLog("We got disconnected from our Device: " + gatt.getDevice().getAddress());
+        deviceConnectedTimer(false);
+        mOWDevice.isConnected.set(false);
+        mWakeLock.release();
+        mScanResults.clear();
+
+        if (App.INSTANCE.getSharedPreferences().shouldAutoReconnect()) {
+            updateLog("Attempting to Reconnect to " + mOWDevice.deviceMacAddress.get());
+            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mOWDevice.deviceMacAddress.get());
+            connectToDevice(device);
+            //scanLeDevice(true);
+        } else {
+            gatt.close();
+
+        }
+        updateOptionsMenu();
+    }
+
     public static boolean isCharacteristicWriteable(BluetoothGattCharacteristic c) {
         return (c.getProperties() & (BluetoothGattCharacteristic.PROPERTY_WRITE | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) != 0;
     }
@@ -971,24 +869,32 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             File owLogFile = new File( PlainTextFileLogger.getLoggingPath() + "/owlogs_" + dateTimeString + ".csv");
             updateLog("Logging device to " + owLogFile.getAbsolutePath());
-            Toast.makeText(mContext, String.format("All OW activity will be logged to %s every %d ms.", owLogFile.getAbsolutePath(), mLoggingFrequency), Toast.LENGTH_LONG).show();
+            Toast.makeText(
+                    mContext,
+                    String.format(
+                            Locale.getDefault(),
+                            "All OW activity will be logged to %s every %d ms.",
+                            owLogFile.getAbsolutePath(),
+                            App.INSTANCE.getSharedPreferences().getLoggingFrequency()
+                    ),
+                    Toast.LENGTH_LONG)
+                .show();
             mTextFileLogger = new PlainTextFileLogger(owLogFile);
-            deviceFileLogger = new Runnable() {
+            Runnable deviceFileLogger = new Runnable() {
                 @Override
                 public void run() {
+                    int mLoggingFrequency = App.INSTANCE.getSharedPreferences().getLoggingFrequency();
                     mLoggingHandler.postDelayed(this, mLoggingFrequency);
-                    if (mOWConnected) {
-                        if (mOWDevice != null) {
-                            try {
-                                mTextFileLogger.write(mOWDevice);
-                            } catch (Exception e) {
-                                Log.e(TAG,"unable to write logs");
-                            }
+                    if (mOWDevice.isConnected.get()) {
+                        try {
+                            mTextFileLogger.write(mOWDevice);
+                        } catch (Exception e) {
+                            Log.e(TAG, "unable to write logs");
                         }
                     }
                 }
             };
-            mLoggingHandler.postDelayed(deviceFileLogger, mLoggingFrequency);
+            mLoggingHandler.postDelayed(deviceFileLogger, App.INSTANCE.getSharedPreferences().getLoggingFrequency());
 
         }
     }
@@ -1040,124 +946,106 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     public void initLightSettings(View v) {
-        mMasterLight = (SwitchCompat) v.findViewById(R.id.master_light_switch);
-        mCustomLight = (SwitchCompat) v.findViewById(R.id.custom_light_switch);
+        mMasterLight = v.findViewById(R.id.master_light_switch);
+        mCustomLight = v.findViewById(R.id.custom_light_switch);
 
-        mFrontBright = (SwitchCompat) v.findViewById(R.id.front_bright_switch);
-        mBackBright = (SwitchCompat) v.findViewById(R.id.back_bright_switch);
-        mFrontBlink = (SwitchCompat) v.findViewById(R.id.front_blink_switch);
-        mBackBlink = (SwitchCompat) v.findViewById(R.id.back_blink_switch);
+        mFrontBright = v.findViewById(R.id.front_bright_switch);
+        mBackBright = v.findViewById(R.id.back_bright_switch);
+        mFrontBlink = v.findViewById(R.id.front_blink_switch);
+        mBackBlink = v.findViewById(R.id.back_blink_switch);
 
-        mMasterLight.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
-                        updateLog("LIGHTS ON");
-                        mOWDevice.setLights(owGatService, mGatt, 1);
-                    } else {
-                        updateLog("LIGHTS OFF");
-                        mOWDevice.setLights(owGatService, mGatt, 0);
-                    }
+        mMasterLight.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    updateLog("LIGHTS ON");
+                    mOWDevice.setLights(owGatService, mGatt, 1);
+                } else {
+                    updateLog("LIGHTS OFF");
+                    mOWDevice.setLights(owGatService, mGatt, 0);
                 }
             }
         });
 
-        mCustomLight.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
-                        updateLog("CUSTOM LIGHTS ON");
-                        mOWDevice.setLights(owGatService, mGatt, 2);
-                    } else {
-                        updateLog("CUSTOM LIGHTS OFF");
-                        mOWDevice.setLights(owGatService, mGatt, 0);
+        mCustomLight.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    updateLog("CUSTOM LIGHTS ON");
+                    mOWDevice.setLights(owGatService, mGatt, 2);
+                } else {
+                    updateLog("CUSTOM LIGHTS OFF");
+                    mOWDevice.setLights(owGatService, mGatt, 0);
 
-                    }
                 }
             }
         });
 
 
-        mFrontBright.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
-                        mOWDevice.setCustomLights(owGatService, mGatt, 0,0,60);
-                     } else {
-                        mOWDevice.setCustomLights(owGatService, mGatt, 0,0,30);
-                     }
-                }
-
+        mFrontBright.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    mOWDevice.setCustomLights(owGatService, mGatt, 0,0,60);
+                 } else {
+                    mOWDevice.setCustomLights(owGatService, mGatt, 0,0,30);
+                 }
             }
+
         });
 
-        mBackBright.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
-                        mOWDevice.setCustomLights(owGatService, mGatt, 1,1,60);
-                    } else {
-                        mOWDevice.setCustomLights(owGatService, mGatt, 1,1,30);
+        mBackBright.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    mOWDevice.setCustomLights(owGatService, mGatt, 1,1,60);
+                } else {
+                    mOWDevice.setCustomLights(owGatService, mGatt, 1,1,30);
 
+                }
+            }
+
+        });
+
+
+        mFrontBlink.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    mFrontBlinkTimerTask = new mFrontBlinkTaskTimerTask();
+                    mFrontBlinkTimer = new Timer();
+                    mFrontBlinkTimer.scheduleAtFixedRate(mFrontBlinkTimerTask, 0, 500);
+
+                } else {
+                    if (mFrontBlinkTimer != null) {
+                        mFrontBlinkTimer.cancel();
+                        mFrontBlinkTimer.purge();
+                        mFrontBlinkTimer = null;
+                    }
+                    if (mFrontBlinkTimerTask != null) {
+                        mFrontBlinkTimerTask.cancel();
+                        mFrontBlinkTimerTask = null;
                     }
                 }
 
             }
+
         });
 
+        mBackBlink.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    mBackBlinkTimerTask = new mBackBlinkTaskTimerTask();
+                    mBackBlinkTimer = new Timer();
+                    mBackBlinkTimer.scheduleAtFixedRate(mBackBlinkTimerTask, 0, 500);
 
-        mFrontBlink.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
-                        mFrontBlinkTimerTask = new mFrontBlinkTaskTimerTask();
-                        mFrontBlinkTimer = new Timer();
-                        mFrontBlinkTimer.scheduleAtFixedRate(mFrontBlinkTimerTask, 0, 500);
-
-                    } else {
-                        if (mFrontBlinkTimer != null) {
-                            mFrontBlinkTimer.cancel();
-                            mFrontBlinkTimer.purge();
-                            mFrontBlinkTimer = null;
-                        }
-                        if (mFrontBlinkTimerTask != null) {
-                            mFrontBlinkTimerTask.cancel();
-                            mFrontBlinkTimerTask = null;
-                        }
+                } else {
+                    if (mBackBlinkTimer != null) {
+                        mBackBlinkTimer.cancel();
+                        mBackBlinkTimer.purge();
+                        mBackBlinkTimer = null;
                     }
-
+                    if (mBackBlinkTimerTask != null) {
+                        mBackBlinkTimerTask.cancel();
+                        mBackBlinkTimerTask = null;
+                    }
                 }
 
-            }
-        });
-
-        mBackBlink.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWConnected) {
-                    if (isChecked == true) {
-                        mBackBlinkTimerTask = new mBackBlinkTaskTimerTask();
-                        mBackBlinkTimer = new Timer();
-                        mBackBlinkTimer.scheduleAtFixedRate(mBackBlinkTimerTask, 0, 500);
-
-                    } else {
-                        if (mBackBlinkTimer != null) {
-                            mBackBlinkTimer.cancel();
-                            mBackBlinkTimer.purge();
-                            mBackBlinkTimer = null;
-                        }
-                        if (mBackBlinkTimerTask != null) {
-                            mBackBlinkTimerTask.cancel();
-                            mBackBlinkTimerTask = null;
-                        }
-                    }
-
-                }
             }
         });
 
@@ -1166,28 +1054,25 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     public void initRideModeButtons(View v) {
-        mRideModeToggleButton = (MultiStateToggleButton) this.findViewById(R.id.mstb_multi_ridemodes);
+        mRideModeToggleButton = this.findViewById(R.id.mstb_multi_ridemodes);
         if (mOWDevice.isOneWheelPlus.get()) {
             mRideModeToggleButton.setElements(getResources().getStringArray(R.array.owplus_ridemode_array));
         } else {
             mRideModeToggleButton.setElements(getResources().getStringArray(R.array.ow_ridemode_array));
         }
 
-        mRideModeToggleButton.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
-            @Override
-            public void onValueChanged(int position) {
-                if (mOWConnected) {
-                    Log.d(TAG, "mOWDevice.setRideMode button pressed:" + position);
-                    if (mOWDevice.isOneWheelPlus.get()) {
-                        updateLog("Ridemode changed to:" + position + 4);
-                        mOWDevice.setRideMode(owGatService, mGatt,position + 4); // ow+ ble value for ridemode 4,5,6,7,8 (delirium)
-                    } else {
-                        updateLog("Ridemode changed to:" + position + 1);
-                        mOWDevice.setRideMode(owGatService, mGatt,position + 1); // ow uses 1,2,3 (expert)
-                    }
+        mRideModeToggleButton.setOnValueChangedListener(position -> {
+            if (mOWDevice.isConnected.get()) {
+                Log.d(TAG, "mOWDevice.setRideMode button pressed:" + position);
+                if (mOWDevice.isOneWheelPlus.get()) {
+                    updateLog("Ridemode changed to:" + position + 4);
+                    mOWDevice.setRideMode(owGatService, mGatt,position + 4); // ow+ ble value for ridemode 4,5,6,7,8 (delirium)
                 } else {
-                    Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
+                    updateLog("Ridemode changed to:" + position + 1);
+                    mOWDevice.setRideMode(owGatService, mGatt,position + 1); // ow uses 1,2,3 (expert)
                 }
+            } else {
+                Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
             }
         });
 
