@@ -39,18 +39,14 @@ public class PlainTextFileLogger  {
 
 
     public void write(DeviceInterface dev) throws Exception {
-        if (!file.exists()) {
-            file.createNewFile();
-
-            FileOutputStream writer = new FileOutputStream(file, true);
-            BufferedOutputStream output = new BufferedOutputStream(writer);
-            output.write(dev.getCSVHeader().getBytes());
-            output.flush();
-            output.close();
-        }
+        boolean wasFileNew = file.createNewFile();
 
         FileOutputStream writer = new FileOutputStream(file, true);
         BufferedOutputStream output = new BufferedOutputStream(writer);
+
+        if (wasFileNew) {
+            output.write(dev.getCSVHeader().getBytes());
+        }
 
         output.write(dev.toCSV().getBytes());
         output.flush();

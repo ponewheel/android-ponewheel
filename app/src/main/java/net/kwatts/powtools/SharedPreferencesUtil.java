@@ -38,7 +38,21 @@ public class SharedPreferencesUtil {
     }
 
     public int getLoggingFrequency() {
-        return mSharedPref.getInt(LOGGING_FREQUENCY, 1000);
+        try {
+            return Integer.valueOf(mSharedPref.getString(LOGGING_FREQUENCY, "1000"));
+
+        } catch (ClassCastException e) {
+            int logFrequency =  mSharedPref.getInt(LOGGING_FREQUENCY, 1000);
+
+            // TODO remove this at some point in the future when everyone is int (
+            // PreferencesActivity doesn't like ints
+            mSharedPref.edit()
+                    .remove(LOGGING_FREQUENCY)
+                    .putString(LOGGING_FREQUENCY, logFrequency+"")
+                    .apply();
+
+            return logFrequency;
+        }
     }
 
     public boolean isDayNightMode() {

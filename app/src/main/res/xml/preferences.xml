@@ -2,79 +2,86 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content">
-  <!-- <EditTextPreference android:title="Your Name"
-                      android:key="username"
-                      android:summary="Please provide your username"></EditTextPreference> -->
-  <CheckBoxPreference android:title="Default to OW+"
-      android:defaultValue="true"
-      android:summary="This option will set the default board to OneWheel+"
-      android:key="oneWheelPlus"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content" />
-  <CheckBoxPreference android:title="Low Battery Alerts"
-                      android:defaultValue="true"
-                      android:summary="This option will vibrate multiple times depending on OneWheel battery levels: 75% (1 time), 50% (2 times), 25% (3 times), 5% (and 4)"
-                      android:key="lowBatteryAlerts"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content" />
-  <CheckBoxPreference android:title="Metric Units"
-      android:defaultValue="false"
-      android:summary="This option uses metric units (kilometers, celsius, etc). Currently requires a reconnect if changed."
-      android:key="metricUnits"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content" />
-  <CheckBoxPreference android:title="Trip logging"
-      android:defaultValue="true"
-      android:summary="This option enables continous (every second) dump of stats to CSV file on the sdcard (under /owlogs)."
-      android:key="tripLogging"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content" />
-  <CheckBoxPreference android:title="Reconnect"
-      android:defaultValue="true"
-      android:summary="This option attempts to reconnect to device if it gets disconnected."
-      android:key="deviceReconnect"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content" />
-    <CheckBoxPreference android:title="Day and Night Theme"
+    <!-- <EditTextPreference android:title="Your Name"
+                        android:key="username"
+                        android:summary="Please provide your username"></EditTextPreference> -->
+    <CheckBoxPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:defaultValue="true"
-        android:summary="This option uses night mode when it is determined that it is night or not. May require restart to take effect."
+        android:key="oneWheelPlus"
+        android:summary="This option will set the default board to OneWheel+"
+        android:title="Default to OW+" />
+    <CheckBoxPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="true"
+        android:key="lowBatteryAlerts"
+        android:summary="This option will vibrate multiple times depending on OneWheel battery levels: 75% (1 time), 50% (2 times), 25% (3 times), 5% (and 4)"
+        android:title="Low Battery Alerts" />
+    <CheckBoxPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="false"
+        android:key="metricUnits"
+        android:summary="This option uses metric units (kilometers, celsius, etc). Currently requires a reconnect if changed."
+        android:title="Metric Units" />
+    <CheckBoxPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="true"
+        android:key="tripLogging"
+        android:summary="This option enables continous (every second) dump of stats to CSV file on the sdcard (under /owlogs)."
+        android:title="Trip logging" />
+    <CheckBoxPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="true"
+        android:key="deviceReconnect"
+        android:summary="This option attempts to reconnect to device if it gets disconnected."
+        android:title="Reconnect" />
+    <CheckBoxPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="true"
         android:key="dayNightMode"
+        android:summary="This option uses night mode when it is determined that it is night or not. May require restart to take effect."
+        android:title="Day and Night Theme" />
+    <CheckBoxPreference
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-  <CheckBoxPreference android:title="Night Theme"
-      android:defaultValue="false"
-      android:summary="This option switches to the night theme. May require restart to take effect."
-      android:key="darkNightMode"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content" />
-    <EditTextPreference android:title="Logging Frequency"
+        android:layout_height="wrap_content"
+        android:defaultValue="false"
+        android:key="darkNightMode"
+        android:summary="This option switches to the night theme. May require restart to take effect."
+        android:title="Night Theme" />
+    <EditTextPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:defaultValue="1000"
-        android:summary="Set the logging frequency (1000ms = 1 second)."
         android:key="loggingFrequency"
+        android:summary="Set the logging frequency (1000ms = 1 second)."
+        android:title="Logging Frequency" />
+    <CheckBoxPreference
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-  <CheckBoxPreference android:title="Debugging"
-      android:defaultValue="true"
-      android:summary="This option turns on the debugging and log window."
-      android:key="debugWindow"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:defaultValue="true"
+        android:key="debugWindow"
+        android:summary="This option turns on the debugging and log window."
+        android:title="Debugging" />
 
-  <CheckBoxPreference android:title="Gather and log locations"
-      android:defaultValue="false"
-      android:summary="This option turns on location support to save to your routes. Your location is never shared."
-      android:key="logLocations"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content" />
-
+    <CheckBoxPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="false"
+        android:key="logLocations"
+        android:summary="This option turns on location support to save to your routes. Your location is never shared."
+        android:title="Gather and log locations" />
 
 
-
-
-  <!-- <ListPreference     android:title="Download Details"
-                      android:summary="Select the kind of data that you would like to download"
-                      android:key="downloadType"
-                      android:defaultValue="1"
-                      android:entries="@array/listArray"
-                      android:entryValues="@array/listValues" /> -->
+    <!-- <ListPreference     android:title="Download Details"
+                        android:summary="Select the kind of data that you would like to download"
+                        android:key="downloadType"
+                        android:defaultValue="1"
+                        android:entries="@array/listArray"
+                        android:entryValues="@array/listValues" /> -->
 </PreferenceScreen>

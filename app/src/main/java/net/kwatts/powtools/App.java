@@ -2,7 +2,6 @@ package net.kwatts.powtools;
 
 
 import android.app.Application;
-import android.content.SharedPreferences;
 
 /**
  * This is a subclass of {@link Application} used to provide shared objects for this app.
@@ -18,7 +17,7 @@ public class App extends Application {
 
     public SharedPreferencesUtil getSharedPreferences() {
         if (sharedPreferencesUtil == null) {
-            sharedPreferencesUtil = new SharedPreferencesUtil();
+            sharedPreferencesUtil = new SharedPreferencesUtil(App.this);
         }
         return sharedPreferencesUtil;
     }

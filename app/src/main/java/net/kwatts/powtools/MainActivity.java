@@ -29,7 +29,6 @@ import android.os.ParcelUuid;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.support.v4.app.NotificationCompat;
@@ -42,11 +41,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Chronometer;
-import android.widget.CompoundButton;
 import android.widget.ScrollView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Description;
@@ -141,124 +138,108 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         Log.d(TAG, event.message + ":" + event.title);
         final String t = event.title;
         final String m = event.message;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                NotificationCompat.Builder mBuilder =
-                        new NotificationCompat.Builder(mContext, "ponewheel")
-                                .setSmallIcon(R.mipmap.ic_launcher)
-                                .setContentTitle(t)
-                                .setColor(0x008000)
-                                .setContentText(m);
-                android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                assert mNotifyMgr != null;
-                mNotifyMgr.notify(m,0, mBuilder.build());
-            }
+        runOnUiThread(() -> {
+            NotificationCompat.Builder mBuilder =
+                    new NotificationCompat.Builder(mContext, "ponewheel")
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setContentTitle(t)
+                            .setColor(0x008000)
+                            .setContentText(m);
+            android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            assert mNotifyMgr != null;
+            mNotifyMgr.notify(m,0, mBuilder.build());
         });
     }
 
     private void updateLog(final String msg) {
         Log.d(TAG, msg);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                //mBinding.owLog.setMovementMethod(new ScrollingMovementMethod());
-                mBinding.owLog.append("\n" + msg);
-                mScrollView.fullScroll(View.FOCUS_DOWN);
-            }
+        runOnUiThread(() -> {
+            //mBinding.owLog.setMovementMethod(new ScrollingMovementMethod());
+            mBinding.owLog.append("\n" + msg);
+            mScrollView.fullScroll(View.FOCUS_DOWN);
         });
 
     }
 
     //battery level alerts
     public static SparseBooleanArray batteryAlertLevels = new SparseBooleanArray(){{
-        batteryAlertLevels.put(75,false); //1
-        batteryAlertLevels.put(50, false); //2
-        batteryAlertLevels.put(25, false); //3
-        batteryAlertLevels.put(5, false); // 4
+        put(75,false); //1
+        put(50, false); //2
+        put(25, false); //3
+        put(5, false); // 4
     }};
 
     public void updateBatteryRemaining(final int percent) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    //mBatteryPieData.removeDataSet(0);
-                    //updateLog("Got battery event with " + percent + " remaining!");
-                    ArrayList<PieEntry> entries = new ArrayList<>();
-                    entries.add(new PieEntry(percent, 0));
-                    entries.add(new PieEntry(100 - percent, 1));
-                    PieDataSet dataSet = new PieDataSet(entries, "battery percentage");
-                    ArrayList<Integer> mColors = new ArrayList<>();
-                    mColors.add(ColorTemplate.rgb("#2E7D32")); //green
-                    mColors.add(ColorTemplate.rgb("#C62828")); //red
-                    dataSet.setColors(mColors);
+        runOnUiThread(() -> {
+            try {
+                //mBatteryPieData.removeDataSet(0);
+                //updateLog("Got battery event with " + percent + " remaining!");
+                ArrayList<PieEntry> entries = new ArrayList<>();
+                entries.add(new PieEntry(percent, 0));
+                entries.add(new PieEntry(100 - percent, 1));
+                PieDataSet dataSet = new PieDataSet(entries, "battery percentage");
+                ArrayList<Integer> mColors = new ArrayList<>();
+                mColors.add(ColorTemplate.rgb("#2E7D32")); //green
+                mColors.add(ColorTemplate.rgb("#C62828")); //red
+                dataSet.setColors(mColors);
 
-                    PieData newPieData = new PieData( dataSet);
-                    mBatteryChart.setCenterText(percent + "%");
-                    mBatteryChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
-                    mBatteryChart.setCenterTextColor(ColorTemplate.rgb("#616161"));
-                    mBatteryChart.setCenterTextSize(20f);
+                PieData newPieData = new PieData( dataSet);
+                mBatteryChart.setCenterText(percent + "%");
+                mBatteryChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
+                mBatteryChart.setCenterTextColor(ColorTemplate.rgb("#616161"));
+                mBatteryChart.setCenterTextSize(20f);
+                mBatteryChart.setDescription(null);
 
-                    mBatteryChart.setData(newPieData);
-                    mBatteryChart.notifyDataSetChanged();
-                    mBatteryChart.invalidate();
+                mBatteryChart.setData(newPieData);
+                mBatteryChart.notifyDataSetChanged();
+                mBatteryChart.invalidate();
 
 
-                    if (batteryAlertLevels.indexOfKey(percent) > -1) {
-                        if (!(batteryAlertLevels.get(percent))) {
-                            switch (percent) {
-                                case 75:
-                                    EventBus.getDefault().post(new VibrateEvent(1000,1));
-                                    onEvent(new NotificationEvent("OW Battery", "75%"));
-                                    break;
-                                case 50:
-                                    EventBus.getDefault().post(new VibrateEvent(1000,2));
-                                    onEvent(new NotificationEvent("OW Battery", "50%"));
-                                    break;
-                                case 25:
-                                    EventBus.getDefault().post(new VibrateEvent(1000,3));
-                                    onEvent(new NotificationEvent("OW Battery", "25%"));
-                                    break;
-                                case 5:
-                                    EventBus.getDefault().post(new VibrateEvent(1000,4));
-                                    onEvent(new NotificationEvent("OW Battery", "5%"));
-                                    break;
-                                default:
-                            }
-                            batteryAlertLevels.put(percent,true);
+                if (batteryAlertLevels.indexOfKey(percent) > -1) {
+                    if (!(batteryAlertLevels.get(percent))) {
+                        switch (percent) {
+                            case 75:
+                                EventBus.getDefault().post(new VibrateEvent(1000,1));
+                                onEvent(new NotificationEvent("OW Battery", "75%"));
+                                break;
+                            case 50:
+                                EventBus.getDefault().post(new VibrateEvent(1000,2));
+                                onEvent(new NotificationEvent("OW Battery", "50%"));
+                                break;
+                            case 25:
+                                EventBus.getDefault().post(new VibrateEvent(1000,3));
+                                onEvent(new NotificationEvent("OW Battery", "25%"));
+                                break;
+                            case 5:
+                                EventBus.getDefault().post(new VibrateEvent(1000,4));
+                                onEvent(new NotificationEvent("OW Battery", "5%"));
+                                break;
+                            default:
                         }
+                        batteryAlertLevels.put(percent,true);
                     }
-
-                } catch (Exception e) {
-                    updateLog("Got an exception updating battery:" + e.getMessage());
-
                 }
+
+            } catch (Exception e) {
+                updateLog("Got an exception updating battery:" + e.getMessage());
+
             }
         });
     }
     private void deviceConnectedTimer(final boolean start) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (start) {
-                    mChronometer.setBase(SystemClock.elapsedRealtime());
-                    mChronometer.start();
-                } else {
-                    mChronometer.stop();
-                }
+        runOnUiThread(() -> {
+            if (start) {
+                mChronometer.setBase(SystemClock.elapsedRealtime());
+                mChronometer.start();
+            } else {
+                mChronometer.stop();
             }
         });
 
 
     }
     private void updateOptionsMenu() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                invalidateOptionsMenu();
-            }
-        });
+        runOnUiThread(this::invalidateOptionsMenu);
     }
 
     @Override
@@ -362,12 +343,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .title("WARNING")
                 .content(R.string.eula)
                 .positiveText("AGREE")
-                .onPositive(new MaterialDialog.SingleButtonCallback() {
-                    @Override
-                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                        App.INSTANCE.getSharedPreferences().setEulaAgreed(true);
-                    }
-                })
+                .onPositive((dialog, which) ->
+                        App.INSTANCE.getSharedPreferences().setEulaAgreed(true))
                 .show();
     }
 
@@ -977,116 +954,98 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mFrontBlink = v.findViewById(R.id.front_blink_switch);
         mBackBlink = v.findViewById(R.id.back_blink_switch);
 
-        mMasterLight.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWDevice.isConnected.get()) {
-                    if (isChecked) {
-                        updateLog("LIGHTS ON");
-                        mOWDevice.setLights(owGatService, mGatt, 1);
-                    } else {
-                        updateLog("LIGHTS OFF");
-                        mOWDevice.setLights(owGatService, mGatt, 0);
-                    }
+        mMasterLight.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    updateLog("LIGHTS ON");
+                    mOWDevice.setLights(owGatService, mGatt, 1);
+                } else {
+                    updateLog("LIGHTS OFF");
+                    mOWDevice.setLights(owGatService, mGatt, 0);
                 }
             }
         });
 
-        mCustomLight.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWDevice.isConnected.get()) {
-                    if (isChecked) {
-                        updateLog("CUSTOM LIGHTS ON");
-                        mOWDevice.setLights(owGatService, mGatt, 2);
-                    } else {
-                        updateLog("CUSTOM LIGHTS OFF");
-                        mOWDevice.setLights(owGatService, mGatt, 0);
+        mCustomLight.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    updateLog("CUSTOM LIGHTS ON");
+                    mOWDevice.setLights(owGatService, mGatt, 2);
+                } else {
+                    updateLog("CUSTOM LIGHTS OFF");
+                    mOWDevice.setLights(owGatService, mGatt, 0);
 
-                    }
                 }
             }
         });
 
 
-        mFrontBright.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWDevice.isConnected.get()) {
-                    if (isChecked) {
-                        mOWDevice.setCustomLights(owGatService, mGatt, 0,0,60);
-                     } else {
-                        mOWDevice.setCustomLights(owGatService, mGatt, 0,0,30);
-                     }
-                }
-
+        mFrontBright.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    mOWDevice.setCustomLights(owGatService, mGatt, 0,0,60);
+                 } else {
+                    mOWDevice.setCustomLights(owGatService, mGatt, 0,0,30);
+                 }
             }
+
         });
 
-        mBackBright.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWDevice.isConnected.get()) {
-                    if (isChecked) {
-                        mOWDevice.setCustomLights(owGatService, mGatt, 1,1,60);
-                    } else {
-                        mOWDevice.setCustomLights(owGatService, mGatt, 1,1,30);
+        mBackBright.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    mOWDevice.setCustomLights(owGatService, mGatt, 1,1,60);
+                } else {
+                    mOWDevice.setCustomLights(owGatService, mGatt, 1,1,30);
 
+                }
+            }
+
+        });
+
+
+        mFrontBlink.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    mFrontBlinkTimerTask = new mFrontBlinkTaskTimerTask();
+                    mFrontBlinkTimer = new Timer();
+                    mFrontBlinkTimer.scheduleAtFixedRate(mFrontBlinkTimerTask, 0, 500);
+
+                } else {
+                    if (mFrontBlinkTimer != null) {
+                        mFrontBlinkTimer.cancel();
+                        mFrontBlinkTimer.purge();
+                        mFrontBlinkTimer = null;
+                    }
+                    if (mFrontBlinkTimerTask != null) {
+                        mFrontBlinkTimerTask.cancel();
+                        mFrontBlinkTimerTask = null;
                     }
                 }
 
             }
+
         });
 
+        mBackBlink.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (mOWDevice.isConnected.get()) {
+                if (isChecked) {
+                    mBackBlinkTimerTask = new mBackBlinkTaskTimerTask();
+                    mBackBlinkTimer = new Timer();
+                    mBackBlinkTimer.scheduleAtFixedRate(mBackBlinkTimerTask, 0, 500);
 
-        mFrontBlink.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWDevice.isConnected.get()) {
-                    if (isChecked) {
-                        mFrontBlinkTimerTask = new mFrontBlinkTaskTimerTask();
-                        mFrontBlinkTimer = new Timer();
-                        mFrontBlinkTimer.scheduleAtFixedRate(mFrontBlinkTimerTask, 0, 500);
-
-                    } else {
-                        if (mFrontBlinkTimer != null) {
-                            mFrontBlinkTimer.cancel();
-                            mFrontBlinkTimer.purge();
-                            mFrontBlinkTimer = null;
-                        }
-                        if (mFrontBlinkTimerTask != null) {
-                            mFrontBlinkTimerTask.cancel();
-                            mFrontBlinkTimerTask = null;
-                        }
+                } else {
+                    if (mBackBlinkTimer != null) {
+                        mBackBlinkTimer.cancel();
+                        mBackBlinkTimer.purge();
+                        mBackBlinkTimer = null;
                     }
-
+                    if (mBackBlinkTimerTask != null) {
+                        mBackBlinkTimerTask.cancel();
+                        mBackBlinkTimerTask = null;
+                    }
                 }
 
-            }
-        });
-
-        mBackBlink.setOnCheckedChangeListener(new android.support.v7.widget.SwitchCompat.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
-                if (mOWDevice.isConnected.get()) {
-                    if (isChecked) {
-                        mBackBlinkTimerTask = new mBackBlinkTaskTimerTask();
-                        mBackBlinkTimer = new Timer();
-                        mBackBlinkTimer.scheduleAtFixedRate(mBackBlinkTimerTask, 0, 500);
-
-                    } else {
-                        if (mBackBlinkTimer != null) {
-                            mBackBlinkTimer.cancel();
-                            mBackBlinkTimer.purge();
-                            mBackBlinkTimer = null;
-                        }
-                        if (mBackBlinkTimerTask != null) {
-                            mBackBlinkTimerTask.cancel();
-                            mBackBlinkTimerTask = null;
-                        }
-                    }
-
-                }
             }
         });
 
@@ -1095,28 +1054,25 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     public void initRideModeButtons(View v) {
-        mRideModeToggleButton = (MultiStateToggleButton) this.findViewById(R.id.mstb_multi_ridemodes);
+        mRideModeToggleButton = this.findViewById(R.id.mstb_multi_ridemodes);
         if (mOWDevice.isOneWheelPlus.get()) {
             mRideModeToggleButton.setElements(getResources().getStringArray(R.array.owplus_ridemode_array));
         } else {
             mRideModeToggleButton.setElements(getResources().getStringArray(R.array.ow_ridemode_array));
         }
 
-        mRideModeToggleButton.setOnValueChangedListener(new MultiStateToggleButton.OnValueChangedListener() {
-            @Override
-            public void onValueChanged(int position) {
-                if (mOWDevice.isConnected.get()) {
-                    Log.d(TAG, "mOWDevice.setRideMode button pressed:" + position);
-                    if (mOWDevice.isOneWheelPlus.get()) {
-                        updateLog("Ridemode changed to:" + position + 4);
-                        mOWDevice.setRideMode(owGatService, mGatt,position + 4); // ow+ ble value for ridemode 4,5,6,7,8 (delirium)
-                    } else {
-                        updateLog("Ridemode changed to:" + position + 1);
-                        mOWDevice.setRideMode(owGatService, mGatt,position + 1); // ow uses 1,2,3 (expert)
-                    }
+        mRideModeToggleButton.setOnValueChangedListener(position -> {
+            if (mOWDevice.isConnected.get()) {
+                Log.d(TAG, "mOWDevice.setRideMode button pressed:" + position);
+                if (mOWDevice.isOneWheelPlus.get()) {
+                    updateLog("Ridemode changed to:" + position + 4);
+                    mOWDevice.setRideMode(owGatService, mGatt,position + 4); // ow+ ble value for ridemode 4,5,6,7,8 (delirium)
                 } else {
-                    Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
+                    updateLog("Ridemode changed to:" + position + 1);
+                    mOWDevice.setRideMode(owGatService, mGatt,position + 1); // ow uses 1,2,3 (expert)
                 }
+            } else {
+                Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
             }
         });
 
