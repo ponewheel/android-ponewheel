@@ -10,6 +10,11 @@ import net.kwatts.powtools.database.Ride;
 
 import java.util.List;
 
+import io.reactivex.Single;
+import io.reactivex.SingleObserver;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+
 public class RidesListActivity extends AppCompatActivity {
 
     @Override
@@ -20,20 +25,41 @@ public class RidesListActivity extends AppCompatActivity {
         ListView listView = findViewById(R.id.ride_list_view);
         ArrayAdapter<Ride> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
 
-        final List<Ride> rides = App.INSTANCE.db.rideDao().getAll();
-        for (Ride ride : rides) {
-            System.out.println("logFile = " + ride);
-        }
+        Single.fromCallable(() -> App.INSTANCE.db.rideDao().getAll())
+                .subscribeOn(Schedulers.io())
+                .subscribe(new SingleObserver<List<Ride>>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onSuccess(List<Ride> rides) {
+                        for (Ride ride : rides) {
+                            System.out.println("logFile = " + ride);
+                        }
+                        adapter.addAll(rides);
+                        adapter.notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+                });
+
         if (listView != null) {
             listView.setAdapter(adapter);
             listView.setOnItemClickListener((parent, view, position, id) -> {
                 Intent intent = new Intent(RidesListActivity.this, MapActivity.class);
-                intent.putExtra(RideDetailActivity.FILE_NAME, rides.get(position).id);
+
+                Ride ride = adapter.getItem(position);
+                assert ride != null;
+                intent.putExtra(RideDetailActivity.FILE_NAME, ride.id);
                 startActivity(intent);
             });
         }
 
-        adapter.addAll(rides);
     }
 
 

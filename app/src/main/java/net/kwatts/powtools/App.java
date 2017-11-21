@@ -40,7 +40,9 @@ public class App extends Application {
 
     private void initDatabase() {
         db = Room.databaseBuilder(getApplicationContext(),
-                Database.class, "database-name-pow").build();
+                Database.class, "database-name-pow")
+                .fallbackToDestructiveMigration()
+                .build();
     }
 
     private void initWakeLock() {

@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.databinding.Observable;
 import android.graphics.Typeface;
+import android.location.Address;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -64,6 +65,8 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
@@ -309,7 +312,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-                ride = new Ride();
+                ride = new Ride(new Date());
                 App.INSTANCE.db.rideDao().insert(ride);
             }
         });
@@ -432,9 +435,21 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 Intent i = new Intent(this, MainPreferencesActivity.class);
                 startActivity(i);
                 break;
+            case R.id.menu_refresh:
+                createNewRide();
+                break;
         }
 
         return true;
+    }
+
+    private void createNewRide() {
+        io.reactivex.Observable.just(new Ride(new Date()))
+                .observeOn(Schedulers.io())
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        ride -> App.INSTANCE.db.rideDao().insert(ride),
+                        throwable -> Log.e(TAG, "createNewRide: ", throwable));
     }
 
     private void startLocationScan() {
@@ -451,7 +466,23 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .subscribeOn(Schedulers.io())
                 .flatMap(location -> rxLocation.geocoding().fromLocation(location).toObservable())
                 .observeOn(Schedulers.io())
-                .subscribe(address -> mOWDevice.setLocation(address.getLongitude() + "," + address.getLatitude()));
+                .subscribe(new DisposableObserver<Address>() {
+                    @Override
+                    public void onNext(Address address) {
+                        mOWDevice.setLocation(address.getLongitude() + "," + address.getLatitude());
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG, "onError: error retreiving location", e);
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        Log.d(TAG, "onComplete: ");
+                    }
+                });
     }
 
     private Single<Boolean> getPermissions() {
