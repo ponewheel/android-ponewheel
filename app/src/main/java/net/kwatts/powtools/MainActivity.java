@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
+import android.databinding.Observable;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -38,6 +39,8 @@ import com.google.android.gms.location.LocationRequest;
 import com.patloew.rxlocation.RxLocation;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
+import net.kwatts.powtools.database.Moment;
+import net.kwatts.powtools.database.Ride;
 import net.kwatts.powtools.events.NotificationEvent;
 import net.kwatts.powtools.events.VibrateEvent;
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
@@ -103,6 +106,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     PieChart mBatteryChart;
+    private Ride ride;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event){
@@ -301,6 +305,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         //mOWDevice.bluetoothStatus.set("Disconnected");
 
         bluetoothUtil.init(this, mOWDevice);
+
+        mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+            @Override
+            public void onPropertyChanged(Observable observable, int i) {
+                ride = new Ride();
+                App.INSTANCE.db.rideDao().insert(ride);
+            }
+        });
     }
 
     private void showEula() {
@@ -404,9 +416,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             case R.id.menu_stop:
                 bluetoothUtil.stopScanning();
                 this.invalidateOptionsMenu();
-
-
-
 
                 break;
             case R.id.menu_disconnect:
@@ -542,7 +551,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     mLoggingHandler.postDelayed(this, mLoggingFrequency);
                     if (mOWDevice.isConnected.get()) {
                         try {
-                            mTextFileLogger.write(mOWDevice);
+                            persistMoment();
+
                         } catch (Exception e) {
                             Log.e(TAG, "unable to write logs");
                         }
@@ -554,7 +564,17 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
     }
 
+    private void persistMoment() throws Exception {
+        mTextFileLogger.write(mOWDevice);
 
+        OWDevice.DeviceCharacteristic speedCharacteristic = mOWDevice.getDeviceCharacteristicByKey("speed");
+        if (speedCharacteristic != null) {
+            Moment moment = new Moment();
+            moment.setSpeed(speedCharacteristic.value.get());
+            App.INSTANCE.db.momentDao().insert(moment);
+        }
+
+    }
 
 
     SwitchCompat mMasterLight;

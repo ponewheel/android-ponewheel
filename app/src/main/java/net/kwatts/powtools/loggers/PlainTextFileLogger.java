@@ -46,7 +46,10 @@ public class PlainTextFileLogger  {
 
         if (wasFileNew) {
             output.write(dev.getCSVHeader().getBytes());
+
         }
+
+
 
         output.write(dev.toCSV().getBytes());
         output.flush();

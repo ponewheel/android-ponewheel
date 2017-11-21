@@ -1,14 +1,14 @@
 package net.kwatts.powtools;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import net.kwatts.powtools.loggers.PlainTextFileLogger;
+import net.kwatts.powtools.database.Ride;
 
-import java.io.File;
+import java.util.List;
 
 public class RidesListActivity extends AppCompatActivity {
 
@@ -18,24 +18,22 @@ public class RidesListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_ride_viewer);
 
         ListView listView = findViewById(R.id.ride_list_view);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
+        ArrayAdapter<Ride> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
 
-        String loggingPath = PlainTextFileLogger.getLoggingPath();
-        File owLogFileDir = new File(loggingPath);
-        final String[] logFiles = owLogFileDir.list();
-        for (String logFile : logFiles) {
-            System.out.println("logFile = " + logFile);
+        final List<Ride> rides = App.INSTANCE.db.rideDao().getAll();
+        for (Ride ride : rides) {
+            System.out.println("logFile = " + ride);
         }
         if (listView != null) {
             listView.setAdapter(adapter);
             listView.setOnItemClickListener((parent, view, position, id) -> {
                 Intent intent = new Intent(RidesListActivity.this, MapActivity.class);
-                intent.putExtra(RideDetailActivity.FILE_NAME, logFiles[position]);
+                intent.putExtra(RideDetailActivity.FILE_NAME, rides.get(position).id);
                 startActivity(intent);
             });
         }
 
-        adapter.addAll(logFiles);
+        adapter.addAll(rides);
     }
 
 
