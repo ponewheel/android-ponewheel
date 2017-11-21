@@ -13,6 +13,7 @@ import android.util.Log;
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.DeviceInterface;
 import net.kwatts.powtools.events.DeviceStatusEvent;
+import net.kwatts.powtools.util.BluetoothUtil;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -22,13 +23,18 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
 
+import static net.kwatts.powtools.util.Util.cel2far;
+import static net.kwatts.powtools.util.Util.milesToKilometers;
+import static net.kwatts.powtools.util.Util.revolutionsToKilometers;
+import static net.kwatts.powtools.util.Util.revolutionsToMiles;
+import static net.kwatts.powtools.util.Util.rpmToKilometersPerHour;
+import static net.kwatts.powtools.util.Util.rpmToMilesPerHour;
+import static net.kwatts.powtools.util.Util.unsignedByte;
+import static net.kwatts.powtools.util.Util.unsignedShort;
+
 /**
  * Created by kwatts on 3/23/16.
  */
-
-
-
-
 public class OWDevice extends BaseObservable implements DeviceInterface {
     private static final String TAG = "OWTOOLS";
     private static final String NAME = "ONEWHEEL";
@@ -522,23 +528,23 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     public final ObservableField<String> log = new ObservableField<>();
 
     @Override
-    public void processUUID(BluetoothGattCharacteristic c) {
-        String c_uuid = c.getUuid().toString();
-        byte[] c_value = c.getValue();
+    public void processUUID(BluetoothGattCharacteristic incomingCharacteristic) {
+        String incomingUuid = incomingCharacteristic.getUuid().toString();
+        byte[] incomingValue = incomingCharacteristic.getValue();
 
 
         for(DeviceCharacteristic dc : deviceReadCharacteristics) {
             String dev_uuid = dc.uuid.get();
-            if(dev_uuid != null && dev_uuid.equals(c_uuid)) {
+            if(dev_uuid != null && dev_uuid.equals(incomingUuid)) {
                 switch(dev_uuid) {
                     case OnewheelCharacteristicHardwareRevision:
-                        dc.value.set(Integer.toString(unsignedShort(c_value)));
+                        dc.value.set(Integer.toString(unsignedShort(incomingValue)));
                         break;
                     case OnewheelCharacteristicFirmwareRevision:
-                        dc.value.set(Integer.toString(unsignedShort(c_value)));
+                        dc.value.set(Integer.toString(unsignedShort(incomingValue)));
                         break;
                     case OnewheelCharacteristicLifetimeOdometer:
-                        int i_lifetime = unsignedShort(c_value);
+                        int i_lifetime = unsignedShort(incomingValue);
                         lifetimeOdometer.set(i_lifetime);
                         if (App.INSTANCE.getSharedPreferences().isMetric()) {
                             dc.value.set(String.format(Locale.getDefault(),"%.2f",milesToKilometers(i_lifetime)));
@@ -560,7 +566,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         //batterySerialNumber.set(Integer.toString(unsignedShort(c_value)));
                         break;
                     case OnewheelCharacteristicLightingMode:
-                        switch (unsignedShort(c_value)) {
+                        switch (unsignedShort(incomingValue)) {
                             case 0:
                                 lightState = false;
                                 dc.value.set("0 (Off)");
@@ -579,8 +585,8 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         }
                         break;
                     case OnewheelCharacteristicLastErrorCode:
-                        int error_code  = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                        int error_code2  = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+                        int error_code  = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                        int error_code2  = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
                         String s_error_code = " " + error_code + ":" + error_code2 + "";
 
 
@@ -640,22 +646,22 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         }
 
         for(DeviceCharacteristic dc : deviceNotifyCharacteristics) {
-            if (dc.uuid.get() != null && dc.uuid.get().equals(c_uuid)) {
+            if (dc.uuid.get() != null && dc.uuid.get().equals(incomingUuid)) {
                 switch(dc.uuid.get()) {
                     case OnewheelCharacteristicBatteryVoltage:
                         //double d_value = Double.valueOf((double) c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1) / 10.0D);
-                        int d_volts = unsignedShort(c_value);
+                        int d_volts = unsignedShort(incomingValue);
                         double d_value = Double.valueOf((double) d_volts / 10.0D);
                         dc.value.set(Double.toString(d_value));
                         break;
                     case OnewheelCharacteristicBatteryRemaining:
-                        int batteryLevel  = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+                        int batteryLevel  = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
 
                         //EventBus.getDefault().post(new DeviceBatteryRemainingEvent(batteryLevel));
                         dc.value.set(Integer.toString(batteryLevel));
                         break;
                     case OnewheelCharacteristicTiltAnglePitch:
-                        int i_tiltAnglePitch = unsignedShort(c_value);
+                        int i_tiltAnglePitch = unsignedShort(incomingValue);
 
                         if (i_tiltAnglePitch > maxTiltAnglePitch.get()) {
                             maxTiltAnglePitch.set(i_tiltAnglePitch);
@@ -664,7 +670,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         dc.value.set(Integer.toString(i_tiltAnglePitch));
                         break;
                     case OnewheelCharacteristicTiltAngleRoll:
-                        int i_tiltAngleRoll = unsignedShort(c_value);
+                        int i_tiltAngleRoll = unsignedShort(incomingValue);
 
                         if (i_tiltAngleRoll > maxTiltAngleRoll.get()) {
                             maxTiltAngleRoll.set(i_tiltAngleRoll);
@@ -673,11 +679,11 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         dc.value.set(Integer.toString(i_tiltAngleRoll));
                         break;
                     case OWDevice.OnewheelCharacteristicTiltAngleYaw:
-                        dc.value.set(Integer.toString(unsignedShort(c_value)));
+                        dc.value.set(Integer.toString(unsignedShort(incomingValue)));
                         break;
 
                     case OnewheelCharacteristicStatusError:
-                        DeviceStatus deviceStatus = DeviceStatus.from(c_value);
+                        DeviceStatus deviceStatus = DeviceStatus.from(incomingValue);
                         //charging.set(Boolean.toString(deviceStatus.charging));
                         //bmsCtrlComms.set(Boolean.toString(deviceStatus.bmsCtrlComms));
                         //icsuFault.set(Boolean.toString(deviceStatus.icsuFault));
@@ -696,13 +702,13 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         }
                         break;
                     case OnewheelCharacteristicOdometer:
-                        int i_odometer = unsignedShort(c_value);
+                        int i_odometer = unsignedShort(incomingValue);
                         DeviceCharacteristic dc_odometer = getDeviceCharacteristicByKey("odometer");
                         if (dc_odometer != null) {
                                 if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                                    dc_odometer.value.set(String.format("%3.2f", revolutionsToKilometers((double) i_odometer)));
+                                    dc_odometer.value.set(String.format(Locale.getDefault(),"%3.2f", revolutionsToKilometers((double) i_odometer)));
                                 } else {
-                                    dc_odometer.value.set(String.format("%3.2f", revolutionsToMiles((double) i_odometer)));
+                                    dc_odometer.value.set(String.format(Locale.getDefault(),"%3.2f", revolutionsToMiles((double) i_odometer)));
                                 }
                         }
 
@@ -710,7 +716,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         break;
 
                     case OnewheelCharacteristicSpeed:
-                        int i_speed = unsignedShort(c_value);
+                        int i_speed = unsignedShort(incomingValue);
                         dc.value.set(Integer.toString(i_speed));
                         DeviceCharacteristic dc_speed = getDeviceCharacteristicByKey("speed");
                         if (dc_speed != null) {
@@ -736,10 +742,10 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                     case OnewheelCharacteristicCurrentAmps:
                         // Wh = mAh × V / 1000
                         // battery is 3.5Amps
-                        int i_cells_1 = unsignedByte(c_value[0]);
+                        int i_cells_1 = unsignedByte(incomingValue[0]);
                         double[] amp_cells = new double[15];
                         if(i_cells_1 < amp_cells.length && i_cells_1 >= 0) {
-                            int var3 = unsignedByte(c_value[1]);
+                            int var3 = unsignedByte(incomingValue[1]);
                             amp_cells[i_cells_1] = (double)var3 / 50.0D;
                         }
                         StringBuilder amps_string = new StringBuilder();
@@ -763,10 +769,10 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         //currentAmps.set(Double.toString(d_currentapps));
                         break;
                     case OnewheelCharacteristicBatteryCells:
-                        int i_cells = unsignedByte(c_value[0]);
+                        int i_cells = unsignedByte(incomingValue[0]);
                         double[] cells = new double[15];
                         if(i_cells < cells.length && i_cells >= 0) {
-                            int var3 = unsignedByte(c_value[1]);
+                            int var3 = unsignedByte(incomingValue[1]);
                             cells[i_cells] = (double)var3 / 50.0D;
                         }
                         StringBuilder var1 = new StringBuilder();
@@ -783,8 +789,8 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         dc.value.set(var1.toString());
                         break;
                     case OnewheelCharacteristicTemperature:
-                        int controllerTemp = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                        int motorTemp = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+                        int controllerTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                        int motorTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
                         for (DeviceCharacteristic dc2 : deviceNotifyCharacteristics) {
                             if (dc2.key.get().equals("controller_temp")) {
                                 if (App.INSTANCE.getSharedPreferences().isMetric()) {
@@ -804,7 +810,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         }
                         break;
                     case OnewheelCharacteristicBatteryTemp:
-                        int batteryTemp = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+                        int batteryTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
                         if (App.INSTANCE.getSharedPreferences().isMetric()) {
                             dc.value.set(String.format(Locale.getDefault(),"%.2f", (double) batteryTemp));
                         } else {
@@ -812,7 +818,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         }
                         break;
                     case OnewheelCharacteristicSafetyHeadroom:
-                        dc.value.set(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0).toString());
+                        dc.value.set(incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0).toString());
                         break;
                     case OnewheelCharacteristicTripTotalAmpHours:
                         //tripTotalAmpHours.set(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1).toString());
@@ -821,20 +827,20 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         //int camps2 = unsignedByte(c_value[1]);
                         //double d_camps2 = (double)camps2 / 50.0D;
                         //tripTotalAmpHours.set("cells:" + i_cells_2 + " value:" + d_camps2);
-                        int i_amphours = unsignedShort(c_value);
+                        int i_amphours = unsignedShort(incomingValue);
                         double d_amphours = Double.valueOf((double) i_amphours / 50.0D);
                         dc.value.set(Double.toString(d_amphours));
                         break;
                     case OnewheelCharacteristicTripRegenAmpHours:
-                        int i_tripregenamp = unsignedShort(c_value);
+                        int i_tripregenamp = unsignedShort(incomingValue);
                         double d_tripregenamp = Double.valueOf((double) i_tripregenamp / 50.0D);
                         dc.value.set(Double.toString(d_tripregenamp));
                         break;
                     case OnewheelCharacteristicLifetimeAmpHours:
-                        dc.value.set(Integer.toString(unsignedShort(c_value)));
+                        dc.value.set(Integer.toString(unsignedShort(incomingValue)));
                         break;
                     case OnewheelCharacteristicRidingMode:
-                        int ridemode = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+                        int ridemode = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
                         dc.value.set(Integer.toString(ridemode));
                         // Let the UI know initial ridemode
                         EventBus.getDefault().post(new DeviceStatusEvent("Ridemode changed to: " + ridemode));
@@ -843,14 +849,14 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
                     default:
                         StringBuilder sb = new StringBuilder();
-                        for (byte b : c_value) {
+                        for (byte b : incomingValue) {
                             sb.append(String.format("%02x", b));
                         }
                         //this.unknownUUID.set(c_uuid);
                         //this.unknownValue.set("hex:" + sb.toString() + " (" + Integer.toString(unsignedShort(c_value)) + ")");
-                        EventBus.getDefault().post(new DeviceStatusEvent("UNKNOWN " + c_uuid + ":" +
-                                "hex:" + sb.toString() + " (" + Integer.toString(unsignedShort(c_value)) + ")"));
-                        Log.i(TAG, "UNKNOWN Device characteristic:" + c_uuid + " value=" + sb.toString() + "|" + Integer.toString(unsignedShort(c_value)));
+                        EventBus.getDefault().post(new DeviceStatusEvent("UNKNOWN " + incomingUuid + ":" +
+                                "hex:" + sb.toString() + " (" + Integer.toString(unsignedShort(incomingValue)) + ")"));
+                        Log.i(TAG, "UNKNOWN Device characteristic:" + incomingUuid + " value=" + sb.toString() + "|" + Integer.toString(unsignedShort(incomingValue)));
 
 
                 }
@@ -862,7 +868,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
 
     /* These are helper methods used to set BLE Device characteristic values */
-    public void setCharacteristicValue(BluetoothGattService gattService,BluetoothGatt gatt,String k,int v) {
+    public void setCharacteristicValue(BluetoothGattService gattService, BluetoothGatt gatt, String k, int v) {
         DeviceCharacteristic dc = getDeviceCharacteristicByKey(k);
         if (dc != null) {
             BluetoothGattCharacteristic lc = null;
@@ -878,19 +884,19 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         }
     }
 
-    public void setLights(BluetoothGattService gattService,BluetoothGatt gatt,int state) {
+    public void setLights(BluetoothUtil bluetoothUtil,int state) {
 
         lightMode.set(state);
         BluetoothGattCharacteristic lc = null;
 
         ByteBuffer v = ByteBuffer.allocate(2);
-        lc = gattService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicLightingMode));
+        lc = bluetoothUtil.getCharacteristic(OWDevice.OnewheelCharacteristicLightingMode);
 
         v.putShort((short) state);
         if (lc != null) {
             lc.setValue(v.array());
             lc.setWriteType(2);
-            gatt.writeCharacteristic(lc);
+            bluetoothUtil.writeCharacteristic(lc);
             EventBus.getDefault().post(new DeviceStatusEvent("LIGHTS SET TO STATE:" + state));
         }
 
@@ -901,8 +907,8 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     public final ObservableInt backLightsWhite = new ObservableInt();
     public final ObservableInt backLightsRed = new ObservableInt();
 
-    public void setCustomLights(BluetoothGattService gattService,BluetoothGatt gatt,int position, int color, int colorLevel) {
-        BluetoothGattCharacteristic lc = null;
+    public void setCustomLights(BluetoothUtil bluetoothUtil, int position, int color, int colorLevel) {
+        BluetoothGattCharacteristic lc;
         // front lights
         if (position == 0) {
             if (color == 0) {
@@ -911,14 +917,14 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             if (color == 1) {
                 frontLightsRed.set(colorLevel);
             }
-            lc = gattService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicLightsFront));
+            lc = bluetoothUtil.getCharacteristic(OWDevice.OnewheelCharacteristicLightsFront);
             if (lc != null) {
                // lc.setValue(new byte[] { (byte)frontLightsWhite.get(), (byte) frontLightsRed.get() });
                 int x = frontLightsWhite.get();
                 int y = frontLightsRed.get();
                 lc.setValue(new byte[] { (byte) x, (byte) y });
                 lc.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                gatt.writeCharacteristic(lc);
+                bluetoothUtil.writeCharacteristic(lc);
             }
 
         }
@@ -931,27 +937,27 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                 backLightsRed.set(colorLevel);
             }
 
-            lc = gattService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicLightsBack));
+            lc = bluetoothUtil.getCharacteristic(OWDevice.OnewheelCharacteristicLightsBack);
             if (lc != null) {
                 int x = backLightsWhite.get();
                 int y = backLightsRed.get();
                 lc.setValue(new byte[] { (byte) x, (byte) y });
                 lc.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                gatt.writeCharacteristic(lc);
+                bluetoothUtil.writeCharacteristic(lc);
             }
 
         }
     }
 
-    public void setRideMode(BluetoothGattService gattService,BluetoothGatt gatt,int ridemode) {
+    public void setRideMode(BluetoothUtil bluetoothUtil, int ridemode) {
         Log.d(TAG,"setRideMode() called for gatt:" + ridemode);
-        BluetoothGattCharacteristic lc = gattService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicRidingMode));
+        BluetoothGattCharacteristic lc = bluetoothUtil.getCharacteristic(OWDevice.OnewheelCharacteristicRidingMode);
         if (lc != null) {
             ByteBuffer var2 = ByteBuffer.allocate(2);
             var2.putShort((short) ridemode);
             lc.setValue(var2.array());
             lc.setWriteType(2);
-            gatt.writeCharacteristic(lc);
+            bluetoothUtil.writeCharacteristic(lc);
             //setDeviceCharacteristicDisplay("ride_mode","ridemode: " + ridemode);
         }
     }
@@ -986,73 +992,5 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
     @Override
     public String getName() { return NAME; }
-    /* Helper methods. For dealing with bytes see:
-       http://www.roseindia.net/java/master-java/bitwise-bitshift-operators.shtml
-       https://calleerlandsson.com/2014/02/06/rubys-bitwise-operators/
-     */
-    public static short byteToShort(byte[] v) {
-        return (short)((v[1] << 8) + (v[0] & 0xff));
-    }
 
-    // 1 byte/8-bit signed two's complement (-128 to 127)
-    // returns an int, 32-bit signed two's complement
-    public static int unsignedByte(byte var0) {
-        return var0 & 255;
-    }
-
-    // short = 2 bytes/16-bit signed two's complement (-32,768 to 32,767)
-    public static int unsignedShort(byte[] var0) {
-        int var1;
-        if(var0.length < 2) {
-            var1 = -1;
-        } else {
-            var1 = (unsignedByte(var0[0]) << 8) + unsignedByte(var0[1]);
-        }
-        // ByteBuffer.wrap(v_bytes).getShort() also works
-        // or
-        // ByteBuffer bb = ByteBuffer.allocate(2);
-        // bb.order(ByteOrder.LITTLE_ENDIAN);
-        // bb.put(var0[0]);
-        // bb.put(var0[1]);
-        // short shortVal = bb.getShort(0);
-            return var1;
-    }
-
-    // double is 64 bit and used for decimals
-    public static double cel2far(int celsius) {
-        return (9.0/5.0)*celsius + 32;
-    }
-    public static double far2cel(int far) {
-        return (5.0/9.0)*(far - 32);
-    }
-    public static double milesToKilometers(double paramDouble) {
-        return paramDouble * 1.609344;
-
-    }
-    public static double revolutionsToKilometers(double paramDouble)
-    {
-        return paramDouble * 35.0D / 39370.099999999999D;
-    }
-
-    public static double revolutionsToMiles(double paramDouble)
-    {
-        return paramDouble * 35.0D / 63360.0D;
-    }
-    public static double rpmToKilometersPerHour(double paramDouble)
-    {
-        return 60.0D * (35.0D * paramDouble) / 39370.099999999999D;
-    }
-
-    public static double rpmToMilesPerHour(double paramDouble)
-    {
-        return 60.0D * (35.0D * paramDouble) / 63360.0D;
-    }
-
-    public static String bytesToHex(byte c[]) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : c) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
-    }
 }
