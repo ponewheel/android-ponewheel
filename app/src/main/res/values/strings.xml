@@ -22,6 +22,16 @@
     <string name="menu_share">Share</string>
     <string name="menu_refresh">Refresh</string>
     <string name="logged_rides">Logged Rides</string>
+    <string name="back_blink">Back Blink</string>
+    <string name="front_blink">Front Blink</string>
+    <string name="front_bright">Front Bright</string>
+    <string name="back_bright">Back Bright</string>
+    <string name="lights">Lights</string>
+    <string name="custom">Custom</string>
+    <string name="current_speed">Current Speed</string>
+    <string name="trip_top_speed">Trip Top Speed:</string>
+    <string name="battery">Battery</string>
+    <string name="onewheel_ble_name">ONEWHEEL BLE NAME</string>
 
     <string-array name="ow_ridemode_array">
         <item>CLASSIC</item>

@@ -1,4 +1,4 @@
-package net.kwatts.powtools;
+package net.kwatts.powtools.util;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -22,7 +22,7 @@ public class SharedPreferencesUtil {
     private SharedPreferences mSharedPref;
 
 
-    SharedPreferencesUtil(Context context) {
+    public SharedPreferencesUtil(Context context) {
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(context);
 
 
@@ -92,5 +92,9 @@ public class SharedPreferencesUtil {
         editor.putString(OW_MAC_ADDRESS, macAdress);
         editor.putString(OW_MAC_NAME,macAddressName);
         editor.commit();
+    }
+
+    public boolean isMetric() {
+        return mSharedPref.getBoolean(METRIC_UNITS, false);
     }
 }

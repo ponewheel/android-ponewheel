@@ -8,7 +8,7 @@ import com.google.android.gms.maps.model.LatLng;
 
 import net.kwatts.powtools.DeviceInterface;
 import net.kwatts.powtools.MapActivity;
-import net.kwatts.powtools.OWDevice;
+import net.kwatts.powtools.model.OWDevice;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;

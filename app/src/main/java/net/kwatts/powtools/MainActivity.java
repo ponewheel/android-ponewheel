@@ -59,7 +59,9 @@ import com.tbruyelle.rxpermissions2.RxPermissions;
 import net.kwatts.powtools.events.NotificationEvent;
 import net.kwatts.powtools.events.VibrateEvent;
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
+import net.kwatts.powtools.model.OWDevice;
 import net.kwatts.powtools.services.VibrateService;
+import net.kwatts.powtools.util.SharedPreferencesUtil;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -506,8 +508,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         // TODO I think this is necessary since changing the target api
         RxPermissions rxPermissions = new RxPermissions(this);
         return rxPermissions
-                .request(
-                        Manifest.permission.ACCESS_FINE_LOCATION)
+                .request(Manifest.permission.ACCESS_FINE_LOCATION)
                 .firstOrError();
     }
 
@@ -539,11 +540,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         Log.i(TAG, "onSharedPreferenceChanged callback");
         switch (key) {
             case SharedPreferencesUtil.METRIC_UNITS:
-                boolean metricUnitsState = sharedPreferences.getBoolean(key,false);
-                mOWDevice.metricUnits.set(metricUnitsState);
                 mOWDevice.refresh();
-//                mTracker.send(new HitBuilders.EventBuilder().setCategory("SharedPreferences").setAction("metricUnits")
-//                        .setLabel((metricUnitsState) ? "on" : "off").build());
                 break;
 
             case SharedPreferencesUtil.DARK_NIGHT_MODE:
@@ -707,7 +704,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     if (localCharacteristic != null) {
                         if (isCharacteristicNotifiable(localCharacteristic)) {
                             mGatt.setCharacteristicNotification(localCharacteristic, true);
-                            BluetoothGattDescriptor descriptor = localCharacteristic.getDescriptor(UUID.fromString(mOWDevice.OnewheelConfigUUID));
+                            BluetoothGattDescriptor descriptor = localCharacteristic.getDescriptor(UUID.fromString(OWDevice.OnewheelConfigUUID));
                             Log.d(TAG, "descriptorWriteQueue.size:" + descriptorWriteQueue.size());
                             if (descriptor == null) {
                                 Log.e(TAG, uuid + " has a null descriptor!");

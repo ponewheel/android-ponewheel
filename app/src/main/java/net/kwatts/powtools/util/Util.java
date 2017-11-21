@@ -1,4 +1,4 @@
-package net.kwatts.powtools;
+package net.kwatts.powtools.util;
 import android.accounts.AccountManager;
 import android.accounts.Account;
 import android.content.*;

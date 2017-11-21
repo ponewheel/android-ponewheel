@@ -1,18 +1,18 @@
-package net.kwatts.powtools;
+package net.kwatts.powtools.model;
 
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.databinding.BaseObservable;
 import android.databinding.ObservableArrayList;
-import android.databinding.ObservableBoolean;
 import android.databinding.ObservableDouble;
 import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
 import android.util.Log;
 
+import net.kwatts.powtools.App;
+import net.kwatts.powtools.DeviceInterface;
 import net.kwatts.powtools.events.DeviceStatusEvent;
-import net.kwatts.powtools.model.DeviceStatus;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -32,10 +32,12 @@ import java.util.UUID;
 public class OWDevice extends BaseObservable implements DeviceInterface {
     private static final String TAG = "OWTOOLS";
     private static final String NAME = "ONEWHEEL";
-    public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
 
+
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     public static final SimpleDateFormat OLD_SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
+    public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
 
 
     public final ObservableField<Boolean> isConnected = new ObservableField<>();
@@ -43,12 +45,11 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
 
     public final ObservableField<Boolean> isOneWheelPlus = new ObservableField<>();
 
-    public static final ObservableBoolean metricUnits = new ObservableBoolean();
-    public static final ObservableDouble maxSpeed = new ObservableDouble();
-    public static final ObservableInt maxTiltAnglePitch = new ObservableInt();
-    public static final ObservableInt maxTiltAngleRoll = new ObservableInt();
-    public static final ObservableInt lifetimeOdometer = new ObservableInt();
-    public static final ObservableInt lightMode = new ObservableInt();
+    public final ObservableDouble maxSpeed = new ObservableDouble();
+    public final ObservableInt maxTiltAnglePitch = new ObservableInt();
+    public final ObservableInt maxTiltAngleRoll = new ObservableInt();
+    public final ObservableInt lifetimeOdometer = new ObservableInt();
+    public final ObservableInt lightMode = new ObservableInt();
 
 
 
@@ -192,37 +193,36 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
        Device attribute and contains the UUID, value, and display string for the UI.
      */
     public void refresh() {
-                deviceReadCharacteristics.clear();
-                deviceNotifyCharacteristics.clear();
+        deviceReadCharacteristics.clear();
+        deviceNotifyCharacteristics.clear();
 
+        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
+            uuid.set(OnewheelCharacteristicHardwareRevision);
+            key.set("hardware_revision");
+            value.set("");
+            ui_name.set("HARDWARE REVISION");
+            ui_enabled.set(true);
+        }});
 
-                deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-                    uuid.set(OnewheelCharacteristicHardwareRevision);
-                    key.set("hardware_revision");
-                    value.set("");
-                    ui_name.set("HARDWARE REVISION");
-                    ui_enabled.set(true);
-                }});
+        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
+            uuid.set(OnewheelCharacteristicFirmwareRevision);
+            key.set("firmware_revision");
+            value.set("");
+            ui_name.set("FIRMWARE REVISION");
+            ui_enabled.set(true);
+        }});
 
-                deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-                    uuid.set(OnewheelCharacteristicFirmwareRevision);
-                    key.set("firmware_revision");
-                    value.set("");
-                    ui_name.set("FIRMWARE REVISION");
-                    ui_enabled.set(true);
-                }});
-
-                deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-                    uuid.set(OnewheelCharacteristicLifetimeOdometer);
-                    key.set("lifetime_odometer");
-                    value.set("");
-                    if (metricUnits.get() == true) {
-                        ui_name.set("LIFETIME ODOMETER (KM)");
-                    } else {
-                        ui_name.set("LIFETIME ODOMETER (MILES)");
-                    }
-                    ui_enabled.set(true);
-                }});
+        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
+            uuid.set(OnewheelCharacteristicLifetimeOdometer);
+            key.set("lifetime_odometer");
+            value.set("");
+            if (App.INSTANCE.getSharedPreferences().isMetric()) {
+                ui_name.set("LIFETIME ODOMETER (KM)");
+            } else {
+                ui_name.set("LIFETIME ODOMETER (MILES)");
+            }
+            ui_enabled.set(true);
+        }});
 /*
                 deviceReadCharacteristics.add(new DeviceCharacteristic() {{
                     uuid.set(OnewheelCharacteristicLifetimeAmpHours);
@@ -269,7 +269,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         {{
             key.set("speed");
             value.set("0.0");
-            if (metricUnits.get() == true) {
+            if (App.INSTANCE.getSharedPreferences().isMetric()) {
                 ui_name.set("(KMH)");
             } else {
                 ui_name.set("(MPH)");
@@ -318,7 +318,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         {{
             key.set("speed_max");
             value.set("");
-            if (metricUnits.get() == true) {
+            if (App.INSTANCE.getSharedPreferences().isMetric()) {
                 ui_name.set("Trip Top Speed: ");
             } else {
                 ui_name.set("Trip Top Speed: ");
@@ -331,7 +331,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         {{
             key.set("odometer");
             value.set("");
-            if (metricUnits.get() == true) {
+            if (App.INSTANCE.getSharedPreferences().isMetric()) {
                 ui_name.set("TRIP ODOMETER (KMS)");
             } else {
                 ui_name.set("TRIP ODOMETER (MILES)");
@@ -437,7 +437,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             uuid.set(OnewheelCharacteristicTemperature);
             key.set("controller_temp");
             value.set("");
-            if (metricUnits.get() == true) {
+            if (App.INSTANCE.getSharedPreferences().isMetric()) {
                 ui_name.set("CONTROLLER TEMP (C)");
             } else {
                 ui_name.set("CONTROLLER TEMP (F)");
@@ -450,7 +450,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         {{
             key.set("motor_temp");
             value.set("");
-            if (metricUnits.get() == true) {
+            if (App.INSTANCE.getSharedPreferences().isMetric()) {
                 ui_name.set("MOTOR TEMP (C)");
             } else {
                 ui_name.set("MOTOR TEMP (F)");
@@ -540,8 +540,8 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                     case OnewheelCharacteristicLifetimeOdometer:
                         int i_lifetime = unsignedShort(c_value);
                         lifetimeOdometer.set(i_lifetime);
-                        if (metricUnits.get()) {
-                            dc.value.set(String.format("%.2f",milesToKilometers(i_lifetime)));
+                        if (App.INSTANCE.getSharedPreferences().isMetric()) {
+                            dc.value.set(String.format(Locale.getDefault(),"%.2f",milesToKilometers(i_lifetime)));
                         } else {
                             dc.value.set(Integer.toString(i_lifetime));
                         }
@@ -699,7 +699,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         int i_odometer = unsignedShort(c_value);
                         DeviceCharacteristic dc_odometer = getDeviceCharacteristicByKey("odometer");
                         if (dc_odometer != null) {
-                                if (metricUnits.get()) {
+                                if (App.INSTANCE.getSharedPreferences().isMetric()) {
                                     dc_odometer.value.set(String.format("%3.2f", revolutionsToKilometers((double) i_odometer)));
                                 } else {
                                     dc_odometer.value.set(String.format("%3.2f", revolutionsToMiles((double) i_odometer)));
@@ -714,19 +714,19 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         dc.value.set(Integer.toString(i_speed));
                         DeviceCharacteristic dc_speed = getDeviceCharacteristicByKey("speed");
                         if (dc_speed != null) {
-                            if (metricUnits.get()) {
-                                dc_speed.value.set(String.format("%3.2f", rpmToKilometersPerHour((double) i_speed)));
+                            if (App.INSTANCE.getSharedPreferences().isMetric()) {
+                                dc_speed.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToKilometersPerHour((double) i_speed)));
                             } else {
-                                dc_speed.value.set(String.format("%3.2f", rpmToMilesPerHour((double) i_speed)));
+                                dc_speed.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToMilesPerHour((double) i_speed)));
                             }
                         }
                         DeviceCharacteristic dc_speed_max = getDeviceCharacteristicByKey("speed_max");
                         if (dc_speed_max != null) {
                             if (i_speed > maxSpeed.get()) {
-                                if (metricUnits.get()) {
-                                    dc_speed_max.value.set(String.format("%3.2f", rpmToKilometersPerHour((double) i_speed)));
+                                if (App.INSTANCE.getSharedPreferences().isMetric()) {
+                                    dc_speed_max.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToKilometersPerHour((double) i_speed)));
                                 } else {
-                                    dc_speed_max.value.set(String.format("%3.2f", rpmToMilesPerHour((double) i_speed)));
+                                    dc_speed_max.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToMilesPerHour((double) i_speed)));
                                 }
                                 maxSpeed.set(i_speed);
                             }
@@ -787,28 +787,28 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         int motorTemp = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
                         for (DeviceCharacteristic dc2 : deviceNotifyCharacteristics) {
                             if (dc2.key.get().equals("controller_temp")) {
-                                if (metricUnits.get()) {
-                                    dc2.value.set(String.format("%.2f", (double)controllerTemp));
+                                if (App.INSTANCE.getSharedPreferences().isMetric()) {
+                                    dc2.value.set(String.format(Locale.getDefault(),"%.2f", (double)controllerTemp));
                                 } else {
-                                    dc2.value.set(String.format("%.2f", cel2far(controllerTemp)));
+                                    dc2.value.set(String.format(Locale.getDefault(),"%.2f", cel2far(controllerTemp)));
                                 }
                             }
 
                             if  (dc2.key.get().equals("motor_temp")) {
-                                if (metricUnits.get()) {
-                                    dc2.value.set(String.format("%.2f", (double)motorTemp));
+                                if (App.INSTANCE.getSharedPreferences().isMetric()) {
+                                    dc2.value.set(String.format(Locale.getDefault(),"%.2f", (double)motorTemp));
                                 } else {
-                                    dc2.value.set(String.format("%.2f", cel2far(motorTemp)));
+                                    dc2.value.set(String.format(Locale.getDefault(),"%.2f", cel2far(motorTemp)));
                                 }
                             }
                         }
                         break;
                     case OnewheelCharacteristicBatteryTemp:
                         int batteryTemp = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-                        if (metricUnits.get()) {
-                            dc.value.set(String.format("%.2f", (double) batteryTemp));
+                        if (App.INSTANCE.getSharedPreferences().isMetric()) {
+                            dc.value.set(String.format(Locale.getDefault(),"%.2f", (double) batteryTemp));
                         } else {
-                            dc.value.set(String.format("%.2f", cel2far(batteryTemp)));
+                            dc.value.set(String.format(Locale.getDefault(),"%.2f", cel2far(batteryTemp)));
                         }
                         break;
                     case OnewheelCharacteristicSafetyHeadroom:
@@ -960,7 +960,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     public String getCSVHeader() {
         StringBuilder headers = new StringBuilder();
         for(OWDevice.DeviceCharacteristic dc : this.deviceNotifyCharacteristics) {
-            headers.append(',' + dc.key.get());
+            headers.append(',').append(dc.key.get());
         }
         return "time" + headers.toString() + '\n';
     }
@@ -1056,4 +1056,3 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         return sb.toString();
     }
 }
-

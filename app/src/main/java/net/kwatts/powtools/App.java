@@ -3,6 +3,8 @@ package net.kwatts.powtools;
 
 import android.app.Application;
 
+import net.kwatts.powtools.util.SharedPreferencesUtil;
+
 /**
  * This is a subclass of {@link Application} used to provide shared objects for this app.
  */

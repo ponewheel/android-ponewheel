@@ -60,7 +60,7 @@ public class MainActivityInstrumentationTest {
        //onView(withId(R.id.editText)).perform(typeText(STRING_TO_BE_TYPED), closeSoftKeyboard()); //line 1
        //onView(withText("Say hello!")).perform(click()); //line 2
 
-        final PieChart pieChart = (PieChart) mActivityRule.getActivity().findViewById(R.id.batteryPieChart);
+        final PieChart pieChart = mActivityRule.getActivity().findViewById(R.id.batteryPieChart);
 
         mActivityRule.getActivity().updateBatteryRemaining(50);
         assertTrue(pieChart.getCenterText().equals("50%"));
@@ -77,7 +77,7 @@ public class MainActivityInstrumentationTest {
             field.set(mActivityRule.getActivity(), true);
         } catch (Exception e) { }
  */
-        final org.honorato.multistatetogglebutton.MultiStateToggleButton toggleButton  = (org.honorato.multistatetogglebutton.MultiStateToggleButton)
+        final org.honorato.multistatetogglebutton.MultiStateToggleButton toggleButton  =
                 mActivityRule.getActivity().findViewById(R.id.mstb_multi_ridemodes);
         //mActivityRule.getActivity().updateRideMode(1);
         //assertTrue(toggleButton.getValue() == 1);

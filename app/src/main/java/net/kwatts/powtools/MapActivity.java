@@ -1,7 +1,6 @@
 package net.kwatts.powtools;
 
 
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
@@ -35,8 +34,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
 
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
 
@@ -128,10 +125,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         this.googleMap = googleMap;
 
-        Polyline polyline1 = googleMap.addPolyline(new PolylineOptions()
-                .clickable(true)
-                .add( timeLocationMap.values().toArray(new LatLng[timeLocationMap.size()]) )
-        );
         LatLngBounds.Builder latLongBoundsBuilder = new LatLngBounds.Builder();
         for (LatLng latLng : timeLocationMap.values()) {
             latLongBoundsBuilder.include(latLng);
@@ -154,7 +147,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
 
     private void setupChart(ArrayList<Entry> values) {
-        LineChart lineChart = (LineChart) findViewById(R.id.ride_detail_speed_chart);
+        LineChart lineChart = findViewById(R.id.ride_detail_speed_chart);
         assert lineChart != null;
         LineDataSet dataSet = new LineDataSet(values, "Label");
         dataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
