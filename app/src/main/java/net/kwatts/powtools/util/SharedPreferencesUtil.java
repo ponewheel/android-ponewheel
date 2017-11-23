@@ -67,6 +67,10 @@ public class SharedPreferencesUtil {
         return mSharedPref.getBoolean(TRIP_LOGGING, false);
     }
 
+    public boolean isLocationsEnabled() {
+        return mSharedPref.getBoolean(LOG_LOCATIONS, false);
+    }
+
     public void registerListener(SharedPreferences.OnSharedPreferenceChangeListener listener) {
         mSharedPref.registerOnSharedPreferenceChangeListener(listener);
     }

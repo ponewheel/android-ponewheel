@@ -1,10 +1,10 @@
 package net.kwatts.powtools;
 
-
 import android.app.Application;
 import android.arch.persistence.room.Room;
 import android.os.PowerManager;
-
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import net.kwatts.powtools.database.Database;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 
@@ -17,6 +17,7 @@ public class App extends Application {
     private SharedPreferencesUtil sharedPreferencesUtil = null;
     PowerManager.WakeLock mWakeLock;
     public Database db;
+    public Executor dbExecutor;
 
 
     public App() {
@@ -43,6 +44,7 @@ public class App extends Application {
                 Database.class, "database-name-pow")
                 .fallbackToDestructiveMigration()
                 .build();
+        dbExecutor = Executors.newSingleThreadExecutor();
     }
 
     private void initWakeLock() {

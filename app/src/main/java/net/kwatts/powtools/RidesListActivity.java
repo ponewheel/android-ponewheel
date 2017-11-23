@@ -3,19 +3,19 @@ package net.kwatts.powtools;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.observers.DisposableSingleObserver;
+import io.reactivex.schedulers.Schedulers;
+import java.util.List;
 import net.kwatts.powtools.database.Ride;
 
-import java.util.List;
-
-import io.reactivex.Single;
-import io.reactivex.SingleObserver;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
-
 public class RidesListActivity extends AppCompatActivity {
+
+    public static final String TAG = "RidesListActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,11 +27,8 @@ public class RidesListActivity extends AppCompatActivity {
 
         Single.fromCallable(() -> App.INSTANCE.db.rideDao().getAll())
                 .subscribeOn(Schedulers.io())
-                .subscribe(new SingleObserver<List<Ride>>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-
-                    }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new DisposableSingleObserver<List<Ride>>() {
 
                     @Override
                     public void onSuccess(List<Ride> rides) {
@@ -44,7 +41,7 @@ public class RidesListActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(Throwable e) {
-
+                        Log.e(TAG, "onError: ", e);
                     }
                 });
 
@@ -55,7 +52,7 @@ public class RidesListActivity extends AppCompatActivity {
 
                 Ride ride = adapter.getItem(position);
                 assert ride != null;
-                intent.putExtra(RideDetailActivity.FILE_NAME, ride.id);
+                //FIXME intent.putExtra(RidesListActivity.FILE_NAME, ride.id);
                 startActivity(intent);
             });
         }

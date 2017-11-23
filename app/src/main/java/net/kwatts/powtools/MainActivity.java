@@ -40,6 +40,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.patloew.rxlocation.RxLocation;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
+import net.kwatts.powtools.database.Attribute;
 import net.kwatts.powtools.database.Moment;
 import net.kwatts.powtools.database.Ride;
 import net.kwatts.powtools.events.NotificationEvent;
@@ -66,7 +67,6 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
@@ -111,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     PieChart mBatteryChart;
     private Ride ride;
+    private DisposableObserver<Address> rxLocationObserver;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event){
@@ -313,7 +314,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             @Override
             public void onPropertyChanged(Observable observable, int i) {
                 ride = new Ride(new Date());
-                App.INSTANCE.db.rideDao().insert(ride);
+
+                App.INSTANCE.dbExecutor.execute(() ->
+                        App.INSTANCE.db.rideDao().insert(ride));
             }
         });
     }
@@ -444,12 +447,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     private void createNewRide() {
-        io.reactivex.Observable.just(new Ride(new Date()))
-                .observeOn(Schedulers.io())
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        ride -> App.INSTANCE.db.rideDao().insert(ride),
-                        throwable -> Log.e(TAG, "createNewRide: ", throwable));
+        App.INSTANCE.dbExecutor.execute(() -> App.INSTANCE.db.rideDao().insert(new Ride(new Date())));
     }
 
     private void startLocationScan() {
@@ -460,26 +458,27 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(TimeUnit.SECONDS.toMillis(5));
 
-        rxLocation
-                .location()
+        rxLocationObserver = rxLocation.location()
                 .updates(locationRequest)
                 .subscribeOn(Schedulers.io())
                 .flatMap(location -> rxLocation.geocoding().fromLocation(location).toObservable())
                 .observeOn(Schedulers.io())
-                .subscribe(new DisposableObserver<Address>() {
-                    @Override
-                    public void onNext(Address address) {
-                        mOWDevice.setLocation(address.getLongitude() + "," + address.getLatitude());
+                .subscribeWith(new DisposableObserver<Address>() {
+                    @Override public void onNext(Address address) {
 
+                        boolean isLocationsEnabled = App.INSTANCE.getSharedPreferences().isLocationsEnabled();
+                        if (isLocationsEnabled) {
+                            mOWDevice.setGpsLocation(address);
+                        } else if (rxLocationObserver != null) {
+                            rxLocationObserver.dispose();
+                        }
                     }
 
-                    @Override
-                    public void onError(Throwable e) {
+                    @Override public void onError(Throwable e) {
                         Log.e(TAG, "onError: error retreiving location", e);
                     }
 
-                    @Override
-                    public void onComplete() {
+                    @Override public void onComplete() {
                         Log.d(TAG, "onComplete: ");
                     }
                 });
@@ -510,6 +509,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     @Override
     protected void onPause() {
         super.onPause();
+
+        // TODO if we want background support, we don't want to do this here
+        if (rxLocationObserver != null) {
+            rxLocationObserver.dispose();
+        }
     }
 
     @Override
@@ -535,7 +539,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             case SharedPreferencesUtil.LOG_LOCATIONS:
                 boolean checkLogLocations = sharedPreferences.getBoolean(key, false);
                 if (!checkLogLocations && mOWDevice != null) {
-                    mOWDevice.setLocation(null);
+                    mOWDevice.setGpsLocation(null);
                 }
                 break;
 
@@ -597,12 +601,24 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     private void persistMoment() throws Exception {
         mTextFileLogger.write(mOWDevice);
+        Moment moment = new Moment();
+        moment.rideId = ride.id;
+        App.INSTANCE.db.momentDao().insert(moment);
 
-        OWDevice.DeviceCharacteristic speedCharacteristic = mOWDevice.getDeviceCharacteristicByKey("speed");
-        if (speedCharacteristic != null) {
-            Moment moment = new Moment();
-            moment.setSpeed(speedCharacteristic.value.get());
-            App.INSTANCE.db.momentDao().insert(moment);
+        for (OWDevice.DeviceCharacteristic deviceReadCharacteristic : mOWDevice.getNotifyCharacteristics()) {
+            Attribute attribute = new Attribute();
+            attribute.setMomentId(moment.id);
+            attribute.setValue(deviceReadCharacteristic.value.get());
+            attribute.setUuid(deviceReadCharacteristic.uuid.get());
+            attribute.setUiName(deviceReadCharacteristic.uuid.get());
+            attribute.setKey(deviceReadCharacteristic.key.get());
+
+            App.INSTANCE.db.attributeDao().insert(attribute);
+        }
+
+        if (mOWDevice.getGpsLocation() != null) {
+            moment.setGpsLat(mOWDevice.getGpsLocation().getLatitude());
+            moment.setGpsLong(mOWDevice.getGpsLocation().getLongitude());
         }
 
     }

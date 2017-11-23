@@ -4,10 +4,10 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.databinding.BaseObservable;
-import android.databinding.ObservableArrayList;
 import android.databinding.ObservableDouble;
 import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
+import android.location.Address;
 import android.util.Log;
 
 import net.kwatts.powtools.App;
@@ -19,7 +19,9 @@ import org.greenrobot.eventbus.EventBus;
 
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -96,10 +98,14 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public static final String OnewheelCharacteristicUNKNOWN2 = "e659f31e-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicUNKNOWN3 = "e659f31f-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicUNKNOWN4 = "e659f320-ea98-11e3-ac10-0800200c9a66";
-    private String location;
+    private Address gpsLocation;
 
-    public void setLocation(String location) {
-        this.location = location;
+    public void setGpsLocation(Address gpsLocation) {
+        this.gpsLocation = gpsLocation;
+    }
+
+    public Address getGpsLocation() {
+        return gpsLocation;
     }
 /*
 0x0000 = e659F301-ea98-11e3-ac10-0800200c9a66 (OnewheelServiceUUID)
@@ -169,13 +175,13 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
 
-    public ObservableArrayList<DeviceCharacteristic> deviceReadCharacteristics = new ObservableArrayList<DeviceCharacteristic>();
-    public ObservableArrayList<DeviceCharacteristic> deviceNotifyCharacteristics = new ObservableArrayList<DeviceCharacteristic>();
+    public List<DeviceCharacteristic> deviceReadCharacteristics = new ArrayList<>();
+    public List<DeviceCharacteristic> deviceNotifyCharacteristics = new ArrayList<>();
 
-    public ObservableArrayList<DeviceCharacteristic> getReadCharacteristics() {
+    public List<DeviceCharacteristic> getReadCharacteristics() {
         return deviceReadCharacteristics;
     }
-    public ObservableArrayList<DeviceCharacteristic> getNotifyCharacteristics() {
+    public List<DeviceCharacteristic> getNotifyCharacteristics() {
         return deviceNotifyCharacteristics;
     }
 
@@ -980,8 +986,8 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             values.append(',').append(dc.value.get());
         }
 
-        if (location != null) {
-            values.append(",LOC=(").append(location).append(")");
+        if (gpsLocation != null) {
+            values.append(",LOC=(").append(gpsLocation.getLongitude() + "," + gpsLocation.getLatitude()).append(")");
         }
         return header + values.toString() + '\n';
     }
