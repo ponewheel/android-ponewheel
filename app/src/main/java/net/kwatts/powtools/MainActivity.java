@@ -48,6 +48,7 @@ import net.kwatts.powtools.loggers.PlainTextFileLogger;
 import net.kwatts.powtools.model.OWDevice;
 import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
+import net.kwatts.powtools.util.BluetoothUtilImpl;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 
 import org.greenrobot.eventbus.EventBus;
@@ -224,9 +225,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mContext = this;
         if (bluetoothUtil == null) {
-            bluetoothUtil = new BluetoothUtil();
+            bluetoothUtil = new BluetoothUtilImpl();
         }
-
 
         EventBus.getDefault().register(this);
         // TODO unbind in onPause or whatever is recommended by goog
