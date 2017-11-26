@@ -36,12 +36,23 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import net.kwatts.powtools.database.Attribute;
 import net.kwatts.powtools.database.Moment;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import timber.log.Timber;
+import net.kwatts.powtools.database.Attribute;
+import net.kwatts.powtools.database.Moment;
+import net.kwatts.powtools.loggers.PlainTextFileLogger;
+import net.kwatts.powtools.model.OWDevice;
 
 public class RideDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
     public static final String TAG = RideDetailActivity.class.getSimpleName();
@@ -149,6 +160,78 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         toolbar.setTitle("POWheel");
         toolbar.setLogo(R.mipmap.ic_launcher);
         setSupportActionBar(toolbar);
+
+
+    }
+
+    @Override public boolean onOptionsItemSelected(MenuItem item) {
+
+        if (item.getItemId() == R.id.menu_item_prepare) {
+            prepareItemForSharing();
+        }
+
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void prepareItemForSharing() {
+        App.dbExecute(database -> {
+            String dateTimeString = new SimpleDateFormat("yyyy-MM-dd_HH_mm", Locale.US).format(new Date());
+
+            File owLogFile = new File( PlainTextFileLogger.getLoggingPath() + "/owlogs_" + dateTimeString + ".csv");
+            File file = new File("");
+            try {
+
+                boolean wasFileNew = file.createNewFile();
+
+                FileOutputStream writer = new FileOutputStream(file, true);
+                BufferedOutputStream output = new BufferedOutputStream(writer);
+
+                StringBuilder headers = new StringBuilder();
+                List<String> headerStrings = new ArrayList<>();
+
+                long rideId = getIntent().getLongExtra(RIDE_ID, -1);
+                List<Moment> moments = database.momentDao().getFromRide(rideId);
+                Long referenceTime = null;
+                for (Moment moment : moments) {
+                    long time = moment.getDate().getTime();
+                    if (referenceTime == null) {
+                        referenceTime = time;
+                    }
+                    time = time - referenceTime;
+                    //timeLocationMap.put(time, new LatLng(moment.getGpsLatDouble(), moment.getGpsLongDouble()));
+
+                    List<Attribute> attributes = database.attributeDao().getFromMoment(moment.id);
+                    for (Attribute attribute : attributes) {
+                        if (!headerStrings.contains(attribute.getKey())) {
+                            headers.append(',').append(attribute.getKey());
+                            headerStrings.add(attribute.getKey());
+
+                            need to maintain order or something :(
+                        }
+
+                    }
+                    if (attribute != null && attribute.getValue() != null) {
+                        String value = attribute.getValue();
+                        //timeSpeedMap.add(new Entry(time, Float.valueOf(value)));
+                    }
+
+                }
+
+                String out =  "time" + headers.toString() + '\n';
+                output.write(out.getBytes());
+                output.flush();
+                output.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            //if (timeSpeedMap.size() > 0) {
+            //    setupChart(timeSpeedMap);
+            //} else {
+            //    Log.w(TAG, "onCreate: no entries");
+            //}
+        });
     }
 
     @Override
@@ -157,6 +240,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 
         // store action provider
         MenuItem item = menu.findItem(R.id.menu_item_share);
+        item.setVisible(false);
         mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
 
         // Create share intent

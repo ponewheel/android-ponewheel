@@ -8,7 +8,7 @@ import java.util.List;
 @Dao
 public interface AttributeDao {
     @Query("SELECT * FROM Attribute where :momentId = moment_id")
-    List<Attribute> getFromMoment(int momentId);
+    List<Attribute> getFromMoment(long momentId);
 
     @Query("SELECT * "
             + "FROM Attribute "

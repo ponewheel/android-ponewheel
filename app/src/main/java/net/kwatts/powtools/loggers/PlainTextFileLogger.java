@@ -42,6 +42,8 @@ public class PlainTextFileLogger  {
 
 
     public void write(DeviceInterface dev) throws Exception {
+
+
         boolean wasFileNew = file.createNewFile();
 
         FileOutputStream writer = new FileOutputStream(file, true);
