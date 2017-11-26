@@ -4,10 +4,10 @@ import android.arch.persistence.room.RoomDatabase;
 import android.arch.persistence.room.TypeConverters;
 
 @android.arch.persistence.room.Database(entities = {
-        Moment.class,
         Ride.class,
+        Moment.class,
         Attribute.class
-}, version = 3)
+}, version = 7)
 @TypeConverters(DateConverter.class)
 public abstract class Database extends RoomDatabase {
     public abstract RideDao rideDao();

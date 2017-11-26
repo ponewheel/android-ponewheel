@@ -1,17 +1,19 @@
 package net.kwatts.powtools;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
+import java.util.ArrayList;
 import java.util.List;
 import net.kwatts.powtools.database.Ride;
+import net.kwatts.powtools.database.RideRow;
 
 public class RidesListActivity extends AppCompatActivity {
 
@@ -22,21 +24,27 @@ public class RidesListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ride_viewer);
 
-        ListView listView = findViewById(R.id.ride_list_view);
-        ArrayAdapter<Ride> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
+        Toolbar mToolbar = (Toolbar) findViewById(R.id.tool_bar);
+        mToolbar.setTitle("Logged Rides");
+        mToolbar.setLogo(R.mipmap.ic_launcher);
+        setSupportActionBar(mToolbar);
 
-        Single.fromCallable(() -> App.INSTANCE.db.rideDao().getAll())
+        RecyclerView recyclerView = findViewById(R.id.ride_list_view);
+        RideListAdapter rideListAdapter = new RideListAdapter(this, new ArrayList<>());
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        Single.fromCallable(() -> App.INSTANCE.db.rideDao().getRideRowList())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new DisposableSingleObserver<List<Ride>>() {
+                .subscribe(new DisposableSingleObserver<List<RideRow>>() {
 
                     @Override
-                    public void onSuccess(List<Ride> rides) {
-                        for (Ride ride : rides) {
+                    public void onSuccess(List<RideRow> rides) {
+                        for (RideRow ride : rides) {
                             System.out.println("logFile = " + ride);
                         }
-                        adapter.addAll(rides);
-                        adapter.notifyDataSetChanged();
+                        rideListAdapter.getRideList().addAll(rides);
+                        rideListAdapter.notifyDataSetChanged();
                     }
 
                     @Override
@@ -45,17 +53,39 @@ public class RidesListActivity extends AppCompatActivity {
                     }
                 });
 
-        if (listView != null) {
-            listView.setAdapter(adapter);
-            listView.setOnItemClickListener((parent, view, position, id) -> {
-                Intent intent = new Intent(RidesListActivity.this, MapActivity.class);
+            recyclerView.setAdapter(rideListAdapter);
+            //recyclerView.clicksetOnItemClickListener((parent, view, position, id) -> {
+            //    Intent intent = new Intent(RidesListActivity.this, MapActivity.class);
+            //
+            //    RideRow ride = rideListAdapter.getItem(position);
+            //    assert ride != null;
+            //    //FIXME intent.putExtra(RidesListActivity.FILE_NAME, ride.id);
+            //    startActivity(intent);
+            //});
 
-                Ride ride = adapter.getItem(position);
-                assert ride != null;
-                //FIXME intent.putExtra(RidesListActivity.FILE_NAME, ride.id);
-                startActivity(intent);
-            });
-        }
+
+
+        App.dbExecute(database -> {
+
+            for (Ride ride : database.rideDao().getAll()) {
+                System.out.println("ride = " + ride);
+            }
+
+            // Insert sample rides
+            //Ride ride = new Ride();
+            //Ride ride2 = new Ride();
+            //long rideId = database.rideDao().insert(ride);
+            //database.rideDao().insert(ride2);
+            //
+            //Calendar calendar = Calendar.getInstance();
+            //Moment moment = new Moment(rideId, calendar.getTime());
+            //database.momentDao().insert(moment);
+            //
+            //calendar.add(Calendar.MINUTE, 2);
+            //Moment moment2 = new Moment(rideId, calendar.getTime());
+            //database.momentDao().insert(moment2);
+        });
+
 
     }
 

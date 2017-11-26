@@ -7,16 +7,16 @@ import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.Nullable;
 
 @Entity(foreignKeys = @ForeignKey(entity = Moment.class,
-        parentColumns = "moment_id",
+        parentColumns = "id",
         childColumns = "moment_id"))
 public class Attribute {
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "attribute_id")
-    public int id;
+    public long id;
 
 
     @ColumnInfo(name = "moment_id")
-    public int momentId;
+    public long momentId;
 
     @Nullable
     private String value;
@@ -27,7 +27,7 @@ public class Attribute {
     @Nullable
     private String key;
 
-    public void setMomentId(int momentId) {
+    public void setMomentId(long momentId) {
         this.momentId = momentId;
     }
 

@@ -5,6 +5,7 @@ import android.arch.persistence.room.Room;
 import android.os.PowerManager;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import net.kwatts.powtools.database.DBExecutor;
 import net.kwatts.powtools.database.Database;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 
@@ -45,6 +46,10 @@ public class App extends Application {
                 .fallbackToDestructiveMigration()
                 .build();
         dbExecutor = Executors.newSingleThreadExecutor();
+    }
+
+    public static void dbExecute(DBExecutor dbExecutor) {
+        INSTANCE.dbExecutor.execute( () -> dbExecutor.run(INSTANCE.db));
     }
 
     private void initWakeLock() {

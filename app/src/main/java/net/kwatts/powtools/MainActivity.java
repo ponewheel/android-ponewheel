@@ -27,7 +27,6 @@ import android.view.WindowManager;
 import android.widget.Chronometer;
 import android.widget.ScrollView;
 import android.widget.Toast;
-
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Description;
@@ -39,7 +38,18 @@ import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.gms.location.LocationRequest;
 import com.patloew.rxlocation.RxLocation;
 import com.tbruyelle.rxpermissions2.RxPermissions;
-
+import io.reactivex.Single;
+import io.reactivex.observers.DisposableObserver;
+import io.reactivex.observers.DisposableSingleObserver;
+import io.reactivex.schedulers.Schedulers;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import net.kwatts.powtools.database.Attribute;
 import net.kwatts.powtools.database.Moment;
 import net.kwatts.powtools.database.Ride;
@@ -51,25 +61,10 @@ import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
 import net.kwatts.powtools.util.BluetoothUtilImpl;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
-
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.honorato.multistatetogglebutton.MultiStateToggleButton;
-
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
-
-import io.reactivex.Single;
-import io.reactivex.observers.DisposableObserver;
-import io.reactivex.observers.DisposableSingleObserver;
-import io.reactivex.schedulers.Schedulers;
 
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
 // https://github.com/alt236/Bluetooth-LE-Library---Android
@@ -313,10 +308,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-                ride = new Ride(new Date());
+                ride = new Ride();
 
-                App.INSTANCE.dbExecutor.execute(() ->
-                        App.INSTANCE.db.rideDao().insert(ride));
+                App.dbExecute(database -> database.rideDao().insert(ride));
             }
         });
     }
@@ -447,7 +441,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     private void createNewRide() {
-        App.INSTANCE.dbExecutor.execute(() -> App.INSTANCE.db.rideDao().insert(new Ride(new Date())));
+        App.dbExecute((database) -> database.rideDao().insert(new Ride()));
     }
 
     private void startLocationScan() {
@@ -601,7 +595,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     private void persistMoment() throws Exception {
         mTextFileLogger.write(mOWDevice);
-        Moment moment = new Moment();
+        Moment moment = new Moment(ride.id, new Date());
         moment.rideId = ride.id;
         App.INSTANCE.db.momentDao().insert(moment);
 
@@ -613,7 +607,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             attribute.setUiName(deviceReadCharacteristic.uuid.get());
             attribute.setKey(deviceReadCharacteristic.key.get());
 
-            App.INSTANCE.db.attributeDao().insert(attribute);
+            App.dbExecute(database -> database.attributeDao().insert(attribute));
         }
 
         if (mOWDevice.getGpsLocation() != null) {

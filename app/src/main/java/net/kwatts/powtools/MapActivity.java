@@ -3,9 +3,7 @@ package net.kwatts.powtools;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.content.FileProvider;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
@@ -15,7 +13,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
@@ -34,10 +31,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-
-import net.kwatts.powtools.loggers.PlainTextFileLogger;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +48,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private GoogleMap googleMap;
     private HashSet<Marker> mapMarkers = new HashSet<>();
     private ShareActionProvider mShareActionProvider;
-    private String mFileName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,13 +55,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         // Retrieve the content view that renders the map.
         setContentView(R.layout.maps_activity);
 
-        mFileName = getIntent().getStringExtra(FILE_NAME);
-
         ArrayList<Entry> timeSpeedMap = new ArrayList<>();
 
         timeLocationMap.clear();
         // TODO convert to async
-        PlainTextFileLogger.getEntriesFromFile(mFileName, timeSpeedMap, timeLocationMap);
 
         setupChart(timeSpeedMap);
 
@@ -96,12 +85,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         // Create share intent
         Intent sendIntent = new Intent();
         sendIntent.setAction(Intent.ACTION_SEND);
-        File logFile = new File(PlainTextFileLogger.getLoggingPath() + "/" + mFileName);
-        Uri uri = FileProvider.getUriForFile(this, "net.kwatts.powtools.fileprovider", logFile);
-        sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
-        sendIntent.setType("text/csv");
-        sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        setShareIntent(sendIntent);
+        //File logFile = new File(PlainTextFileLogger.getLoggingPath() + "/" + mFileName);
+        //Uri uri = FileProvider.getUriForFile(this, "net.kwatts.powtools.fileprovider", logFile);
+        //sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
+        //sendIntent.setType("text/csv");
+        //sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        //setShareIntent(sendIntent);
 
         return true;
     }
