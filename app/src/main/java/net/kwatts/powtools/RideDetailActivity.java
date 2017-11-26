@@ -60,7 +60,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate: ");
-        setContentView(R.layout.maps_activity);
+        setContentView(R.layout.activity_ride_detail);
 
         ArrayList<Entry> timeSpeedMap = new ArrayList<>();
 

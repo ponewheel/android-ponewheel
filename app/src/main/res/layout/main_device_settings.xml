@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
     <data xmlns:android="http://schemas.android.com/apk/res/android">
-
         <import type="android.view.View"/>
         <import type="net.kwatts.powtools.model.OWDevice"/>
         <variable name="owdevice" type="net.kwatts.powtools.model.OWDevice" />
     </data>
+
     <android.support.percent.PercentRelativeLayout
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
@@ -42,8 +42,6 @@
         app:showText="true"
         android:enabled="@{owdevice.isConnected ? true : false}"
         />
-
-
 
     <android.support.v7.widget.SwitchCompat
         android:id="@+id/back_bright_switch"

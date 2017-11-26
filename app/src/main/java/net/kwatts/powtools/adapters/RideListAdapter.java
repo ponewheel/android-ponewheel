@@ -23,9 +23,9 @@ import timber.log.Timber;
 public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideViewHolder> {
 
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("MM/dd/yy", Locale.ENGLISH);
-    private final Context context;
+    final Context context;
     private final List<RideRow> rideRows;
-    private final List<RideRow> checkedRides = new ArrayList<>();
+    final List<RideRow> checkedRides = new ArrayList<>();
 
     public RideListAdapter(Context context, List<RideRow> rideRows) {
         this.context = context;

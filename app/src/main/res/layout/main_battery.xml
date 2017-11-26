@@ -1,6 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<temp_root xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
 
-</temp_root>
+
+<android.support.percent.PercentRelativeLayout
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    tools:showIn="@layout/activity_main"
+    >
+
+    <com.github.mikephil.charting.charts.PieChart
+        android:id="@+id/batteryPieChart"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        app:layout_heightPercent="70%"
+        app:layout_widthPercent="100%"
+        />
+
+    <TextView
+        android:id="@id/header_battery_label"
+        android:layout_below="@id/batteryPieChart"
+        android:layout_marginTop="25dp"
+        android:gravity="center"
+        android:text="@string/battery"
+        android:textSize="20.0sp"
+        android:textStyle="bold"
+        app:layout_heightPercent="30%"
+        app:layout_widthPercent="100%"
+        />
+</android.support.percent.PercentRelativeLayout>
