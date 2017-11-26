@@ -54,16 +54,34 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private ShareActionProvider mShareActionProvider;
     private boolean isDatasetReady = false;
     private boolean isMapReady = false;
+    private int mapCameraPadding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate: ");
         setContentView(R.layout.maps_activity);
 
         ArrayList<Entry> timeSpeedMap = new ArrayList<>();
 
         timeLocationMap.clear();
+        retrieveData(timeSpeedMap);
+        setupMap();
 
+        setupToolbar();
+    }
+
+    private void setupMap() {
+        mapCameraPadding = getResources().getDimensionPixelSize(R.dimen.map_camera_padding);
+
+        // Get the SupportMapFragment and request notification
+        // when the map is ready to be used.
+        mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+
+    private void retrieveData(ArrayList<Entry> timeSpeedMap) {
         App.dbExecute(database -> {
             long rideId = getIntent().getLongExtra(RIDE_ID, -1);
             List<Moment> moments = database.momentDao().getFromRide(rideId);
@@ -87,19 +105,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             if (!timeSpeedMap.isEmpty()) {
                 setupChart(timeSpeedMap);
+            } else {
+                Log.w(TAG, "onCreate: no entries");
             }
         });
-
-
-        // Get the SupportMapFragment and request notification
-        // when the map is ready to be used.
-        mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-
-        setupToolbar();
     }
-
 
     private synchronized void checkDataAndMapReady() {
         if (isMapReady && isDatasetReady) {
@@ -120,15 +130,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 View mapFragmentView = mapFragment.getView();
                 if (timeLocationMap.size() != 0) {
                     LatLngBounds latLngBounds = latLongBoundsBuilder.build();
-                    double width = latLngBounds.southwest.longitude - latLngBounds.northeast.longitude;
-                    Log.d(TAG, "onMapReady: mapWidth" + width);
-
-                    // TODO apply a min width
 
                     assert mapFragmentView != null;
                     mapFragmentView.post(() -> googleMap.moveCamera(
-                            // TODO convert dp to px
-                            CameraUpdateFactory.newLatLngBounds(latLngBounds, 150)));
+                            // TODO Is mapCameraPadding w/ 150dp converted to px a good approach? Seems like maybe we'd prefer a geographic unit, aka 1 mile padding if that's possible?
+                            CameraUpdateFactory.newLatLngBounds(latLngBounds, mapCameraPadding)));
                 }
 
             });
@@ -159,9 +165,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         //File logFile = new File(PlainTextFileLogger.getLoggingPath() + "/" + mFileName);
         //Uri uri = FileProvider.getUriForFile(this, "net.kwatts.powtools.fileprovider", logFile);
         //sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
-        //sendIntent.setType("text/csv");
-        //sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        //setShareIntent(sendIntent);
+        sendIntent.setType("text/csv");
+        sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        setShareIntent(sendIntent);
 
         return true;
     }
@@ -185,8 +191,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         this.googleMap = googleMap;
-
-
 
         isMapReady = true;
         checkDataAndMapReady();

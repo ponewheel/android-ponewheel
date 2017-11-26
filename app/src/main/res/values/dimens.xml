@@ -3,4 +3,5 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="font_size_stats">12.0sp</dimen>
+    <dimen name="map_camera_padding">150dp</dimen>
 </resources>
