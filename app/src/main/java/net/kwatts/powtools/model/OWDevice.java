@@ -243,13 +243,14 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                     ui_name.set("LIFETIME AMPS (HOURS)");
                     ui_enabled.set(true);
                 }}); */
-                deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-                    uuid.set(OnewheelCharacteristicLightingMode);
-                    key.set("lighting_mode");
-                    value.set("");
-                    ui_name.set("LIGHTS");
-                    ui_enabled.set(true);
-                }}); /*
+        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
+            uuid.set(OnewheelCharacteristicLightingMode);
+            key.set("lighting_mode");
+            value.set("");
+            ui_name.set("LIGHTS");
+            ui_enabled.set(true);
+        }});
+                /*
                 deviceReadCharacteristics.add(new DeviceCharacteristic() {{
                     uuid.set(OnewheelCharacteristicRidingMode);
                     key.set("ride_mode");
@@ -257,17 +258,16 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                     ui_name.set("RIDING MODE");
                     ui_enabled.set(false);
                 }}); */
-                deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-                    uuid.set(OnewheelCharacteristicBatteryRemaining);
-                    key.set("battery_initial");
-                    value.set("");
-                    ui_name.set("BATTERY AT START (%)");
-                    ui_enabled.set(true);
-                }});
+        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
+            uuid.set(OnewheelCharacteristicBatteryRemaining);
+            key.set("battery_initial");
+            value.set("");
+            ui_name.set("BATTERY AT START (%)");
+            ui_enabled.set(true);
+        }});
 
 
-        deviceReadCharacteristics.add(new DeviceCharacteristic()
-        {{
+        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
             uuid.set(OnewheelCharacteristicLastErrorCode);
             key.set("last_error_code");
             value.set("");

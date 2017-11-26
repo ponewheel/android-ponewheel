@@ -17,7 +17,7 @@
         android:id="@id/gridLayout1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:columnCount="4"
+        android:columnCount="2"
         android:paddingBottom="2dp"
         android:paddingTop="5dp"
         tools:showIn="@layout/activity_main"
