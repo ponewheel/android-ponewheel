@@ -32,6 +32,7 @@
     <string name="trip_top_speed">Trip Top Speed:</string>
     <string name="battery">Battery</string>
     <string name="onewheel_ble_name">ONEWHEEL BLE NAME</string>
+    <string name="min_duration">min</string>
 
     <string-array name="ow_ridemode_array">
         <item>CLASSIC</item>

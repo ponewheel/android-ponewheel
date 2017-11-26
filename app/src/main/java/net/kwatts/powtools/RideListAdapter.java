@@ -6,8 +6,10 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.TextView;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import net.kwatts.powtools.database.RideRow;
@@ -17,6 +19,7 @@ public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideVi
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("MM/dd/yy", Locale.ENGLISH);
     private final Context context;
     private final List<RideRow> rideRows;
+    private final List<RideRow> checkedRides = new ArrayList<>();
 
     RideListAdapter(Context context, List<RideRow> rideRows) {
         this.context = context;
@@ -45,30 +48,49 @@ public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideVi
         return rideRows;
     }
 
+    public List<RideRow> getCheckedItems() {
+        return checkedRides;
+    }
+
     class RideViewHolder extends RecyclerView.ViewHolder {
 
-        private final TextView dateView;
-        private final TextView rideLengthView;
+        private TextView dateView;
+        private TextView rideLengthView;
+        private CheckBox checkbox;
 
         RideViewHolder(View itemView) {
             super(itemView);
 
             dateView = itemView.findViewById(R.id.rides_row_date);
             rideLengthView = itemView.findViewById(R.id.rides_row_length);
+            checkbox = itemView.findViewById(R.id.rides_row_checkbox);
         }
 
         void bind(RideRow rideRow) {
             System.out.println("rideId" + rideRow.rideId + " minDate= " + rideRow.minEventDate + " max=" + rideRow.maxEventDate);
             // TODO only show id in debug builds?
             if (rideRow.getMinDate() != null) {
-                dateView.setText(SIMPLE_DATE_FORMAT.format(rideRow.getMinDate())+ " ("+rideRow.rideId + ")");
+                dateView.setText(SIMPLE_DATE_FORMAT.format(rideRow.getMinDate()));
+                //dateView.setText(SIMPLE_DATE_FORMAT.format(rideRow.getMinDate())+ " ("+rideRow.rideId + ")");
             }
-            rideLengthView.setText(rideRow.getMinuteDuration()+" " );
+            rideLengthView.setText(
+                    String.format(Locale.getDefault(),"%d%s", rideRow.getMinuteDuration(), context.getString(R.string.min_duration)));
 
             itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(context, MapActivity.class);
                 //intent.putExtra(MapActivity.FILE_NAME, rideRow.getName());
-                context.startActivity(intent);
+                //context.startActivity(intent);
+            });
+
+            checkbox.setOnCheckedChangeListener(null);
+            checkbox.setChecked(checkedRides.contains(rideRow));
+
+            checkbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (isChecked) {
+                    checkedRides.add(rideRow);
+                } else {
+                    checkedRides.remove(rideRow);
+                }
             });
         }
     }

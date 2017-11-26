@@ -25,6 +25,7 @@
         tools:text="09 minutes"
         />
     <CheckBox
+        android:id="@+id/rides_row_checkbox"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="5dp"
         android:layout_centerVertical="true"

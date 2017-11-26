@@ -13,15 +13,18 @@ public interface RideDao {
 
     @Query("SELECT "
             + "ride.id as rideId, "
-            + "min(moment1.date) as minEventDate, "
-            + "max(moment2.date) as maxEventDate "
+            + "min(momentMin.date) as minEventDate, "
+            + "max(momentMax.date) as maxEventDate "
             + "FROM Ride "
-            + "INNER JOIN MOMENT as moment1 on moment1.ride_id = ride.id "
-            + "INNER JOIN MOMENT as moment2 on moment2.ride_id = ride.id "
+            + "INNER JOIN MOMENT as momentMin on momentMin.ride_id = ride.id "
+            + "INNER JOIN MOMENT as momentMax on momentMax.ride_id = ride.id "
             + "GROUP BY rideId"
     )
     List<RideRow> getRideRowList();
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(Ride ride);
+
+    @Query("DELETE from RIDE where id = :rideId")
+    void delete(long rideId);
 }

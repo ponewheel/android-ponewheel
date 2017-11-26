@@ -6,9 +6,12 @@ import android.arch.persistence.room.ForeignKey;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.Nullable;
 
+import static android.arch.persistence.room.ForeignKey.CASCADE;
+
 @Entity(foreignKeys = @ForeignKey(entity = Moment.class,
         parentColumns = "id",
-        childColumns = "moment_id"))
+        childColumns = "moment_id",
+        onDelete = CASCADE))
 public class Attribute {
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "attribute_id")

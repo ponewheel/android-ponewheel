@@ -7,7 +7,7 @@ import android.arch.persistence.room.TypeConverters;
         Ride.class,
         Moment.class,
         Attribute.class
-}, version = 7)
+}, version = 8)
 @TypeConverters(DateConverter.class)
 public abstract class Database extends RoomDatabase {
     public abstract RideDao rideDao();
