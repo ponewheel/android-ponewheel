@@ -21,8 +21,9 @@ public class Moment {
     @ColumnInfo(name = "ride_id")
     public long rideId;
 
-    @Nullable private Double gpsLat;
-    @Nullable private Double gpsLong;
+
+    @Nullable private String gpsLat;
+    @Nullable private String gpsLong;
 
     private Date date;
 
@@ -45,16 +46,32 @@ public class Moment {
     }
 
     public void setGpsLat(double gpsLat) {
-        this.gpsLat = gpsLat;
+        this.gpsLat = Double.toString(gpsLat);
     }
-    public Double getGpsLat() {
-        return gpsLat;
+    public Double getGpsLatDouble() {
+        return gpsLat != null ? Double.parseDouble(gpsLat) : 0.0;
     }
 
     public void setGpsLong(double gpsLong) {
-        this.gpsLong = gpsLong;
+        this.gpsLong = Double.toString(gpsLong);
     }
-    public Double getGpsLong() {
+    public Double getGpsLongDouble() {
+        return gpsLong != null ? Double.parseDouble(gpsLong) : 0.0;
+    }
+
+    public String getGpsLat() {
+        return gpsLat;
+    }
+    public String getGpsLong() {
         return gpsLong;
     }
+
+    public void setGpsLat(@Nullable String gpsLat) {
+        this.gpsLat = gpsLat;
+    }
+
+    public void setGpsLong(@Nullable String gpsLong) {
+        this.gpsLong = gpsLong;
+    }
+
 }

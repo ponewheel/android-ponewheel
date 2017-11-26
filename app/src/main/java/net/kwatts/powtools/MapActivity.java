@@ -1,6 +1,5 @@
 package net.kwatts.powtools;
 
-
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -31,36 +30,60 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import net.kwatts.powtools.database.Attribute;
+import net.kwatts.powtools.database.Moment;
 
-/**
- * An activity that displays a Google map with a marker (pin) to indicate a particular location.
- */
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
     public static final String TAG = MapActivity.class.getSimpleName();
-    public static final String FILE_NAME = "EXTRA_DATA_FILE_NAME";
-
+    public static final String RIDE_ID = "EXTRA_RIDE_ID";
 
     ArrayMap<Long, LatLng> timeLocationMap = new ArrayMap<>();
     private SupportMapFragment mapFragment;
-    private GoogleMap googleMap;
-    private HashSet<Marker> mapMarkers = new HashSet<>();
+    GoogleMap googleMap;
+    HashSet<Marker> mapMarkers = new HashSet<>();
     private ShareActionProvider mShareActionProvider;
+    private boolean isDatasetReady = false;
+    private boolean isMapReady = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Retrieve the content view that renders the map.
         setContentView(R.layout.maps_activity);
 
         ArrayList<Entry> timeSpeedMap = new ArrayList<>();
 
         timeLocationMap.clear();
-        // TODO convert to async
 
-        setupChart(timeSpeedMap);
+        App.dbExecute(database -> {
+            long rideId = getIntent().getLongExtra(RIDE_ID, -1);
+            List<Moment> moments = database.momentDao().getFromRide(rideId);
+            Long referenceTime = null;
+            for (Moment moment : moments) {
+                long time = moment.getDate().getTime();
+                if (referenceTime == null) {
+                    referenceTime = time;
+                }
+                time = time - referenceTime;
+                timeLocationMap.put(time, new LatLng(moment.getGpsLatDouble(), moment.getGpsLongDouble()));
+
+                Attribute attribute = database.attributeDao().getFromMoment(moment.id, "speed");
+                if (attribute != null && attribute.getValue() != null) {
+                    String value = attribute.getValue();
+                    timeSpeedMap.add(new Entry(time, Float.valueOf(value)));
+                }
+            }
+
+            isDatasetReady = true;
+            checkDataAndMapReady();
+
+            setupChart(timeSpeedMap);
+        });
+
 
         // Get the SupportMapFragment and request notification
         // when the map is ready to be used.
@@ -68,7 +91,29 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.tool_bar);
+        setupToolbar();
+    }
+
+
+    private synchronized void checkDataAndMapReady() {
+        if (isMapReady && isDatasetReady) {
+            runOnUiThread(() ->
+                    googleMap.addPolyline(
+                            new PolylineOptions().clickable(true).add(
+                                    timeLocationMap.values().toArray(
+                                            new LatLng[timeLocationMap.size()]
+                                    )
+                            )
+                    )
+            );
+
+            isMapReady = false;
+            isDatasetReady = false;
+        }
+    }
+
+    private void setupToolbar() {
+        Toolbar toolbar = findViewById(R.id.tool_bar);
         toolbar.setTitle("POWheel");
         toolbar.setLogo(R.mipmap.ic_launcher);
         setSupportActionBar(toolbar);
@@ -132,6 +177,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     // TODO convert dp to px
                     CameraUpdateFactory.newLatLngBounds(latLngBounds, 150)));
         }
+
+        isMapReady = true;
+        checkDataAndMapReady();
     }
 
 

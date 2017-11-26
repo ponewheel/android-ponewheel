@@ -9,8 +9,8 @@ import java.util.List;
 @Dao
 public interface MomentDao {
     @Query("SELECT * FROM Moment where :rideId = ride_id")
-    List<Moment> getFromRide(int rideId);
+    List<Moment> getFromRide(long rideId);
 
     @Insert
-    void insert(Moment moment);
+    long insert(Moment moment);
 }

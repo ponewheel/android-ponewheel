@@ -78,8 +78,8 @@ public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideVi
 
             itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(context, MapActivity.class);
-                //intent.putExtra(MapActivity.FILE_NAME, rideRow.getName());
-                //context.startActivity(intent);
+                intent.putExtra(MapActivity.RIDE_ID, rideRow.rideId);
+                context.startActivity(intent);
             });
 
             checkbox.setOnCheckedChangeListener(null);

@@ -15,6 +15,7 @@ import io.reactivex.schedulers.Schedulers;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import net.kwatts.powtools.database.Attribute;
 import net.kwatts.powtools.database.Moment;
 import net.kwatts.powtools.database.Ride;
 import net.kwatts.powtools.database.RideRow;
@@ -92,21 +93,32 @@ public class RidesListActivity extends AppCompatActivity {
     private void insertSampleRidesOrDebug() {
         App.dbExecute(database -> {
 
-            for (Ride ride : database.rideDao().getAll()) {
-                System.out.println("ride = " + ride);
-            }
+            //for (Ride ride : database.rideDao().getAll()) {
+            //    System.out.println("ride = " + ride);
+            //}
 
             // Insert sample rides
             Ride ride = new Ride();
             long rideId = database.rideDao().insert(ride);
 
             Calendar calendar = Calendar.getInstance();
-            Moment moment = new Moment(rideId, calendar.getTime());
-            database.momentDao().insert(moment);
+            Moment moment;
+            for (int i = 0; i < (int) (Math.random() * 58); i++) {
+                calendar.add(Calendar.MINUTE, 1);
+                moment = new Moment(rideId, calendar.getTime());
 
-            calendar.add(Calendar.MINUTE, (int) (Math.random() * 58));
-            Moment moment2 = new Moment(rideId, calendar.getTime());
-            database.momentDao().insert(moment2);
+                moment.setGpsLat(37.7891223 + i*.001);
+                moment.setGpsLong(-122.4118449 + Math.sin(i) * .001);
+
+                long momentId = database.momentDao().insert(moment);
+
+                Attribute attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setUiName("speed");
+                attribute.setValue(""+i);
+
+                database.attributeDao().insert(attribute);
+            }
 
             refreshList();
         });
