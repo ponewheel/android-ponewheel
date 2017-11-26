@@ -97,15 +97,35 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     private synchronized void checkDataAndMapReady() {
         if (isMapReady && isDatasetReady) {
-            runOnUiThread(() ->
-                    googleMap.addPolyline(
-                            new PolylineOptions().clickable(true).add(
-                                    timeLocationMap.values().toArray(
-                                            new LatLng[timeLocationMap.size()]
-                                    )
-                            )
-                    )
-            );
+            runOnUiThread(() -> {
+
+                googleMap.addPolyline(
+                        new PolylineOptions().clickable(true).add(
+                                timeLocationMap.values().toArray(
+                                        new LatLng[timeLocationMap.size()]
+                                )
+                        )
+                );
+                LatLngBounds.Builder latLongBoundsBuilder = new LatLngBounds.Builder();
+                for (LatLng latLng : timeLocationMap.values()) {
+                    latLongBoundsBuilder.include(latLng);
+                }
+
+                View mapFragmentView = mapFragment.getView();
+                if (timeLocationMap.size() != 0) {
+                    LatLngBounds latLngBounds = latLongBoundsBuilder.build();
+                    double width = latLngBounds.southwest.longitude - latLngBounds.northeast.longitude;
+                    Log.d(TAG, "onMapReady: mapWidth" + width);
+
+                    // TODO apply a min width
+
+                    assert mapFragmentView != null;
+                    mapFragmentView.post(() -> googleMap.moveCamera(
+                            // TODO convert dp to px
+                            CameraUpdateFactory.newLatLngBounds(latLngBounds, 150)));
+                }
+
+            });
 
             isMapReady = false;
             isDatasetReady = false;
@@ -143,6 +163,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void setShareIntent(Intent shareIntent) {
         if (mShareActionProvider != null) {
             mShareActionProvider.setShareIntent(shareIntent);
+            //mShareActionProvider.setOnShareTargetSelectedListener();
         }
     }
 
@@ -159,24 +180,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         this.googleMap = googleMap;
 
-        LatLngBounds.Builder latLongBoundsBuilder = new LatLngBounds.Builder();
-        for (LatLng latLng : timeLocationMap.values()) {
-            latLongBoundsBuilder.include(latLng);
-        }
 
-        View mapFragmentView = mapFragment.getView();
-        if (timeLocationMap.size() != 0) {
-            LatLngBounds latLngBounds = latLongBoundsBuilder.build();
-            double width = latLngBounds.southwest.longitude - latLngBounds.northeast.longitude;
-            Log.d(TAG, "onMapReady: mapWidth" + width);
-
-            // TODO apply a min width
-
-            assert mapFragmentView != null;
-            mapFragmentView.post(() -> googleMap.moveCamera(
-                    // TODO convert dp to px
-                    CameraUpdateFactory.newLatLngBounds(latLngBounds, 150)));
-        }
 
         isMapReady = true;
         checkDataAndMapReady();
