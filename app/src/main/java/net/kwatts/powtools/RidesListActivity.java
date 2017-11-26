@@ -8,7 +8,14 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.observers.DisposableSingleObserver;
+import io.reactivex.schedulers.Schedulers;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import net.kwatts.powtools.adapters.RideListAdapter;
 import net.kwatts.powtools.database.Attribute;
 import net.kwatts.powtools.database.Moment;
 import net.kwatts.powtools.database.Ride;
@@ -34,7 +41,7 @@ public class RidesListActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_ride_viewer);
+        setContentView(R.layout.activity_rides_list);
 
         setupToolbar();
 

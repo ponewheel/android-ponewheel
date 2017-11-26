@@ -45,7 +45,7 @@
             android:enabled="true" />
 
         <activity android:name=".RidesListActivity" />
-        <activity android:name=".MapActivity" />
+        <activity android:name=".RideDetailActivity" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"

@@ -43,8 +43,8 @@ import java.util.concurrent.TimeUnit;
 
 import timber.log.Timber;
 
-public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
-    public static final String TAG = MapActivity.class.getSimpleName();
+public class RideDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
+    public static final String TAG = RideDetailActivity.class.getSimpleName();
     public static final String RIDE_ID = "EXTRA_RIDE_ID";
 
     ArrayMap<Long, LatLng> timeLocationMap = new ArrayMap<>();

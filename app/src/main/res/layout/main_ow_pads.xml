@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <import type="android.databinding.ObservableArrayList" />
+        <import type="android.view.View" />
+        <import type="net.kwatts.powtools.model.OWDevice" />
+        <variable
+            name="owdevice"
+            type="net.kwatts.powtools.model.OWDevice"
+            android:layout_height="wrap_content" />
+    </data>
+
+    <android.support.percent.PercentRelativeLayout
+
+        android:id="@+id/header_ow_pads"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ?
+                @drawable/border_ui_green :
+                (safeUnbox(owdevice.isConnected)?
+                    @drawable/border_ui_red :
+                    @drawable/border_ui)}'
+        tools:showIn="@layout/activity_main"
+        >
+
+        <TextView
+            android:id="@+id/header_disconnected"
+            android:background="?attr/colorPrimary"
+            android:gravity="center"
+            android:text="@string/off"
+            android:textColor="#FFFFFF"
+            android:textSize="10.0sp"
+            android:visibility="@{safeUnbox(owdevice.isConnected) ? View.GONE : View.VISIBLE}"
+            app:layout_heightPercent="100%"
+            app:layout_widthPercent="100%"
+            />
+
+        <TextView
+            android:id="@id/header_rider_on"
+            android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ?
+                    @drawable/on_color :
+                    @drawable/off_color}'
+            android:gravity="center"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(2).ui_name}'
+            android:textColor="#FFFFFF"
+            android:textSize="10.0sp"
+            android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
+            app:layout_heightPercent="60%"
+            app:layout_widthPercent="100%"
+            />
+
+        <TextView
+            android:id="@id/header_rider_pad1"
+            android:layout_below="@id/header_rider_on"
+            android:background='@{owdevice.deviceNotifyCharacteristics.get(3).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
+            android:gravity="center"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(3).ui_name}'
+            android:textColor="#FFFFFF"
+            android:textSize="5.0sp"
+            android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
+            app:layout_heightPercent="40%"
+            app:layout_widthPercent="50%"
+            />
+
+        <TextView
+            android:id="@id/header_rider_pad2"
+            android:layout_below="@id/header_rider_on"
+            android:layout_toEndOf="@id/header_rider_pad1"
+            android:background='@{owdevice.deviceNotifyCharacteristics.get(4).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
+            android:gravity="center"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(4).ui_name}'
+            android:textColor="#FFFFFF"
+            android:textSize="5.0sp"
+            android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
+            app:layout_heightPercent="40%"
+            app:layout_widthPercent="50%"
+            />
+    </android.support.percent.PercentRelativeLayout>
+</layout>

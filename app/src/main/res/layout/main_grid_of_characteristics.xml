@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="RtlHardcoded">
+    <data xmlns:android="http://schemas.android.com/apk/res/android">
+
+        <import type="android.databinding.ObservableArrayList" />
+        <import type="android.view.View" />
+        <import type="net.kwatts.powtools.model.OWDevice" />
+        <variable
+            name="owdevice"
+            type="net.kwatts.powtools.model.OWDevice"
+            android:layout_height="wrap_content" />
+    </data>
+
+    <GridLayout
+        android:id="@id/gridLayout1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="4"
+        android:paddingBottom="2dp"
+        android:paddingTop="5dp"
+        tools:showIn="@layout/activity_main"
+        >
+
+        <!-- READ ONCE CHARACTERISTICS, 50 + -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="55"
+            android:text="@string/onewheel_ble_name"
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginStart="28dp"
+            android:layout_row="55"
+            android:gravity="right"
+            android:text='@{owdevice.deviceMacName}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="53"
+            android:text='@{owdevice.deviceReadCharacteristics.get(0).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginStart="28dp"
+            android:layout_row="53"
+            android:gravity="right"
+            android:text='@{owdevice.deviceReadCharacteristics.get(0).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="54"
+            android:text="@{owdevice.deviceReadCharacteristics.get(1).ui_name}"
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="54"
+            android:gravity="right"
+            android:text='@{owdevice.deviceReadCharacteristics.get(1).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="50"
+            android:text="@{owdevice.deviceReadCharacteristics.get(2).ui_name}"
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="50"
+            android:gravity="right"
+            android:text='@{owdevice.deviceReadCharacteristics.get(2).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="51"
+            android:text="@{owdevice.deviceReadCharacteristics.get(4).ui_name}"
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="51"
+            android:gravity="right"
+            android:text='@{owdevice.deviceReadCharacteristics.get(4).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+        <!--            <TextView android:text="@{owdevice.deviceReadCharacteristics.get(6).ui_name}" android:layout_row="52" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(6).value}' android:layout_row="52" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
+                            -->
+        <!-- NOTIFY AND UPDATING CHARACTERISTICS, 0-50 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="0"
+            android:text="@string/trip_connected_time"
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <Chronometer
+            android:id="@+id/chronometer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="0"
+            android:gravity="right"
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="26"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(6).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="26"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(6).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="27"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(7).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="27"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(7).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="28"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(8).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="28"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(8).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="29"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(9).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="29"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(9).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="30"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(10).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="30"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(10).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="31"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(11).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="31"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(11).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="32"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(12).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="32"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(12).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+        <!-- CURRENT -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="33"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(13).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="33"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(13).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="34"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(14).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="34"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(14).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="35"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(15).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="35"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(15).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="36"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(16).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="36"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(16).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="37"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(17).ui_name}'
+            android:textSize="@dimen/font_size_stats"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="37"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(17).value}'
+            android:textSize="@dimen/font_size_stats"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:layout_row="38"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(18).ui_name}'
+            android:textSize="12.0sp"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginLeft="28.0dip"
+            android:layout_row="38"
+            android:gravity="right"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(18).value}'
+            android:textSize="12.0sp"
+            />
+        <!--
+                            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(1).ui_name}' android:layout_row="39" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(1).value}' android:layout_row="39" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
+                 -->
+    </GridLayout>
+</layout>

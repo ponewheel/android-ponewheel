@@ -1,4 +1,4 @@
-package net.kwatts.powtools;
+package net.kwatts.powtools.adapters;
 
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +9,8 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
+import net.kwatts.powtools.R;
+import net.kwatts.powtools.RideDetailActivity;
 import net.kwatts.powtools.database.RideRow;
 
 import java.text.SimpleDateFormat;
@@ -25,7 +27,7 @@ public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideVi
     private final List<RideRow> rideRows;
     private final List<RideRow> checkedRides = new ArrayList<>();
 
-    RideListAdapter(Context context, List<RideRow> rideRows) {
+    public RideListAdapter(Context context, List<RideRow> rideRows) {
         this.context = context;
         this.rideRows = rideRows;
     }
@@ -81,8 +83,8 @@ public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideVi
                     String.format(Locale.getDefault(),"%d%s", rideRow.getMinuteDuration(), context.getString(R.string.min_duration)));
 
             itemView.setOnClickListener(v -> {
-                Intent intent = new Intent(context, MapActivity.class);
-                intent.putExtra(MapActivity.RIDE_ID, rideRow.rideId);
+                Intent intent = new Intent(context, RideDetailActivity.class);
+                intent.putExtra(RideDetailActivity.RIDE_ID, rideRow.rideId);
                 context.startActivity(intent);
             });
 

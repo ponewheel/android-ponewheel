@@ -8,7 +8,7 @@ import com.github.mikephil.charting.data.Entry;
 import com.google.android.gms.maps.model.LatLng;
 
 import net.kwatts.powtools.DeviceInterface;
-import net.kwatts.powtools.MapActivity;
+import net.kwatts.powtools.RideDetailActivity;
 import net.kwatts.powtools.model.OWDevice;
 
 import java.io.BufferedOutputStream;
@@ -29,7 +29,7 @@ import timber.log.Timber;
  */
 
 public class PlainTextFileLogger  {
-    public static final String TAG = MapActivity.class.getSimpleName();
+    public static final String TAG = RideDetailActivity.class.getSimpleName();
 
     private File file;
     protected final String name = "TXT";

@@ -36,6 +36,7 @@
     <string name="date">Date</string>
     <string name="duration">Duration</string>
     <string name="delete">Delete?</string>
+    <string name="trip_connected_time">TRIP CONNECTED TIME</string>
 
     <string-array name="ow_ridemode_array">
         <item>CLASSIC</item>
