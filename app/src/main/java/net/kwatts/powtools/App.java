@@ -3,11 +3,15 @@ package net.kwatts.powtools;
 import android.app.Application;
 import android.arch.persistence.room.Room;
 import android.os.PowerManager;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+
 import net.kwatts.powtools.database.DBExecutor;
 import net.kwatts.powtools.database.Database;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import timber.log.Timber;
 
 /**
  * This is a subclass of {@link Application} used to provide shared objects for this app.
@@ -16,7 +20,7 @@ public class App extends Application {
 
     public static App INSTANCE = null;
     private SharedPreferencesUtil sharedPreferencesUtil = null;
-    PowerManager.WakeLock mWakeLock;
+    PowerManager.WakeLock wakeLock;
     public Database db;
     public Executor dbExecutor;
 
@@ -35,7 +39,9 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-
+        if (BuildConfig.DEBUG) {
+            Timber.plant(new Timber.DebugTree());
+        }
         initWakeLock();
         initDatabase();
     }
@@ -54,15 +60,14 @@ public class App extends Application {
 
     private void initWakeLock() {
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-        assert powerManager != null;
-        mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "pOWToolsWakeLock");
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "pOWToolsWakeLock");
     }
 
     public void acquireWakeLock() {
-        mWakeLock.acquire();
+        wakeLock.acquire();
     }
 
     public void releaseWakeLock() {
-        mWakeLock.release();
+        wakeLock.release();
     }
 }

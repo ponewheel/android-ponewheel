@@ -220,9 +220,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         super.onCreate(savedInstanceState);
 
         mContext = this;
-        if (bluetoothUtil == null) {
-            bluetoothUtil = new BluetoothUtilImpl();
-        }
+        bluetoothUtil = new BluetoothUtilImpl();
 
         EventBus.getDefault().register(this);
         // TODO unbind in onPause or whatever is recommended by goog
@@ -230,7 +228,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         initWakelock();
 
-        mBinding = DataBindingUtil.setContentView(this, net.kwatts.powtools.R.layout.activity_main);
+        mBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
 
         setupDarkModes(savedInstanceState);
 
@@ -310,7 +308,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             public void onPropertyChanged(Observable observable, int i) {
                 ride = new Ride();
 
-                App.dbExecute(database -> database.rideDao().insert(ride));
+                App.dbExecute(database -> ride.id = database.rideDao().insert(ride));
             }
         });
     }
@@ -583,7 +581,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                             persistMoment();
 
                         } catch (Exception e) {
-                            Log.e(TAG, "unable to write logs");
+                            Log.e(TAG, "unable to write logs", e);
                         }
                     }
                 }
@@ -594,21 +592,24 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     private void persistMoment() throws Exception {
-        mTextFileLogger.write(mOWDevice);
+//        mTextFileLogger.write(mOWDevice);
         Moment moment = new Moment(ride.id, new Date());
         moment.rideId = ride.id;
-        App.INSTANCE.db.momentDao().insert(moment);
+        App.dbExecute(database -> {
+            long momentId = database.momentDao().insert(moment);
+            for (OWDevice.DeviceCharacteristic deviceReadCharacteristic : mOWDevice.getNotifyCharacteristics()) {
+                Attribute attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setValue(deviceReadCharacteristic.value.get());
+                attribute.setUuid(deviceReadCharacteristic.uuid.get());
+                attribute.setUiName(deviceReadCharacteristic.uuid.get());
+                attribute.setKey(deviceReadCharacteristic.key.get());
 
-        for (OWDevice.DeviceCharacteristic deviceReadCharacteristic : mOWDevice.getNotifyCharacteristics()) {
-            Attribute attribute = new Attribute();
-            attribute.setMomentId(moment.id);
-            attribute.setValue(deviceReadCharacteristic.value.get());
-            attribute.setUuid(deviceReadCharacteristic.uuid.get());
-            attribute.setUiName(deviceReadCharacteristic.uuid.get());
-            attribute.setKey(deviceReadCharacteristic.key.get());
+                database.attributeDao().insert(attribute);
+            }
+        });
 
-            App.dbExecute(database -> database.attributeDao().insert(attribute));
-        }
+
 
         if (mOWDevice.getGpsLocation() != null) {
             moment.setGpsLat(mOWDevice.getGpsLocation().getLatitude());

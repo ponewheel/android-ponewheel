@@ -82,6 +82,9 @@ dependencies {
     implementation("com.github.afollestad.material-dialogs:commons:0.8.5.7@aar") {
         transitive = true
     }
+
+    implementation 'com.jakewharton.timber:timber:4.5.1'
+
     implementation "com.github.PhilJay:MPAndroidChart:v3.0.2"
     implementation "com.github.rey5137:material:1.2.2"
     // https://github.com/rey5137/material

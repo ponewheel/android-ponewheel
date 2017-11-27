@@ -9,6 +9,7 @@ import com.github.mikephil.charting.charts.PieChart;
 
 import net.kwatts.powtools.util.Util;
 
+import org.honorato.multistatetogglebutton.MultiStateToggleButton;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -56,7 +57,7 @@ public class MainActivityInstrumentationTest {
             field.set(mActivityRule.getActivity(), true);
         } catch (Exception e) { }
  */
-        final org.honorato.multistatetogglebutton.MultiStateToggleButton toggleButton  =
+        final MultiStateToggleButton toggleButton  =
                 mActivityRule.getActivity().findViewById(R.id.mstb_multi_ridemodes);
         //mActivityRule.getActivity().updateRideMode(1);
         //assertTrue(toggleButton.getValue() == 1);

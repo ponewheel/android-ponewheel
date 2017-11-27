@@ -8,11 +8,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.TextView;
+
+import net.kwatts.powtools.database.RideRow;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import net.kwatts.powtools.database.RideRow;
+
+import timber.log.Timber;
 
 public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideViewHolder> {
 
@@ -67,7 +71,7 @@ public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideVi
         }
 
         void bind(RideRow rideRow) {
-            System.out.println("rideId" + rideRow.rideId + " minDate= " + rideRow.minEventDate + " max=" + rideRow.maxEventDate);
+            Timber.d("rideId" + rideRow.rideId + " minDate= " + rideRow.minEventDate + " max=" + rideRow.maxEventDate);
             // TODO only show id in debug builds?
             if (rideRow.getMinDate() != null) {
                 dateView.setText(SIMPLE_DATE_FORMAT.format(rideRow.getMinDate()));

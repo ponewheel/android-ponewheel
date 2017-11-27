@@ -8,17 +8,21 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.observers.DisposableSingleObserver;
-import io.reactivex.schedulers.Schedulers;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
+
 import net.kwatts.powtools.database.Attribute;
 import net.kwatts.powtools.database.Moment;
 import net.kwatts.powtools.database.Ride;
 import net.kwatts.powtools.database.RideRow;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.observers.DisposableSingleObserver;
+import io.reactivex.schedulers.Schedulers;
+import timber.log.Timber;
 
 public class RidesListActivity extends AppCompatActivity {
 
@@ -94,7 +98,7 @@ public class RidesListActivity extends AppCompatActivity {
         App.dbExecute(database -> {
 
             //for (Ride ride : database.rideDao().getAll()) {
-            //    System.out.println("ride = " + ride);
+            //    Log.d(TAG, "ride = " + ride);
             //}
 
             // Insert sample rides
@@ -133,7 +137,7 @@ public class RidesListActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(List<RideRow> rides) {
                         for (RideRow ride : rides) {
-                            System.out.println("logFile = " + ride);
+                            Timber.d("logFile = " + ride);
                         }
 
                         rideListAdapter.getRideList().clear();
