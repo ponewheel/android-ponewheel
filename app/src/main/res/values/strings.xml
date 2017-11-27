@@ -33,6 +33,9 @@
     <string name="battery">Battery</string>
     <string name="onewheel_ble_name">ONEWHEEL BLE NAME</string>
     <string name="min_duration">min</string>
+    <string name="date">Date</string>
+    <string name="duration">Duration</string>
+    <string name="delete">Delete?</string>
 
     <string-array name="ow_ridemode_array">
         <item>CLASSIC</item>
