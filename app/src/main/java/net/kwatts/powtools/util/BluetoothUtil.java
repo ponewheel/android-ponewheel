@@ -22,10 +22,12 @@ import android.os.ParcelUuid;
 import android.util.Log;
 
 import net.kwatts.powtools.App;
+import net.kwatts.powtools.BuildConfig;
 import net.kwatts.powtools.MainActivity;
 import net.kwatts.powtools.model.OWDevice;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -157,6 +159,62 @@ public class BluetoothUtil {
         }
 
         @Override
+        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic c, int status) {
+            String characteristic_uuid = c.getUuid().toString();
+            Log.i(TAG, "BluetoothGattCallback.onCharacteristicRead: CharacteristicUuid=" + characteristic_uuid + "status=" + status);
+            characteristicReadQueue.remove();
+
+
+            //XXX until we figure out what's going on
+            if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
+                mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+            } /* else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicRidingMode)) {
+                 Log.d(TAG, "Got ride mode from the main UI thread:" + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+             } */
+
+            mOWDevice.processUUID(c);
+
+            if (BuildConfig.DEBUG) {
+                byte[] v_bytes = c.getValue();
+
+
+                StringBuilder sb = new StringBuilder();
+                for (byte b : c.getValue()) {
+                    sb.append(String.format("%02x", b));
+                }
+
+                Log.d(TAG, "HEX %02x: " + sb);
+                Log.d(TAG, "Arrays.toString() value: " + Arrays.toString(v_bytes));
+                Log.d(TAG, "String value: " + c.getStringValue(0));
+                Log.d(TAG, "Unsigned short: " + unsignedShort(v_bytes));
+                Log.d(TAG, "getIntValue(FORMAT_UINT8,0) " + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0));
+                Log.d(TAG, "getIntValue(FORMAT_UINT8,1) " + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+            }
+            // Callback to make sure the queue is drained
+            if (characteristicReadQueue.size() > 0) {
+                gatt.readCharacteristic(characteristicReadQueue.element());
+            }
+
+
+        }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic c) {
+            //XXX until we figure out what's going on
+            if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
+                mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+            }
+
+            mOWDevice.processUUID(c);
+        }
+
+
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            Log.i(TAG, "onCharacteristicWrite: " + status);
+        }
+
+        @Override
         public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
             Log.i(TAG, "onDescriptorWrite: " + status);
             descriptorWriteQueue.remove();  //pop the item that we just finishing writing
@@ -167,6 +225,8 @@ public class BluetoothUtil {
                 gatt.readCharacteristic(characteristicReadQueue.element());
             }
         }
+
+
     };
 
     private void updateLog(String s) {
@@ -174,6 +234,7 @@ public class BluetoothUtil {
     }
 
     private void scanLeDevice(final boolean enable) {
+        Log.d("DFSDFDSF","scanLeDevice" + enable);
         if (enable) {
             mScanning = true;
             List<ScanFilter> filters_v2 = new ArrayList<>();
