@@ -13,9 +13,9 @@ public interface AttributeDao {
     @Query("SELECT * "
             + "FROM Attribute "
             + "where "
-            + ":name = uiName and "
+            + ":keyName = \"key\" and "
             + ":momentId = moment_id")
-    Attribute getFromMoment(long momentId, String name);
+    Attribute getFromMomentAndKey(long momentId, String keyName);
 
     @Insert
     void insert(Attribute attribute);

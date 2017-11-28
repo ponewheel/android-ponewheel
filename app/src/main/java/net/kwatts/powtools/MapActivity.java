@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
@@ -31,12 +32,16 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+
+import net.kwatts.powtools.database.Attribute;
+import net.kwatts.powtools.database.Moment;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import net.kwatts.powtools.database.Attribute;
-import net.kwatts.powtools.database.Moment;
+
+import timber.log.Timber;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
     public static final String TAG = MapActivity.class.getSimpleName();
@@ -70,8 +75,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 }
                 time = time - referenceTime;
                 timeLocationMap.put(time, new LatLng(moment.getGpsLatDouble(), moment.getGpsLongDouble()));
-
-                Attribute attribute = database.attributeDao().getFromMoment(moment.id, "speed");
+                Attribute attribute = database.attributeDao().getFromMomentAndKey(moment.id, "speed");
                 if (attribute != null && attribute.getValue() != null) {
                     String value = attribute.getValue();
                     timeSpeedMap.add(new Entry(time, Float.valueOf(value)));
@@ -81,7 +85,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             isDatasetReady = true;
             checkDataAndMapReady();
 
-            setupChart(timeSpeedMap);
+            if (!timeSpeedMap.isEmpty()) {
+                setupChart(timeSpeedMap);
+            }
         });
 
 
