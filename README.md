@@ -1,8 +1,5 @@
 # ![ponewheel logo](artwork/logo.png?raw=true) [![CircleCI](https://circleci.com/gh/ponewheel/android-ponewheel.svg?style=svg)](https://circleci.com/gh/ponewheel/android-ponewheel) <a style="margin-bottom: 0;" href='https://play.google.com/store/apps/details?id=net.kwatts.powtools><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' height="80px"/></a>
 
-
-
-
 This repository contains the source code for the pOneWheel app.
 
 > What's pOneWheel?
@@ -24,7 +21,11 @@ Available on [Google Play].
 
 ![main screenshot](https://lh3.googleusercontent.com/9H6BH3lNRwYY50xUHNbHnpy68aAvUzxEuhE2Y-dcRB84hSeJx0EHScNe7v01bJTF8w=h310-rw)
 
+# License
+
+* ![MIT](artwork/logo.png?raw=true)
+
 [Github Ponewheel Issues]: https://github.com/ponewheel/android-ponewheel/issues
 [Contributors]: https://github.com/ponewheel/android-ponewheel/graphs/contributors
 [OneWheel]: https://onewheel.com/
-[Google Play]: https://play.google.com/store/apps/details?id=net.kwatts.powtools 
+[Google Play]: https://play.google.com/store/apps/details?id=net.kwatts.powtools
