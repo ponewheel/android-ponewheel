@@ -118,7 +118,7 @@ public class RidesListActivity extends AppCompatActivity {
 
                 Attribute attribute = new Attribute();
                 attribute.setMomentId(momentId);
-                attribute.setUiName("speed");
+                attribute.setKey("speed");
                 attribute.setValue(""+i);
 
                 database.attributeDao().insert(attribute);
