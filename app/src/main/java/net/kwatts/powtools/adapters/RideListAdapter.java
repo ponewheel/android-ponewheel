@@ -20,6 +20,8 @@ import java.util.Locale;
 
 import timber.log.Timber;
 
+import static net.kwatts.powtools.RideDetailActivity.FILE_FORMAT_DATE;
+
 public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideViewHolder> {
 
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("MM/dd/yy", Locale.ENGLISH);
@@ -85,6 +87,7 @@ public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideVi
             itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(context, RideDetailActivity.class);
                 intent.putExtra(RideDetailActivity.RIDE_ID, rideRow.rideId);
+                intent.putExtra(RideDetailActivity.RIDE_DATE, FILE_FORMAT_DATE.format(rideRow.getMinDate()));
                 context.startActivity(intent);
             });
 

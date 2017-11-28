@@ -12,7 +12,7 @@
 
     <item
         android:id="@+id/menu_item_prepare"
-        android:title="Prepare"
+        android:title="Export File"
         app:showAsAction="ifRoom" />
 
 </menu>

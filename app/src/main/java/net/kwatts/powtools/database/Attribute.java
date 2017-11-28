@@ -23,10 +23,10 @@ public class Attribute {
 
     @Nullable
     private String value;
-    @Nullable
-    private String uuid;
-    @Nullable
-    private String uiName;
+//    @Nullable
+//    private String uuid;
+//    @Nullable
+//    private String uiName;
     @Nullable
     private String key;
 
@@ -40,22 +40,6 @@ public class Attribute {
 
     public String getValue() {
         return value;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUiName(String uiName) {
-        this.uiName = uiName;
-    }
-
-    public String getUiName() {
-        return uiName;
     }
 
     public void setKey(String key) {

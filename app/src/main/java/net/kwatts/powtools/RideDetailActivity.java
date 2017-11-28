@@ -2,7 +2,9 @@ package net.kwatts.powtools;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.content.FileProvider;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
@@ -12,6 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
@@ -35,6 +38,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import net.kwatts.powtools.database.Attribute;
 import net.kwatts.powtools.database.Moment;
+import net.kwatts.powtools.loggers.PlainTextFileLogger;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -42,21 +46,21 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import timber.log.Timber;
-import net.kwatts.powtools.database.Attribute;
-import net.kwatts.powtools.database.Moment;
-import net.kwatts.powtools.loggers.PlainTextFileLogger;
-import net.kwatts.powtools.model.OWDevice;
 
 public class RideDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
     public static final String TAG = RideDetailActivity.class.getSimpleName();
     public static final String RIDE_ID = "EXTRA_RIDE_ID";
+    public static final String RIDE_DATE = "EXTRA_RIDE_DATE";
+    public static final SimpleDateFormat FILE_FORMAT_DATE = new SimpleDateFormat("yyyy-MM-dd_HH_mm", Locale.US);
+
 
     ArrayMap<Long, LatLng> timeLocationMap = new ArrayMap<>();
     private SupportMapFragment mapFragment;
@@ -66,6 +70,8 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     private boolean isDatasetReady = false;
     private boolean isMapReady = false;
     private int mapCameraPadding;
+    private MenuItem shareMenuItem;
+    private Intent shareFileIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,7 +121,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
             checkDataAndMapReady();
 
             if (!timeSpeedMap.isEmpty()) {
-                setupChart(timeSpeedMap);
+                runOnUiThread( () -> setupChart(timeSpeedMap) );
             } else {
                 Log.w(TAG, "onCreate: no entries");
             }
@@ -125,7 +131,6 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     private synchronized void checkDataAndMapReady() {
         if (isMapReady && isDatasetReady) {
             runOnUiThread(() -> {
-
                 googleMap.addPolyline(
                         new PolylineOptions().clickable(true).add(
                                 timeLocationMap.values().toArray(
@@ -147,7 +152,6 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                             // TODO Is mapCameraPadding w/ 150dp converted to px a good approach? Seems like maybe we'd prefer a geographic unit, aka 1 mile padding if that's possible?
                             CameraUpdateFactory.newLatLngBounds(latLngBounds, mapCameraPadding)));
                 }
-
             });
 
             isMapReady = false;
@@ -167,70 +171,92 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     @Override public boolean onOptionsItemSelected(MenuItem item) {
 
         if (item.getItemId() == R.id.menu_item_prepare) {
+            Toast.makeText(
+                    this,
+                    "Your file is being prepared",
+                    Toast.LENGTH_SHORT)
+                    .show();
             prepareItemForSharing();
-        }
+            item.setVisible(false);
 
+            // share icon will be visible after preparation is done
+        } else {
+            Timber.d("menuItem:"+item.toString());
+        }
 
         return super.onOptionsItemSelected(item);
     }
 
     private void prepareItemForSharing() {
         App.dbExecute(database -> {
-            String dateTimeString = new SimpleDateFormat("yyyy-MM-dd_HH_mm", Locale.US).format(new Date());
-
-            File owLogFile = new File( PlainTextFileLogger.getLoggingPath() + "/owlogs_" + dateTimeString + ".csv");
-            File file = new File("");
+            long rideId = getIntent().getLongExtra(RIDE_ID, -1);
+            String rideDate = getIntent().getStringExtra(RIDE_DATE);
+            File file = new File( PlainTextFileLogger.getLoggingPath() + "/owlogs_" + rideDate + ".csv");
+            if (file.exists()) {
+                boolean deleted = file.delete();
+                Timber.d("deleted?" + deleted);
+            }
             try {
-
-                boolean wasFileNew = file.createNewFile();
-
                 FileOutputStream writer = new FileOutputStream(file, true);
                 BufferedOutputStream output = new BufferedOutputStream(writer);
 
-                StringBuilder headers = new StringBuilder();
-                List<String> headerStrings = new ArrayList<>();
-
-                long rideId = getIntent().getLongExtra(RIDE_ID, -1);
-                List<Moment> moments = database.momentDao().getFromRide(rideId);
-                Long referenceTime = null;
-                for (Moment moment : moments) {
-                    long time = moment.getDate().getTime();
-                    if (referenceTime == null) {
-                        referenceTime = time;
+                StringBuilder stringBuilder = new StringBuilder();
+                List<String> headers = database.attributeDao().getDistinctKeysFromRide(rideId);
+                HashMap<String, String> keyValueOrderKeeper = new LinkedHashMap<>();
+                headers.add(0, "time");
+                headers.add("gps_lat");
+                headers.add("gps_long");
+                for (String header : headers) {
+                    if (stringBuilder.length() > 0) {
+                        stringBuilder.append(',');
                     }
-                    time = time - referenceTime;
-                    //timeLocationMap.put(time, new LatLng(moment.getGpsLatDouble(), moment.getGpsLongDouble()));
+                    stringBuilder.append(header);
+                    keyValueOrderKeeper.put(header, "");
+                }
+                stringBuilder.append('\n');
+                output.write(stringBuilder.toString().getBytes());
+
+                List<Moment> moments = database.momentDao().getFromRide(rideId);
+//                Long referenceTime = null;
+                for (Moment moment : moments) {
+                    stringBuilder.setLength(0); // reset
+                    keyValueOrderKeeper.values().clear();
+
+                    long time = moment.getDate().getTime();
+
+                    // do we need relative time?
+//                    if (referenceTime == null) {
+//                        referenceTime = time;
+//                    }
+//                    time = time - referenceTime;
+                    stringBuilder.append(Long.toString(time));
 
                     List<Attribute> attributes = database.attributeDao().getFromMoment(moment.id);
                     for (Attribute attribute : attributes) {
-                        if (!headerStrings.contains(attribute.getKey())) {
-                            headers.append(',').append(attribute.getKey());
-                            headerStrings.add(attribute.getKey());
+                        keyValueOrderKeeper.put(attribute.getKey(), attribute.getValue());
+                    }
+                    keyValueOrderKeeper.put("gps_lat", moment.getGpsLat());
+                    keyValueOrderKeeper.put("gps_long", moment.getGpsLong());
 
-                            need to maintain order or something :(
+                    for (String value : keyValueOrderKeeper.values()) {
+                        if (stringBuilder.length() > 0) {
+                            stringBuilder.append(',');
                         }
-
+                        stringBuilder.append(value);
                     }
-                    if (attribute != null && attribute.getValue() != null) {
-                        String value = attribute.getValue();
-                        //timeSpeedMap.add(new Entry(time, Float.valueOf(value)));
-                    }
-
+                    stringBuilder.append('\n');
+                    output.write(stringBuilder.toString().getBytes());
                 }
 
-                String out =  "time" + headers.toString() + '\n';
-                output.write(out.getBytes());
                 output.flush();
                 output.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            //if (timeSpeedMap.size() > 0) {
-            //    setupChart(timeSpeedMap);
-            //} else {
-            //    Log.w(TAG, "onCreate: no entries");
-            //}
+            Uri uri = FileProvider.getUriForFile(this, "net.kwatts.powtools.fileprovider", file);
+            shareFileIntent.putExtra(Intent.EXTRA_STREAM, uri);
+            runOnUiThread(() -> shareMenuItem.setVisible(true));
         });
     }
 
@@ -239,19 +265,16 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         getMenuInflater().inflate(R.menu.ride_menu, menu);
 
         // store action provider
-        MenuItem item = menu.findItem(R.id.menu_item_share);
-        item.setVisible(false);
-        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+        shareMenuItem = menu.findItem(R.id.menu_item_share);
+        shareMenuItem.setVisible(false);
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(shareMenuItem);
 
         // Create share intent
-        Intent sendIntent = new Intent();
-        sendIntent.setAction(Intent.ACTION_SEND);
-        //File logFile = new File(PlainTextFileLogger.getLoggingPath() + "/" + mFileName);
-        //Uri uri = FileProvider.getUriForFile(this, "net.kwatts.powtools.fileprovider", logFile);
-        //sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
-        sendIntent.setType("text/csv");
-        sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        setShareIntent(sendIntent);
+        shareFileIntent = new Intent();
+        shareFileIntent.setAction(Intent.ACTION_SEND);
+        shareFileIntent.setType("text/csv");
+        shareFileIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        setShareIntent(shareFileIntent);
 
         return true;
     }
@@ -259,7 +282,8 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     private void setShareIntent(Intent shareIntent) {
         if (mShareActionProvider != null) {
             mShareActionProvider.setShareIntent(shareIntent);
-            //mShareActionProvider.setOnShareTargetSelectedListener();
+            // unable to modify the intent?! wtf android
+//            mShareActionProvider.setOnShareTargetSelectedListener((source, intent) -> false);
         }
     }
 

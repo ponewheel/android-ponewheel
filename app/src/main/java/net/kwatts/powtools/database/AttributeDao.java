@@ -19,4 +19,10 @@ public interface AttributeDao {
 
     @Insert
     void insert(Attribute attribute);
+
+    @Query("SELECT distinct(\"key\") " +
+            "FROM Attribute " +
+            "INNER JOIN Moment on moment_id = moment.id " +
+            "where ride_id = :rideId ")
+    List<String> getDistinctKeysFromRide(long rideId);
 }
