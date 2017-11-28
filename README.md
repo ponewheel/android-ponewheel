@@ -1,4 +1,4 @@
-# ![ponewheel logo](artwork/logo.png?raw=true) [![CircleCI](https://circleci.com/gh/ponewheel/android-ponewheel.svg?style=svg)](https://circleci.com/gh/ponewheel/android-ponewheel) <a style="margin-bottom: 0;" href='https://play.google.com/store/apps/details?id=net.kwatts.powtools><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' height="80px"/></a>
+# pOneWheel [![CircleCI](https://circleci.com/gh/ponewheel/android-ponewheel.svg?style=svg)](https://circleci.com/gh/ponewheel/android-ponewheel) <a style="margin-bottom: 0;" href='https://play.google.com/store/apps/details?id=net.kwatts.powtools'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' height="80px"/></a>
 
 This repository contains the source code for the pOneWheel app.
 
@@ -13,17 +13,13 @@ For questions, to report bugs, or suggestions and feature requests, head over to
 
 
 Special thanks to,
-- The [Contributors] who awesomely picked up this project @ebabel, @wmaciel, @twyatt
+- The [Contributors] that awesomely picked up this project and running with it - @ebabel, @wmaciel, @twyatt
 - My lady Linda Luu for giving it the usability and graphics it desperately needed
-- @christorrella for pushing to open source it.
+- @christorrella for pushing me to open source
 
-Available on [Google Play].
-
+![ponewheel logo](artwork/logo.png?raw=true)
 ![main screenshot](https://lh3.googleusercontent.com/9H6BH3lNRwYY50xUHNbHnpy68aAvUzxEuhE2Y-dcRB84hSeJx0EHScNe7v01bJTF8w=h310-rw)
 
-# License
-
-* ![MIT](artwork/logo.png?raw=true)
 
 [Github Ponewheel Issues]: https://github.com/ponewheel/android-ponewheel/issues
 [Contributors]: https://github.com/ponewheel/android-ponewheel/graphs/contributors
