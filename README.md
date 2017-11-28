@@ -20,8 +20,8 @@ Special thanks to,
 - My lady Linda Luu for giving it the usability and graphics it desperately needed
 - @christorrella for pushing me to open source
 
-![ponewheel logo](artwork/logo.png?raw=true)
-![main screenshot](https://lh3.googleusercontent.com/9H6BH3lNRwYY50xUHNbHnpy68aAvUzxEuhE2Y-dcRB84hSeJx0EHScNe7v01bJTF8w=h310-rw)
+<!-- ![ponewheel logo](artwork/logo.png?raw=true) -->
+<!-- ![main screenshot](https://lh3.googleusercontent.com/9H6BH3lNRwYY50xUHNbHnpy68aAvUzxEuhE2Y-dcRB84hSeJx0EHScNe7v01bJTF8w=h310-rw) -->
 
 
 [Github Ponewheel Issues]: https://github.com/ponewheel/android-ponewheel/issues
