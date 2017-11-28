@@ -16,7 +16,7 @@ For questions, to report bugs, or suggestions and feature requests, head over to
 
 
 Special thanks to,
-- The [Contributors] that awesomely picked up this project and running with it - @ebabel, @wmaciel, @twyatt
+- The [Contributors] that awesomely picked up this project and ran with it - @ebabel, @wmaciel, @twyatt
 - My lady Linda Luu for giving it the usability and graphics it desperately needed
 - @christorrella for pushing me to open source
 
