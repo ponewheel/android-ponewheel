@@ -85,27 +85,27 @@
                 app:layout_heightPercent="100%" app:layout_widthPercent="20%" android:layout_margin="5dp"
                 card_view:cardCornerRadius="2dp" card_view:contentPadding="10dp">
                 <android.support.percent.PercentRelativeLayout  android:id="@+id/header_ow_pads" android:layout_width="fill_parent" android:layout_height="wrap_content" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
-                    android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/border_ui_green : (owdevice.isConnected ? @drawable/border_ui_red : @drawable/border_ui)}'>
+                    android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/border_ui_green : (safeUnbox(owdevice.isConnected) ? @drawable/border_ui_red : @drawable/border_ui)}'>
                     <TextView android:id="@+id/header_disconnected" android:textSize="10.0sp" app:layout_heightPercent="100%" app:layout_widthPercent="100%" android:text="OFF"
                         android:background="?attr/colorPrimary"
                         android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:visibility="@{owdevice.isConnected ? View.GONE : View.VISIBLE}"/>
+                        android:visibility="@{safeUnbox(owdevice.isConnected) ? View.GONE : View.VISIBLE}"/>
                     <TextView android:id="@id/header_rider_on" android:textSize="10.0sp" app:layout_heightPercent="60%" app:layout_widthPercent="100%" android:text='@{owdevice.deviceNotifyCharacteristics.get(2).ui_name}'
                         android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
                         android:textColor="#FFFFFF"
-                        android:visibility="@{owdevice.isConnected ? View.VISIBLE : View.GONE}"
+                        android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
                         android:gravity="center" />
                     <TextView android:id="@id/header_rider_pad1" android:textSize="5.0sp" app:layout_heightPercent="40%" app:layout_widthPercent="50%" android:text='@{owdevice.deviceNotifyCharacteristics.get(3).ui_name}'   android:layout_below="@id/header_rider_on"
                         android:gravity="center"
                         android:background='@{owdevice.deviceNotifyCharacteristics.get(3).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
-                        android:visibility="@{owdevice.isConnected ? View.VISIBLE : View.GONE}"
+                        android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
                         android:textColor="#FFFFFF" />
                     <TextView android:id="@id/header_rider_pad2"  android:textSize="5.0sp"  app:layout_heightPercent="40%" app:layout_widthPercent="50%" android:text='@{owdevice.deviceNotifyCharacteristics.get(4).ui_name}' android:layout_below="@id/header_rider_on"
                         android:layout_toRightOf="@id/header_rider_pad1"
                         android:gravity="center"
                         android:background='@{owdevice.deviceNotifyCharacteristics.get(4).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
-                        android:visibility="@{owdevice.isConnected ? View.VISIBLE : View.GONE}"
+                        android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
                         android:textColor="#FFFFFF" />
                 </android.support.percent.PercentRelativeLayout>
                 </android.support.v7.widget.CardView>
@@ -179,7 +179,7 @@
                 mstb:mstbPrimaryColor="?attr/colorPrimary"
                 mstb:mstbSecondaryColor="@color/white"
                 android:layout_below="@id/front_blink_switch"
-                android:enabled="@{owdevice.isConnected ? true : false}"/>
+                android:enabled="@{safeUnbox(owdevice.isConnected) ? true : false}"/>
         </android.support.v7.widget.CardView>
 
         <android.support.v7.widget.CardView android:id="@+id/card_detailed_stats"
@@ -251,7 +251,7 @@
             android:layout_width="fill_parent"
             android:layout_height="150dp"
             android:layout_margin="5dp"
-            android:visibility="@{owdevice.showDebugWindow ? View.VISIBLE : View.GONE}"
+            android:visibility="@{safeUnbox(owdevice.showDebugWindow) ? View.VISIBLE : View.GONE}"
             card_view:cardCornerRadius="2dp"
             card_view:contentPadding="5dp">
             <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"

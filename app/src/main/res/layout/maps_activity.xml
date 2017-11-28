@@ -5,6 +5,7 @@
     android:layout_height="match_parent">
 
 
+    <include android:id="@+id/tool_bar" layout="@layout/tool_bar"/>
 
     <fragment
         android:layout_weight="1"
