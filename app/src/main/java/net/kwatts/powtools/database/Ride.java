@@ -9,7 +9,7 @@ public class Ride {
     public long id;
 
     @Override public String toString() {
-        return "id";
+        return "Ride(" + Long.toString(id) + ")";
     }
 
 }
