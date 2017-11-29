@@ -109,7 +109,9 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                     referenceTime = time;
                 }
                 time = time - referenceTime;
-                timeLocationMap.put(time, new LatLng(moment.getGpsLatDouble(), moment.getGpsLongDouble()));
+                if (moment.getGpsLatDouble() != null && moment.getGpsLongDouble() != null) {
+                    timeLocationMap.put(time, new LatLng(moment.getGpsLatDouble(), moment.getGpsLongDouble()));
+                }
                 Attribute attribute = database.attributeDao().getFromMomentAndKey(moment.id, "speed");
                 if (attribute != null && attribute.getValue() != null) {
                     String value = attribute.getValue();

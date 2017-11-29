@@ -49,14 +49,14 @@ public class Moment {
         this.gpsLat = Double.toString(gpsLat);
     }
     public Double getGpsLatDouble() {
-        return gpsLat != null ? Double.parseDouble(gpsLat) : 0.0;
+        return gpsLat != null ? Double.parseDouble(gpsLat) : null;
     }
 
     public void setGpsLong(double gpsLong) {
         this.gpsLong = Double.toString(gpsLong);
     }
     public Double getGpsLongDouble() {
-        return gpsLong != null ? Double.parseDouble(gpsLong) : 0.0;
+        return gpsLong != null ? Double.parseDouble(gpsLong) : null;
     }
 
     public String getGpsLat() {
