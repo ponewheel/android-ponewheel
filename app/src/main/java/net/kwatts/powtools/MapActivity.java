@@ -1,12 +1,8 @@
 package net.kwatts.powtools;
 
-
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.content.FileProvider;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
@@ -35,46 +31,65 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import net.kwatts.powtools.loggers.PlainTextFileLogger;
+import net.kwatts.powtools.database.Attribute;
+import net.kwatts.powtools.database.Moment;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
- * An activity that displays a Google map with a marker (pin) to indicate a particular location.
- */
+import timber.log.Timber;
+
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
     public static final String TAG = MapActivity.class.getSimpleName();
-    public static final String FILE_NAME = "EXTRA_DATA_FILE_NAME";
-
+    public static final String RIDE_ID = "EXTRA_RIDE_ID";
 
     ArrayMap<Long, LatLng> timeLocationMap = new ArrayMap<>();
     private SupportMapFragment mapFragment;
-    private GoogleMap googleMap;
-    private HashSet<Marker> mapMarkers = new HashSet<>();
+    GoogleMap googleMap;
+    HashSet<Marker> mapMarkers = new HashSet<>();
     private ShareActionProvider mShareActionProvider;
-    private String mFileName;
+    private boolean isDatasetReady = false;
+    private boolean isMapReady = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Retrieve the content view that renders the map.
         setContentView(R.layout.maps_activity);
-
-        mFileName = getIntent().getStringExtra(FILE_NAME);
 
         ArrayList<Entry> timeSpeedMap = new ArrayList<>();
 
         timeLocationMap.clear();
-        // TODO convert to async
-        PlainTextFileLogger.getEntriesFromFile(mFileName, timeSpeedMap, timeLocationMap);
 
-        setupChart(timeSpeedMap);
+        App.dbExecute(database -> {
+            long rideId = getIntent().getLongExtra(RIDE_ID, -1);
+            List<Moment> moments = database.momentDao().getFromRide(rideId);
+            Long referenceTime = null;
+            for (Moment moment : moments) {
+                long time = moment.getDate().getTime();
+                if (referenceTime == null) {
+                    referenceTime = time;
+                }
+                time = time - referenceTime;
+                timeLocationMap.put(time, new LatLng(moment.getGpsLatDouble(), moment.getGpsLongDouble()));
+                Attribute attribute = database.attributeDao().getFromMomentAndKey(moment.id, "speed");
+                if (attribute != null && attribute.getValue() != null) {
+                    String value = attribute.getValue();
+                    timeSpeedMap.add(new Entry(time, Float.valueOf(value)));
+                }
+            }
+
+            isDatasetReady = true;
+            checkDataAndMapReady();
+
+            if (!timeSpeedMap.isEmpty()) {
+                setupChart(timeSpeedMap);
+            }
+        });
+
 
         // Get the SupportMapFragment and request notification
         // when the map is ready to be used.
@@ -82,7 +97,49 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.tool_bar);
+        setupToolbar();
+    }
+
+
+    private synchronized void checkDataAndMapReady() {
+        if (isMapReady && isDatasetReady) {
+            runOnUiThread(() -> {
+
+                googleMap.addPolyline(
+                        new PolylineOptions().clickable(true).add(
+                                timeLocationMap.values().toArray(
+                                        new LatLng[timeLocationMap.size()]
+                                )
+                        )
+                );
+                LatLngBounds.Builder latLongBoundsBuilder = new LatLngBounds.Builder();
+                for (LatLng latLng : timeLocationMap.values()) {
+                    latLongBoundsBuilder.include(latLng);
+                }
+
+                View mapFragmentView = mapFragment.getView();
+                if (timeLocationMap.size() != 0) {
+                    LatLngBounds latLngBounds = latLongBoundsBuilder.build();
+                    double width = latLngBounds.southwest.longitude - latLngBounds.northeast.longitude;
+                    Log.d(TAG, "onMapReady: mapWidth" + width);
+
+                    // TODO apply a min width
+
+                    assert mapFragmentView != null;
+                    mapFragmentView.post(() -> googleMap.moveCamera(
+                            // TODO convert dp to px
+                            CameraUpdateFactory.newLatLngBounds(latLngBounds, 150)));
+                }
+
+            });
+
+            isMapReady = false;
+            isDatasetReady = false;
+        }
+    }
+
+    private void setupToolbar() {
+        Toolbar toolbar = findViewById(R.id.tool_bar);
         toolbar.setTitle("POWheel");
         toolbar.setLogo(R.mipmap.ic_launcher);
         setSupportActionBar(toolbar);
@@ -99,12 +156,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         // Create share intent
         Intent sendIntent = new Intent();
         sendIntent.setAction(Intent.ACTION_SEND);
-        File logFile = new File(PlainTextFileLogger.getLoggingPath() + "/" + mFileName);
-        Uri uri = FileProvider.getUriForFile(this, "net.kwatts.powtools.fileprovider", logFile);
-        sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
-        sendIntent.setType("text/csv");
-        sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        setShareIntent(sendIntent);
+        //File logFile = new File(PlainTextFileLogger.getLoggingPath() + "/" + mFileName);
+        //Uri uri = FileProvider.getUriForFile(this, "net.kwatts.powtools.fileprovider", logFile);
+        //sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
+        //sendIntent.setType("text/csv");
+        //sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        //setShareIntent(sendIntent);
 
         return true;
     }
@@ -112,6 +169,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void setShareIntent(Intent shareIntent) {
         if (mShareActionProvider != null) {
             mShareActionProvider.setShareIntent(shareIntent);
+            //mShareActionProvider.setOnShareTargetSelectedListener();
         }
     }
 
@@ -128,33 +186,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         this.googleMap = googleMap;
 
-        Polyline polyline1 = googleMap.addPolyline(new PolylineOptions()
-                .clickable(true)
-                .add( timeLocationMap.values().toArray(new LatLng[timeLocationMap.size()]) )
-        );
-        LatLngBounds.Builder latLongBoundsBuilder = new LatLngBounds.Builder();
-        for (LatLng latLng : timeLocationMap.values()) {
-            latLongBoundsBuilder.include(latLng);
-        }
 
-        View mapFragmentView = mapFragment.getView();
-        if (timeLocationMap.size() != 0) {
-            LatLngBounds latLngBounds = latLongBoundsBuilder.build();
-            double width = latLngBounds.southwest.longitude - latLngBounds.northeast.longitude;
-            Log.d(TAG, "onMapReady: mapWidth" + width);
 
-            // TODO apply a min width
-
-            assert mapFragmentView != null;
-            mapFragmentView.post(() -> googleMap.moveCamera(
-                    // TODO convert dp to px
-                    CameraUpdateFactory.newLatLngBounds(latLngBounds, 150)));
-        }
+        isMapReady = true;
+        checkDataAndMapReady();
     }
 
 
     private void setupChart(ArrayList<Entry> values) {
-        LineChart lineChart = (LineChart) findViewById(R.id.ride_detail_speed_chart);
+        LineChart lineChart = findViewById(R.id.ride_detail_speed_chart);
         assert lineChart != null;
         LineDataSet dataSet = new LineDataSet(values, "Label");
         dataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
