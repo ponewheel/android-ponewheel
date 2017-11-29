@@ -110,8 +110,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     PieChart mBatteryChart;
-    private Ride ride;
+    Ride ride;
     private DisposableObserver<Address> rxLocationObserver;
+    Date latestMoment;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event){
@@ -311,11 +312,20 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-                ride = new Ride();
+                if (
+                        ride == null ||
+                        latestMoment == null ||
+                        TimeUnit.MINUTES.toMillis(1) > getMillisSinceLastMoment()) {
 
-                App.dbExecute(database -> ride.id = database.rideDao().insert(ride));
+                    ride = new Ride();
+                    App.dbExecute(database -> ride.id = database.rideDao().insert(ride));
+                }
             }
         });
+    }
+
+    long getMillisSinceLastMoment() {
+        return new Date().getTime() - latestMoment.getTime();
     }
 
     private void showEula() {
@@ -598,7 +608,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     private void persistMoment() throws Exception {
 //        mTextFileLogger.write(mOWDevice);
-        Moment moment = new Moment(ride.id, new Date());
+        latestMoment = new Date();
+        Moment moment = new Moment(ride.id, latestMoment);
         moment.rideId = ride.id;
         App.dbExecute(database -> {
             long momentId = database.momentDao().insert(moment);
