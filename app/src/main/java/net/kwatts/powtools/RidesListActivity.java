@@ -8,13 +8,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.observers.DisposableSingleObserver;
-import io.reactivex.schedulers.Schedulers;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
+
 import net.kwatts.powtools.adapters.RideListAdapter;
 import net.kwatts.powtools.database.Attribute;
 import net.kwatts.powtools.database.Moment;
@@ -84,11 +78,14 @@ public class RidesListActivity extends AppCompatActivity {
     private void deleteSelectedRides() {
         App.dbExecute(database -> {
             final List<RideRow> checkedItems = rideListAdapter.getCheckedItems();
-            for (RideRow checkedItem : checkedItems) {
+            for (int i = 0; i < checkedItems.size(); i++) {
+                RideRow checkedItem = checkedItems.get(i);
                 database.rideDao().delete(checkedItem.rideId);
-            }
 
-            refreshList();
+                int removedIndex = rideListAdapter.getRideList().indexOf(checkedItem);
+                rideListAdapter.getRideList().remove(checkedItem);
+                runOnUiThread(() -> rideListAdapter.notifyItemRemoved(removedIndex));
+            }
         });
     }
 
@@ -111,10 +108,13 @@ public class RidesListActivity extends AppCompatActivity {
             // Insert sample rides
             Ride ride = new Ride();
             long rideId = database.rideDao().insert(ride);
+            RideRow newRideRow = new RideRow();
+            newRideRow.rideId = rideId;
 
             Calendar calendar = Calendar.getInstance();
             Moment moment;
-            for (int i = 0; i < (int) (Math.random() * 58); i++) {
+            int rideLength = (int) (Math.random() * 58);
+            for (int i = 0; i < rideLength; i++) {
                 calendar.add(Calendar.MINUTE, 1);
                 moment = new Moment(rideId, calendar.getTime());
 
@@ -129,9 +129,17 @@ public class RidesListActivity extends AppCompatActivity {
                 attribute.setValue(""+i);
 
                 database.attributeDao().insert(attribute);
+
+                if (i == 0) {
+                    newRideRow.minEventDate = calendar.getTime();
+                } else if (i == rideLength - 1) {
+                    newRideRow.maxEventDate = calendar.getTime();
+                }
             }
 
-            refreshList();
+            rideListAdapter.getRideList().add(newRideRow);
+            runOnUiThread(() -> rideListAdapter.notifyItemInserted(rideListAdapter.getRideList().size()-1));
+
         });
     }
 
