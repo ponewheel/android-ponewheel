@@ -195,7 +195,7 @@ public class GattAttributeResolver {
     }
 
     private static Map populateGattAttributesMap() {
-        HashMap var0 = new HashMap();
+        HashMap<String, String> var0 = new HashMap<>();
         var0.put("00000001-0000-1000-8000-00805f9b34fb", "Service Discovery Protocol (SDP)");
         var0.put("00000002-0000-1000-8000-00805f9b34fb", "User Datagram Protocol (UDP)");
         var0.put("00000003-0000-1000-8000-00805f9b34fb", "Radio Frequency Communication Protocol (RFCOMM)");

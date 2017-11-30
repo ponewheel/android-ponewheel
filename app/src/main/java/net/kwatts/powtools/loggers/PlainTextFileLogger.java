@@ -1,4 +1,5 @@
 package net.kwatts.powtools.loggers;
+
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.util.ArrayMap;
@@ -7,8 +8,8 @@ import com.github.mikephil.charting.data.Entry;
 import com.google.android.gms.maps.model.LatLng;
 
 import net.kwatts.powtools.DeviceInterface;
-import net.kwatts.powtools.MapActivity;
-import net.kwatts.powtools.OWDevice;
+import net.kwatts.powtools.RideDetailActivity;
+import net.kwatts.powtools.model.OWDevice;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -21,12 +22,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.StringTokenizer;
 
+import timber.log.Timber;
+
 /**
  * Created by kwatts on 4/21/16.
  */
 
 public class PlainTextFileLogger  {
-    public static final String TAG = MapActivity.class.getSimpleName();
+    public static final String TAG = RideDetailActivity.class.getSimpleName();
 
     private File file;
     protected final String name = "TXT";
@@ -39,6 +42,8 @@ public class PlainTextFileLogger  {
 
 
     public void write(DeviceInterface dev) throws Exception {
+
+
         boolean wasFileNew = file.createNewFile();
 
         FileOutputStream writer = new FileOutputStream(file, true);
@@ -46,7 +51,10 @@ public class PlainTextFileLogger  {
 
         if (wasFileNew) {
             output.write(dev.getCSVHeader().getBytes());
+
         }
+
+
 
         output.write(dev.toCSV().getBytes());
         output.flush();
@@ -84,7 +92,7 @@ public class PlainTextFileLogger  {
 
     public static void getEntriesFromFile(String fileName, ArrayList<Entry> timeSpeedMap, ArrayMap<Long, LatLng> latLngs) {
         String logFileLocation = PlainTextFileLogger.getLoggingPath() + "/" + fileName;
-        System.out.println("logFile = " + logFileLocation);
+        Timber.d("logFile = " + logFileLocation);
 
         BufferedReader bufferedReader = null;
         FileReader fileReader = null;
@@ -100,16 +108,16 @@ public class PlainTextFileLogger  {
 
             Long referenceTime = null;
             while ((currentLine = bufferedReader.readLine()) != null) {
-//                System.out.println(currentLine);
+//                Timber.d(currentLine);
                 StringTokenizer stringTokenizer = new StringTokenizer(currentLine, ",");
 
                 Date date;
-                //System.out.println("now = " + OWDevice.SIMPLE_DATE_FORMAT.format(new Date()));
+                //Timber.d("now = " + OWDevice.SIMPLE_DATE_FORMAT.format(new Date()));
                 String dateString = stringTokenizer.nextToken();
                 try {
                     date = OWDevice.SIMPLE_DATE_FORMAT.parse(dateString);
                 } catch (ParseException e) {
-                    //System.out.println("now (old)= " + OWDevice.OLD_SIMPLE_DATE_FORMAT.format(new Date()));
+                    //Timber.d("now (old)= " + OWDevice.OLD_SIMPLE_DATE_FORMAT.format(new Date()));
                     date = OWDevice.OLD_SIMPLE_DATE_FORMAT.parse(dateString);
 
                 }
@@ -134,7 +142,7 @@ public class PlainTextFileLogger  {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Timber.e(e);
         } finally {
 
             try {

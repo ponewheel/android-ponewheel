@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
     <data xmlns:android="http://schemas.android.com/apk/res/android">
-
         <import type="android.view.View"/>
-        <import type="net.kwatts.powtools.OWDevice"/>
-        <variable name="owdevice" type="net.kwatts.powtools.OWDevice" />
+        <import type="net.kwatts.powtools.model.OWDevice"/>
+        <variable name="owdevice" type="net.kwatts.powtools.model.OWDevice" />
     </data>
+
     <android.support.percent.PercentRelativeLayout
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:mstb="http://schemas.android.com/apk/res-auto"
         tools:context=".MainActivity">
 
         <android.support.v7.widget.SwitchCompat
@@ -22,7 +21,7 @@
             android:layout_height="wrap_content"
             app:layout_widthPercent="50%"
             android:checked="false"
-            android:text="Custom"
+            android:text="@string/custom"
             android:textOn=""
             android:textOff=""
             app:showText="true"
@@ -37,14 +36,12 @@
         android:layout_toLeftOf="@id/custom_light_switch"
         android:layout_alignParentLeft="true"
         android:checked="false"
-        android:text="Lights"
+        android:text="@string/lights"
         android:textOn=""
         android:textOff=""
         app:showText="true"
         android:enabled="@{owdevice.isConnected ? true : false}"
         />
-
-
 
     <android.support.v7.widget.SwitchCompat
         android:id="@+id/back_bright_switch"
@@ -55,7 +52,7 @@
         android:layout_height="wrap_content"
         app:layout_widthPercent="50%"
         android:checked="false"
-        android:text="Back Bright"
+        android:text="@string/back_bright"
         android:textOn=""
         android:textOff=""
         app:showText="true"
@@ -71,7 +68,7 @@
         android:layout_height="wrap_content"
         app:layout_widthPercent="50%"
         android:checked="false"
-        android:text="Front Bright"
+        android:text="@string/front_bright"
         android:textOn=""
         android:textOff=""
         app:showText="true"
@@ -87,7 +84,7 @@
         android:layout_height="wrap_content"
         app:layout_widthPercent="50%"
         android:checked="false"
-        android:text="Back Blink"
+        android:text="@string/back_blink"
         android:textOn=""
         android:textOff=""
         app:showText="true"
@@ -103,13 +100,12 @@
         android:layout_height="wrap_content"
         app:layout_widthPercent="50%"
         android:checked="false"
-        android:text="Front Blink"
+        android:text="@string/front_blink"
         android:textOn=""
         android:textOff=""
         app:showText="true"
         android:enabled="@{owdevice.isConnected ? true : false}"/>
 
-        />
 <!--
         <org.honorato.multistatetogglebutton.MultiStateToggleButton
             android:id="@+id/mstb_multi_ridemodes_owplus"

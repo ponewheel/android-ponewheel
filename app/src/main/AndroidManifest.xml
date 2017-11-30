@@ -27,6 +27,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
+        android:resizeableActivity="true"
         android:theme="@style/AppTheme.Base">
         <activity
             android:name=".MainActivity"
@@ -45,7 +46,6 @@
 
         <activity android:name=".RidesListActivity" />
         <activity android:name=".RideDetailActivity" />
-        <activity android:name=".MapActivity" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"

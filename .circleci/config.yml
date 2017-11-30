@@ -1,10 +1,14 @@
 version: 2
 
+executorType: docker
+containerInfo:
+  - image: circleci/android:api-27-alpha
+    cmd: ["/bin/bash"]
 jobs:
   build:
     working_directory: ~/android-ponewheel
     docker:
-      - image: circleci/android:api-26-alpha
+      - image: circleci/android:api-27-alpha
     steps:
       - checkout
       - run:

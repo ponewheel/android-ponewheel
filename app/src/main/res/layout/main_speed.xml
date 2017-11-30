@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="RtlHardcoded">
+    <data xmlns:android="http://schemas.android.com/apk/res/android">
+
+        <import type="android.databinding.ObservableArrayList" />
+        <import type="android.view.View" />
+        <import type="net.kwatts.powtools.model.OWDevice" />
+        <variable
+            name="owdevice"
+            type="net.kwatts.powtools.model.OWDevice"
+            android:layout_height="wrap_content" />
+    </data>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:showIn="@layout/activity_main"
+        >
+
+        <TextView
+            android:id="@+id/header_speed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(0).value}'
+            android:textSize="40.0dp"
+            />
+
+        <TextView
+            android:id="@+id/header_speed_label1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/header_speed"
+            android:layout_centerHorizontal="true"
+            android:text="@string/current_speed"
+            android:textSize="20.0dp"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:id="@+id/header_speed_label2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/header_speed_label1"
+            android:layout_centerHorizontal="true"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(0).ui_name}'
+            android:textSize="20.0dp"
+            android:textStyle="bold"
+            />
+
+
+        <View
+            android:id="@+id/header_speed_line"
+            android:layout_width="match_parent"
+            android:layout_height="1.0dip"
+            android:layout_below="@id/header_speed_label2"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/disconnected_color"
+            />
+
+
+        <TextView
+            android:id="@+id/header_speed_top_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_below="@id/header_speed_line"
+            android:layout_marginTop="25dp"
+            android:text="@string/trip_top_speed"
+            android:textSize="15.0sp"
+            android:textStyle="bold"
+            />
+
+        <TextView
+            android:id="@+id/header_speed_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@id/header_speed_line"
+            android:layout_marginTop="25dp"
+            android:layout_toEndOf="@id/header_speed_top_label"
+            android:text='@{owdevice.deviceNotifyCharacteristics.get(5).value}'
+            android:textSize="15.0sp"
+            android:textStyle="bold"
+            />
+        <!--        android:text="23.00"   android:text='@{owdevice.deviceNotifyCharacteristics.get(5).value}'  android:textStyle="bold" android:layout_below="@id/header_speed_line" />
+
+                                  -->
+    </RelativeLayout>
+</layout>

@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<layout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:bind="http://schemas.android.com/apk/res-auto">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:bind="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    tools:ignore="RtlHardcoded">
+
     <data xmlns:android="http://schemas.android.com/apk/res/android">
-        <import type="android.databinding.ObservableArrayList"/>
-        <import type="android.view.View"/>
-        <import type="net.kwatts.powtools.OWDevice"/>
-        <variable name="owdevice" type="net.kwatts.powtools.OWDevice" android:layout_height="wrap_content" />
+        <import type="android.databinding.ObservableArrayList" />
+        <import type="android.view.View" />
+        <import type="net.kwatts.powtools.model.OWDevice" />
+        <variable
+            name="owdevice"
+            type="net.kwatts.powtools.model.OWDevice"
+            android:layout_height="wrap_content" />
     </data>
 
     <!--
@@ -13,272 +22,206 @@
       http://developer.android.com/tools/data-binding/guide.html
       ic_menu_refresh,ic_menu_share
     -->
-    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
-    <RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent">
-    <include android:id="@+id/tool_bar" layout="@layout/tool_bar"/>
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <LinearLayout android:layout_below="@id/tool_bar" android:orientation="vertical" android:paddingLeft="@dimen/activity_horizontal_margin"
-        xmlns:card_view="http://schemas.android.com/apk/res-auto" android:paddingTop="@dimen/activity_vertical_margin" android:paddingRight="@dimen/activity_horizontal_margin" android:paddingBottom="@dimen/activity_vertical_margin" android:layout_width="match_parent" android:layout_height="fill_parent">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <android.support.percent.PercentRelativeLayout android:layout_width="match_parent" android:layout_height="200dp"
-           xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"  xmlns:card_view="http://schemas.android.com/apk/res-auto">
-            <android.support.v7.widget.CardView android:id="@+id/card_view1" style="@style/CardView.DayNight"
-                app:layout_heightPercent="100%" app:layout_widthPercent="50%" android:layout_margin="5dp"
-                card_view:cardCornerRadius="2dp" card_view:contentPadding="10dp">
+            <include
+                android:id="@+id/tool_bar"
+                layout="@layout/tool_bar" />
 
-                <RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent">
-                    <TextView android:id="@+id/header_speed" android:layout_centerHorizontal="true" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:textSize="40.0dp" android:text='@{owdevice.deviceNotifyCharacteristics.get(0).value}' />
-                    <TextView android:id="@+id/header_speed_label1" android:layout_centerHorizontal="true" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text="Current Speed" android:textStyle="bold"
-                        android:textSize="20.0dp" android:layout_below="@id/header_speed" />
-                    <TextView android:id="@+id/header_speed_label2" android:layout_centerHorizontal="true" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text='@{owdevice.deviceNotifyCharacteristics.get(0).ui_name}' android:textStyle="bold"
-                        android:textSize="20.0dp" android:layout_below="@id/header_speed_label1" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="fill_parent"
+                android:layout_below="@id/tool_bar"
+                android:orientation="vertical"
+                android:paddingBottom="@dimen/activity_vertical_margin"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:paddingRight="@dimen/activity_horizontal_margin"
+                android:paddingTop="@dimen/activity_vertical_margin">
+
+                <android.support.percent.PercentRelativeLayout
+                    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp">
+
+                    <android.support.v7.widget.CardView
+                        android:id="@+id/card_view1"
+                        style="@style/CardView.DayNight"
+                        android:layout_margin="5dp"
+                        app:layout_heightPercent="100%"
+                        app:layout_widthPercent="50%"
+                        card_view:cardCornerRadius="2dp"
+                        card_view:contentPadding="10dp">
+
+                        <include layout="@layout/main_speed"
+                            bind:owdevice="@{owdevice}"/>
+
+                    </android.support.v7.widget.CardView>
+
+                    <android.support.v7.widget.CardView
+                        android:id="@+id/card_view2"
+                        style="@style/CardView.DayNight"
+                        android:layout_gravity="right"
+                        android:layout_margin="5dp"
+                        android:layout_toEndOf="@id/card_view1"
+                        app:layout_heightPercent="100%"
+                        app:layout_widthPercent="50%"
+                        card_view:cardCornerRadius="2dp"
+                        card_view:contentPadding="10dp">
+
+                        <include layout="@layout/main_battery"
+                            bind:owdevice="@{owdevice}"/>
+
+                    </android.support.v7.widget.CardView>
+                </android.support.percent.PercentRelativeLayout>
+
+                <android.support.percent.PercentRelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="120dp">
+
+                    <android.support.v7.widget.CardView
+                        android:id="@+id/card_view3"
+                        style="@style/CardView.DayNight"
+                        android:layout_margin="5dp"
+                        app:layout_heightPercent="100%"
+                        app:layout_widthPercent="20%"
+                        card_view:cardCornerRadius="2dp"
+                        card_view:contentPadding="10dp">
+
+                        <include layout="@layout/main_ow_pads"
+                            bind:owdevice="@{owdevice}"/>
+                    </android.support.v7.widget.CardView>
+
+                    <android.support.v7.widget.CardView
+                        android:id="@+id/card_view4"
+                        style="@style/CardView.DayNight"
+                        android:layout_gravity="right"
+                        android:layout_margin="5dp"
+                        android:layout_toEndOf="@id/card_view3"
+                        app:layout_heightPercent="100%"
+                        app:layout_widthPercent="80%"
+                        card_view:cardCornerRadius="2dp"
+                        card_view:contentPadding="10dp">
+
+                        <include
+                            layout="@layout/main_device_settings"
+                            bind:owdevice="@{owdevice}" />
+                    </android.support.v7.widget.CardView>
+                    <!--
+                    <android.support.v7.widget.CardView android:id="@+id/card_view0"
+                        android:layout_gravity="center"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        card_view:cardCornerRadius="2dp"
+                        card_view:contentPadding="10dp">
+                        <android.support.percent.PercentRelativeLayout  android:layout_width="match_parent" android:layout_height="50.0sp" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+                            android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/border_ui_green : (owdevice.isConnected ? @drawable/border_ui_red : @drawable/border_ui)}'>
+                            <TextView android:id="@+id/header_disconnected" android:textSize="20.0sp" app:layout_heightPercent="100%" app:layout_widthPercent="100%" android:text="DISCONNECTED"
+                                android:background="@drawable/disconnected_color"
+                                android:textColor="#FFFFFF"
+                                android:gravity="center"
+                                android:visibility="@{owdevice.isConnected ? View.GONE : View.VISIBLE}"/>
+                            <TextView android:id="@id/header_rider_on" android:textSize="20.0sp" app:layout_heightPercent="60%" app:layout_widthPercent="100%" android:text='@{owdevice.deviceNotifyCharacteristics.get(2).ui_name}'
+                                android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
+                                android:textColor="#FFFFFF"
+                                android:visibility="@{owdevice.isConnected ? View.VISIBLE : View.GONE}"
+                                android:gravity="center" />
+                            <TextView android:id="@id/header_rider_pad1" android:textSize="10.0sp" app:layout_heightPercent="40%" app:layout_widthPercent="50%" android:text='@{owdevice.deviceNotifyCharacteristics.get(3).ui_name}'   android:layout_below="@id/header_rider_on"
+                                android:gravity="center"
+                                android:background='@{owdevice.deviceNotifyCharacteristics.get(3).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
+                                android:visibility="@{owdevice.isConnected ? View.VISIBLE : View.GONE}"
+                                android:textColor="#FFFFFF" />
+                            <TextView android:id="@id/header_rider_pad2"  android:textSize="10.0sp"  app:layout_heightPercent="40%" app:layout_widthPercent="50%" android:text='@{owdevice.deviceNotifyCharacteristics.get(4).ui_name}' android:layout_below="@id/header_rider_on"
+                                android:layout_toRightOf="@id/header_rider_pad1"
+                                android:gravity="center"
+                                android:background='@{owdevice.deviceNotifyCharacteristics.get(4).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
+                                android:visibility="@{owdevice.isConnected ? View.VISIBLE : View.GONE}"
+                                android:textColor="#FFFFFF" />
+                        </android.support.percent.PercentRelativeLayout>
+
+                    </android.support.v7.widget.CardView>
 
 
-                    <View android:layout_marginTop="10dp" android:id="@+id/header_speed_line" android:layout_width="match_parent" android:layout_height="1.0dip"
-                        android:background="@drawable/disconnected_color" android:layout_below="@id/header_speed_label2"  />
+                    -->
 
 
-                    <TextView android:layout_marginTop="25dp"  android:id="@+id/header_speed_top_label" android:layout_alignParentLeft="true"
-                        android:textSize="15.0sp" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text="Trip Top Speed: " android:textStyle="bold"
-                        android:layout_below="@id/header_speed_line" />
-                    <TextView android:layout_marginTop="25dp" android:id="@+id/header_speed_top"  android:layout_toRightOf="@id/header_speed_top_label" android:layout_alignParentRight="true"
-                        android:textSize="15.0sp" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text='@{owdevice.deviceNotifyCharacteristics.get(5).value}'   android:textStyle="bold" android:layout_below="@id/header_speed_line" />
-            <!--        android:text="23.00"   android:text='@{owdevice.deviceNotifyCharacteristics.get(5).value}'  android:textStyle="bold" android:layout_below="@id/header_speed_line" />
+                </android.support.percent.PercentRelativeLayout>
 
-              -->
-                </RelativeLayout>
+                <android.support.v7.widget.CardView
+                    android:id="@+id/card_ridemode"
+                    style="@style/CardView.DayNight"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:layout_gravity="center"
+                    android:layout_margin="5dp"
+                    card_view:cardCornerRadius="2dp"
+                    card_view:contentPadding="5dp">
 
-            </android.support.v7.widget.CardView>
-
-            <android.support.v7.widget.CardView
-                android:id="@+id/card_view2" android:layout_gravity="right" style="@style/CardView.DayNight"
-                app:layout_heightPercent="100%" app:layout_widthPercent="50%" android:layout_margin="5dp"
-                card_view:cardCornerRadius="2dp" card_view:contentPadding="10dp" android:layout_toRightOf="@id/card_view1">
-
-
-
-                <android.support.percent.PercentRelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
-                    <com.github.mikephil.charting.charts.PieChart
-                        android:gravity="center"
-                        app:layout_heightPercent="70%" app:layout_widthPercent="100%"
-                        android:id="@+id/batteryPieChart"
+                    <org.honorato.multistatetogglebutton.MultiStateToggleButton xmlns:mstb="http://schemas.android.com/apk/res-auto"
+                        android:id="@+id/mstb_multi_ridemodes"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
-
-                    <TextView android:id="@id/header_battery_label" android:gravity="center" app:layout_heightPercent="30%"
-                        app:layout_widthPercent="100%" android:textSize="20.0sp" android:layout_below="@id/batteryPieChart"
-                        android:layout_marginTop="25dp" android:textStyle="bold" android:text="Battery"   />
-                </android.support.percent.PercentRelativeLayout>
-
-            </android.support.v7.widget.CardView>
-        </android.support.percent.PercentRelativeLayout>
-
-        <android.support.percent.PercentRelativeLayout android:layout_width="match_parent" android:layout_height="120dp"
-            xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"  xmlns:card_view="http://schemas.android.com/apk/res-auto">
-            <android.support.v7.widget.CardView
-                android:id="@+id/card_view3"  style="@style/CardView.DayNight"
-                app:layout_heightPercent="100%" app:layout_widthPercent="20%" android:layout_margin="5dp"
-                card_view:cardCornerRadius="2dp" card_view:contentPadding="10dp">
-                <android.support.percent.PercentRelativeLayout  android:id="@+id/header_ow_pads" android:layout_width="fill_parent" android:layout_height="wrap_content" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
-                    android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/border_ui_green : (safeUnbox(owdevice.isConnected) ? @drawable/border_ui_red : @drawable/border_ui)}'>
-                    <TextView android:id="@+id/header_disconnected" android:textSize="10.0sp" app:layout_heightPercent="100%" app:layout_widthPercent="100%" android:text="OFF"
-                        android:background="?attr/colorPrimary"
-                        android:textColor="#FFFFFF"
-                        android:gravity="center"
-                        android:visibility="@{safeUnbox(owdevice.isConnected) ? View.GONE : View.VISIBLE}"/>
-                    <TextView android:id="@id/header_rider_on" android:textSize="10.0sp" app:layout_heightPercent="60%" app:layout_widthPercent="100%" android:text='@{owdevice.deviceNotifyCharacteristics.get(2).ui_name}'
-                        android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
-                        android:textColor="#FFFFFF"
-                        android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
-                        android:gravity="center" />
-                    <TextView android:id="@id/header_rider_pad1" android:textSize="5.0sp" app:layout_heightPercent="40%" app:layout_widthPercent="50%" android:text='@{owdevice.deviceNotifyCharacteristics.get(3).ui_name}'   android:layout_below="@id/header_rider_on"
-                        android:gravity="center"
-                        android:background='@{owdevice.deviceNotifyCharacteristics.get(3).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
-                        android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
-                        android:textColor="#FFFFFF" />
-                    <TextView android:id="@id/header_rider_pad2"  android:textSize="5.0sp"  app:layout_heightPercent="40%" app:layout_widthPercent="50%" android:text='@{owdevice.deviceNotifyCharacteristics.get(4).ui_name}' android:layout_below="@id/header_rider_on"
-                        android:layout_toRightOf="@id/header_rider_pad1"
-                        android:gravity="center"
-                        android:background='@{owdevice.deviceNotifyCharacteristics.get(4).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
-                        android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
-                        android:textColor="#FFFFFF" />
-                </android.support.percent.PercentRelativeLayout>
+                        android:layout_height="match_parent"
+                        android:layout_below="@id/front_blink_switch"
+                        android:enabled="@{safeUnbox(owdevice.isConnected) ? true : false}"
+                        mstb:mstbPrimaryColor="?attr/colorPrimary"
+                        mstb:mstbSecondaryColor="@color/white"
+                        mstb:values="@array/ow_ridemode_array" />
                 </android.support.v7.widget.CardView>
 
-            <android.support.v7.widget.CardView
-                android:id="@+id/card_view4" android:layout_gravity="right"  style="@style/CardView.DayNight"
-                app:layout_heightPercent="100%" app:layout_widthPercent="80%" android:layout_margin="5dp"
-                card_view:cardCornerRadius="2dp" card_view:contentPadding="10dp" android:layout_toRightOf="@id/card_view3">
+                <android.support.v7.widget.CardView
+                    android:id="@+id/card_detailed_stats"
+                    style="@style/CardView.DayNight"
+                    android:layout_width="fill_parent"
+                    android:layout_height="350dp"
+                    android:layout_gravity="center"
+                    android:layout_margin="5dp"
+                    card_view:cardCornerRadius="2dp"
+                    card_view:contentPadding="5dp">
 
-                <include
-                    android:id="@+id/device_settings"
-                    layout="@layout/device_settings"
-                    bind:owdevice="@{owdevice}" />
-            </android.support.v7.widget.CardView>
-        <!--
-        <android.support.v7.widget.CardView android:id="@+id/card_view0"
-            android:layout_gravity="center"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            card_view:cardCornerRadius="2dp"
-            card_view:contentPadding="10dp">
-            <android.support.percent.PercentRelativeLayout  android:layout_width="match_parent" android:layout_height="50.0sp" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/border_ui_green : (owdevice.isConnected ? @drawable/border_ui_red : @drawable/border_ui)}'>
-                <TextView android:id="@+id/header_disconnected" android:textSize="20.0sp" app:layout_heightPercent="100%" app:layout_widthPercent="100%" android:text="DISCONNECTED"
-                    android:background="@drawable/disconnected_color"
-                    android:textColor="#FFFFFF"
-                    android:gravity="center"
-                    android:visibility="@{owdevice.isConnected ? View.GONE : View.VISIBLE}"/>
-                <TextView android:id="@id/header_rider_on" android:textSize="20.0sp" app:layout_heightPercent="60%" app:layout_widthPercent="100%" android:text='@{owdevice.deviceNotifyCharacteristics.get(2).ui_name}'
-                    android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
-                    android:textColor="#FFFFFF"
-                    android:visibility="@{owdevice.isConnected ? View.VISIBLE : View.GONE}"
-                    android:gravity="center" />
-                <TextView android:id="@id/header_rider_pad1" android:textSize="10.0sp" app:layout_heightPercent="40%" app:layout_widthPercent="50%" android:text='@{owdevice.deviceNotifyCharacteristics.get(3).ui_name}'   android:layout_below="@id/header_rider_on"
-                    android:gravity="center"
-                    android:background='@{owdevice.deviceNotifyCharacteristics.get(3).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
-                    android:visibility="@{owdevice.isConnected ? View.VISIBLE : View.GONE}"
-                    android:textColor="#FFFFFF" />
-                <TextView android:id="@id/header_rider_pad2"  android:textSize="10.0sp"  app:layout_heightPercent="40%" app:layout_widthPercent="50%" android:text='@{owdevice.deviceNotifyCharacteristics.get(4).ui_name}' android:layout_below="@id/header_rider_on"
-                    android:layout_toRightOf="@id/header_rider_pad1"
-                    android:gravity="center"
-                    android:background='@{owdevice.deviceNotifyCharacteristics.get(4).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
-                    android:visibility="@{owdevice.isConnected ? View.VISIBLE : View.GONE}"
-                    android:textColor="#FFFFFF" />
-            </android.support.percent.PercentRelativeLayout>
+                    <include
+                        layout="@layout/main_grid_of_characteristics"
+                        bind:owdevice="@{owdevice}"/>
+                </android.support.v7.widget.CardView>
 
-        </android.support.v7.widget.CardView>
+                <android.support.v7.widget.CardView
+                    android:id="@+id/card_deviceEventView"
+                    style="@style/CardView.DayNight"
+                    android:layout_width="fill_parent"
+                    android:layout_height="150dp"
+                    android:layout_gravity="center"
+                    android:layout_margin="5dp"
+                    android:visibility="@{safeUnbox(owdevice.showDebugWindow) ? View.VISIBLE : View.GONE}"
+                    card_view:cardCornerRadius="2dp"
+                    card_view:contentPadding="5dp">
 
+                    <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="fill_parent"
+                        android:orientation="vertical">
 
-        -->
+                        <ScrollView
+                            android:id="@+id/logScroller"
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:fillViewport="true"
+                            android:scrollbars="vertical">
 
-
-        </android.support.percent.PercentRelativeLayout>
-
-        <android.support.v7.widget.CardView android:id="@+id/card_ridemode"
-            style="@style/CardView.DayNight"
-            android:layout_gravity="center"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:layout_margin="5dp"
-            card_view:cardCornerRadius="2dp"
-            card_view:contentPadding="5dp">
-
-            <org.honorato.multistatetogglebutton.MultiStateToggleButton
-                xmlns:mstb="http://schemas.android.com/apk/res-auto"
-                android:id="@+id/mstb_multi_ridemodes"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                mstb:values= "@array/ow_ridemode_array"
-                mstb:mstbPrimaryColor="?attr/colorPrimary"
-                mstb:mstbSecondaryColor="@color/white"
-                android:layout_below="@id/front_blink_switch"
-                android:enabled="@{safeUnbox(owdevice.isConnected) ? true : false}"/>
-        </android.support.v7.widget.CardView>
-
-        <android.support.v7.widget.CardView android:id="@+id/card_detailed_stats"
-            style="@style/CardView.DayNight"
-            android:layout_gravity="center"
-            android:layout_width="fill_parent"
-            android:layout_height="350dp"
-            android:layout_margin="5dp"
-            card_view:cardCornerRadius="2dp"
-            card_view:contentPadding="5dp">
-
-        <GridLayout android:id="@id/gridLayout1" android:paddingBottom="2dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="5dp" android:columnCount="4">
-
-            <!-- READ ONCE CHARACTERISTICS, 50 + -->
-            <TextView android:text="ONEWHEEL BLE NAME" android:layout_row="55" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceMacName}' android:layout_row="55" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-
-            <TextView android:text='@{owdevice.deviceReadCharacteristics.get(0).ui_name}' android:layout_row="53" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceReadCharacteristics.get(0).value}' android:layout_row="53" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text="@{owdevice.deviceReadCharacteristics.get(1).ui_name}" android:layout_row="54" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceReadCharacteristics.get(1).value}' android:layout_row="54" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text="@{owdevice.deviceReadCharacteristics.get(2).ui_name}" android:layout_row="50" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceReadCharacteristics.get(2).value}' android:layout_row="50" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text="@{owdevice.deviceReadCharacteristics.get(4).ui_name}" android:layout_row="51" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceReadCharacteristics.get(4).value}' android:layout_row="51" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-<!--            <TextView android:text="@{owdevice.deviceReadCharacteristics.get(6).ui_name}" android:layout_row="52" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceReadCharacteristics.get(6).value}' android:layout_row="52" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
--->
-            <!-- NOTIFY AND UPDATING CHARACTERISTICS, 0-50 -->
-            <TextView android:text="TRIP CONNECTED TIME" android:layout_row="0" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <Chronometer android:layout_row="0" android:layout_column="1" android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  android:id="@+id/chronometer"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(6).value}' android:layout_row="26" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(6).ui_name}' android:layout_row="26" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(7).value}' android:layout_row="27" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(7).ui_name}' android:layout_row="27" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(8).value}' android:layout_row="28" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(8).ui_name}' android:layout_row="28" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(9).value}' android:layout_row="29" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(9).ui_name}' android:layout_row="29" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(10).value}' android:layout_row="30" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(10).ui_name}' android:layout_row="30" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(11).value}' android:layout_row="31" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(11).ui_name}' android:layout_row="31" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(12).value}' android:layout_row="32" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(12).ui_name}' android:layout_row="32" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <!-- CURRENT -->
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(13).value}' android:layout_row="33" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(13).ui_name}' android:layout_row="33" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(14).ui_name}' android:layout_row="34" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(14).value}' android:layout_row="34" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(15).ui_name}' android:layout_row="35" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(15).value}' android:layout_row="35" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(16).ui_name}' android:layout_row="36" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(16).value}' android:layout_row="36" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(17).ui_name}' android:layout_row="37" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(17).value}' android:layout_row="37" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(18).ui_name}' android:layout_row="38" android:layout_column="0"  android:textSize="12.0sp" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(18).value}' android:layout_row="38" android:layout_column="1"   android:textSize="12.0sp" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-            <!--
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(1).ui_name}' android:layout_row="39" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(1).value}' android:layout_row="39" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
- -->
-        </GridLayout>
-        </android.support.v7.widget.CardView>
-
-        <android.support.v7.widget.CardView android:id="@+id/card_deviceEventView"
-            style="@style/CardView.DayNight"
-            android:layout_gravity="center"
-            android:layout_width="fill_parent"
-            android:layout_height="150dp"
-            android:layout_margin="5dp"
-            android:visibility="@{safeUnbox(owdevice.showDebugWindow) ? View.VISIBLE : View.GONE}"
-            card_view:cardCornerRadius="2dp"
-            card_view:contentPadding="5dp">
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:orientation="vertical"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent">
-
-            <ScrollView
-                android:id="@+id/logScroller"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:scrollbars="vertical"
-                android:fillViewport="true">
-
-                <TextView android:gravity="bottom" android:id="@+id/owLog" android:text="@{owdevice.log}" android:layout_width="fill_parent" android:layout_height="fill_parent"
-                    android:layout_weight="1.0"/>
-            </ScrollView>
+                            <TextView
+                                android:id="@+id/owLog"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="bottom"
+                                android:text="@{owdevice.log}" />
+                        </ScrollView>
+                    </LinearLayout>
+                </android.support.v7.widget.CardView>
             </LinearLayout>
-    <!--        </LinearLayout>
-        </RelativeLayout> -->
-        </android.support.v7.widget.CardView>
-
-
-    </LinearLayout>
-
-
-
-    </RelativeLayout>
-</ScrollView>
+        </RelativeLayout>
+    </ScrollView>
 </layout>
