@@ -44,8 +44,12 @@
             android:name=".services.VibrateService"
             android:enabled="true" />
 
-        <activity android:name=".RidesListActivity" />
-        <activity android:name=".RideDetailActivity" />
+        <activity
+            android:name=".RidesListActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".RideDetailActivity"
+            android:screenOrientation="portrait"/>
 
         <provider
             android:name="android.support.v4.content.FileProvider"

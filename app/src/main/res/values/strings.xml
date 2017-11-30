@@ -42,6 +42,9 @@
     <string name="_95">95</string>
     <string name="_17">17</string>
     <string name="_27">27</string>
+    <string name="speed">Speed</string>
+    <string name="pads">Rider Pads</string>
+    <string name="temp">Temperature</string>
 
     <string-array name="ow_ridemode_array">
         <item>CLASSIC</item>

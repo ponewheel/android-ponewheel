@@ -1,21 +1,66 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <include android:id="@+id/tool_bar"
-        layout="@layout/tool_bar"/>
+    <include
+        android:id="@+id/tool_bar"
+        layout="@layout/tool_bar" />
 
     <fragment
-        android:layout_weight="1"
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
-        android:layout_height="0dp" />
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
-    <com.github.mikephil.charting.charts.LineChart
-        android:id="@+id/ride_detail_speed_chart"
+    <net.kwatts.powtools.components.LockableScrollView
+        android:id="@+id/ride_detail_scroll_view"
         android:layout_width="match_parent"
-        android:layout_height="150dp" />
+        android:layout_height="300dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/speed"
+                android:textSize="16sp"
+                android:padding="13dp"
+                android:textStyle="bold" />
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/ride_detail_speed_chart"
+                android:layout_width="match_parent"
+                android:layout_height="150dp" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/pads"
+                android:textSize="16sp"
+                android:padding="13dp"
+                android:textStyle="bold" />
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/ride_detail_pads_chart"
+                android:layout_width="match_parent"
+                android:layout_height="150dp" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/temp"
+                android:textSize="16sp"
+                android:padding="13dp"
+                android:textStyle="bold" />
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/ride_detail_temp_chart"
+                android:layout_width="match_parent"
+                android:layout_height="150dp" />
+        </LinearLayout>
+
+    </net.kwatts.powtools.components.LockableScrollView>
+
 
 </LinearLayout>

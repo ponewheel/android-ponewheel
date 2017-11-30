@@ -42,6 +42,10 @@ public class DebugDrawerAddDummyRide implements DebugModule {
     private void insertSampleRidesOrDebug() {
         App.dbExecute(database -> {
 
+            //for (Ride ride : database.rideDao().getAll()) {
+            //    Log.d(TAG, "ride = " + ride);
+            //}
+
             // Insert sample rides
             Ride ride = new Ride();
             long rideId = database.rideDao().insert(ride);
@@ -55,16 +59,28 @@ public class DebugDrawerAddDummyRide implements DebugModule {
                 calendar.add(Calendar.MINUTE, 1);
                 moment = new Moment(rideId, calendar.getTime());
 
-                moment.setGpsLat(37.7891223 + i*.001);
+                moment.setGpsLat(37.7891223 + i * .001);
                 moment.setGpsLong(-122.4118449 + Math.sin(i) * .001);
 
                 long momentId = database.momentDao().insert(moment);
 
                 Attribute attribute = new Attribute();
                 attribute.setMomentId(momentId);
-                attribute.setKey("speed");
-                attribute.setValue(""+i);
+                attribute.setKey(Attribute.KEY_SPEED);
+                attribute.setValue("" + i);
+                database.attributeDao().insert(attribute);
 
+                attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setKey(Attribute.KEY_PAD1);
+                attribute.setValue(Math.random() > .3 ? "true" : null);
+                database.attributeDao().insert(attribute);
+
+
+                attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setKey(Attribute.KEY_PAD2);
+                attribute.setValue(Math.random() > .3 ? "true" : null);
                 database.attributeDao().insert(attribute);
 
                 if (i == 0) {
