@@ -125,9 +125,21 @@ public class RidesListActivity extends AppCompatActivity {
 
                 Attribute attribute = new Attribute();
                 attribute.setMomentId(momentId);
-                attribute.setKey("speed");
+                attribute.setKey(Attribute.KEY_SPEED);
                 attribute.setValue(""+i);
+                database.attributeDao().insert(attribute);
 
+                attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setKey(Attribute.KEY_PAD1);
+                attribute.setValue(Math.random() > .3 ? "true" : null);
+                database.attributeDao().insert(attribute);
+
+
+                attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setKey(Attribute.KEY_PAD2);
+                attribute.setValue(Math.random() > .3 ? "true" : null);
                 database.attributeDao().insert(attribute);
 
                 if (i == 0) {
