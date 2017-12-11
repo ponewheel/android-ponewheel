@@ -1,7 +1,6 @@
 package net.kwatts.powtools.util;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -357,7 +356,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
 
     @Override
-    public void reconnect(Activity activity) {
+    public void reconnect(MainActivity activity) {
         Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
     }

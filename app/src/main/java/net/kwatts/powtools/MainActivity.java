@@ -49,7 +49,7 @@ import net.kwatts.powtools.loggers.PlainTextFileLogger;
 import net.kwatts.powtools.model.OWDevice;
 import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
-import net.kwatts.powtools.util.BluetoothUtilImpl;
+import net.kwatts.powtools.util.BluetoothUtilMockImpl;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 import net.kwatts.powtools.view.AlertsMvpController;
 
@@ -232,7 +232,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         super.onCreate(savedInstanceState);
 
         mContext = this;
-        bluetoothUtil = new BluetoothUtilImpl();
+        bluetoothUtil = new BluetoothUtilMockImpl();
+//        bluetoothUtil = new BluetoothUtilImpl();
 
 
         EventBus.getDefault().register(this);
