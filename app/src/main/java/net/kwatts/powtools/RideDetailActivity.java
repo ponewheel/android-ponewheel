@@ -149,10 +149,11 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                 if (timeLocationMap.size() != 0) {
                     LatLngBounds latLngBounds = latLongBoundsBuilder.build();
 
-                    assert mapFragmentView != null;
-                    mapFragmentView.post(() -> googleMap.moveCamera(
-                            // TODO Is mapCameraPadding w/ 150dp converted to px a good approach? Seems like maybe we'd prefer a geographic unit, aka 1 mile padding if that's possible?
-                            CameraUpdateFactory.newLatLngBounds(latLngBounds, mapCameraPadding)));
+                    if (mapFragmentView != null && googleMap != null) {
+                        mapFragmentView.post(() -> googleMap.moveCamera(
+                                // TODO Is mapCameraPadding w/ 150dp converted to px a good approach? Seems like maybe we'd prefer a geographic unit, aka 1 mile padding if that's possible?
+                                CameraUpdateFactory.newLatLngBounds(latLngBounds, mapCameraPadding)));
+                    }
                 }
             });
 

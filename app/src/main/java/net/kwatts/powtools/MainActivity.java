@@ -11,6 +11,7 @@ import android.databinding.Observable;
 import android.graphics.Typeface;
 import android.location.Address;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
@@ -101,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     MultiStateToggleButton mRideModeToggleButton;
 
     public VibrateService mVibrateService;
-    private android.os.Handler mLoggingHandler = new android.os.Handler();
+    private android.os.Handler mLoggingHandler = new Handler();
     private PlainTextFileLogger mTextFileLogger;
 
     private Context mContext;
@@ -269,9 +270,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mChronometer = findViewById(R.id.chronometer);
         initBatteryChart();
-        initLightSettings(getWindow().getDecorView().getRootView());
-        initRideModeButtons(getWindow().getDecorView().getRootView());
-
+        initLightSettings();
+        initRideModeButtons();
     }
 
     private void initWakelock() {
@@ -639,6 +639,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         latestMoment = new Date();
         Moment moment = new Moment(ride.id, latestMoment);
         moment.rideId = ride.id;
+
         App.dbExecute(database -> {
             long momentId = database.momentDao().insert(moment);
             for (OWDevice.DeviceCharacteristic deviceReadCharacteristic : mOWDevice.getNotifyCharacteristics()) {
@@ -706,14 +707,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
 
-    public void initLightSettings(View v) {
-        mMasterLight = v.findViewById(R.id.master_light_switch);
-        mCustomLight = v.findViewById(R.id.custom_light_switch);
+    public void initLightSettings() {
+        mMasterLight = this.findViewById(R.id.master_light_switch);
+        mCustomLight = this.findViewById(R.id.custom_light_switch);
 
-        mFrontBright = v.findViewById(R.id.front_bright_switch);
-        mBackBright = v.findViewById(R.id.back_bright_switch);
-        mFrontBlink = v.findViewById(R.id.front_blink_switch);
-        mBackBlink = v.findViewById(R.id.back_blink_switch);
+        mFrontBright = this.findViewById(R.id.front_bright_switch);
+        mBackBright = this.findViewById(R.id.back_bright_switch);
+        mFrontBlink = this.findViewById(R.id.front_blink_switch);
+        mBackBlink = this.findViewById(R.id.back_blink_switch);
 
         mMasterLight.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (mOWDevice.isConnected.get()) {
@@ -814,7 +815,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
 
-    public void initRideModeButtons(View v) {
+    public void initRideModeButtons() {
         mRideModeToggleButton = this.findViewById(R.id.mstb_multi_ridemodes);
         if (mOWDevice.isOneWheelPlus.get()) {
             mRideModeToggleButton.setElements(getResources().getStringArray(R.array.owplus_ridemode_array));
