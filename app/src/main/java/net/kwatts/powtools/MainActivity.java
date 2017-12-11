@@ -318,16 +318,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         //mOWDevice.bluetoothLe.set("Off");
         //mOWDevice.bluetoothStatus.set("Disconnected");
 
-        bluetoothUtil.init(this, mOWDevice);
-
         mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-                if (
-                        ride == null ||
-                        latestMoment == null ||
-                        TimeUnit.MINUTES.toMillis(1) > getMillisSinceLastMoment()) {
-
+                boolean hasMinutePassed = latestMoment == null || // to short circuit the next line
+                        TimeUnit.MINUTES.toMillis(1) > getMillisSinceLastMoment();
+                if (mOWDevice.isConnected.get() && (ride == null || hasMinutePassed)) {
                     ride = new Ride();
                     App.dbExecute(database -> ride.id = database.rideDao().insert(ride));
                 }
@@ -340,6 +336,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 alertsController.handleSpeed(mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get());
             }
         });
+        bluetoothUtil.init(this, mOWDevice);
     }
 
     long getMillisSinceLastMoment() {
@@ -454,6 +451,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 bluetoothUtil.disconnect();
                 updateLog("Disconnected from device by user.");
                 deviceConnectedTimer(false);
+                mLoggingHandler.removeCallbacksAndMessages(null);
                 this.invalidateOptionsMenu();
                 break;
             case R.id.menu_about:

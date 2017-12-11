@@ -104,8 +104,10 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             mainActivity.deviceConnectedTimer(true);
             mOWDevice.isConnected.set(true);
             App.INSTANCE.acquireWakeLock();
-            mOWDevice.deviceMacAddress.set(mGatt.getDevice().toString());
-            mOWDevice.deviceMacName.set(mGatt.getDevice().getName());
+            String deviceMacAddress = mGatt.getDevice().toString();
+            String deviceMacName = mGatt.getDevice().getName();
+            mOWDevice.deviceMacAddress.set(deviceMacAddress);
+            mOWDevice.deviceMacName.set(deviceMacName);
             App.INSTANCE.getSharedPreferences().saveMacAddress(
                     mOWDevice.deviceMacAddress.get(),
                     mOWDevice.deviceMacName.get()
