@@ -12,7 +12,7 @@ public class LockableScrollView extends ScrollView {
 
     // true if we can scroll (not locked)
     // false if we cannot scroll (locked)
-    private boolean mScrollable = true;
+    private boolean scrollable = true;
 
     public LockableScrollView(Context context) {
         super(context);
@@ -31,11 +31,11 @@ public class LockableScrollView extends ScrollView {
     }
 
     public void setScrollingEnabled(boolean enabled) {
-        mScrollable = enabled;
+        scrollable = enabled;
     }
 
     public boolean isScrollable() {
-        return mScrollable;
+        return scrollable;
     }
 
     @Override
@@ -43,9 +43,9 @@ public class LockableScrollView extends ScrollView {
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 // if we can scroll pass the event to the superclass
-                if (mScrollable) return super.onTouchEvent(ev);
+                if (scrollable) return super.onTouchEvent(ev);
                 // only continue to handle the touch event if scrolling enabled
-                return mScrollable; // mScrollable is always false at this point
+                return scrollable; // scrollable is always false at this point
             default:
                 return super.onTouchEvent(ev);
         }
@@ -55,7 +55,7 @@ public class LockableScrollView extends ScrollView {
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         // Don't do anything with intercepted touch events if
         // we are not scrollable
-        if (!mScrollable) return false;
+        if (!scrollable) return false;
         else return super.onInterceptTouchEvent(ev);
     }
 
