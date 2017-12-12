@@ -186,7 +186,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
     public List<DeviceCharacteristic> deviceReadCharacteristics = new ArrayList<>();
     public List<DeviceCharacteristic> deviceNotifyCharacteristics = new ArrayList<>();
-    Map<String, DeviceCharacteristic> characteristics = new HashMap<>();
+    public Map<String, DeviceCharacteristic> characteristics = new HashMap<>();
 
     public List<DeviceCharacteristic> getReadCharacteristics() {
         return deviceReadCharacteristics;
@@ -755,6 +755,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                                 maxSpeed.set(i_speed);
                             }
                         }
+
 
                         break;
                     case OnewheelCharacteristicCurrentAmps:

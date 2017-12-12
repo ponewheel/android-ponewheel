@@ -221,6 +221,20 @@
                         </ScrollView>
                     </LinearLayout>
                 </android.support.v7.widget.CardView>
+
+                <android.support.v7.widget.CardView
+                    android:id="@+id/card_alerts"
+                    style="@style/CardView.DayNight"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_margin="5dp"
+                    card_view:cardCornerRadius="2dp"
+                    card_view:contentPadding="5dp">
+
+                    <include layout="@layout/main_alerts"/>
+                </android.support.v7.widget.CardView>
+
             </LinearLayout>
         </RelativeLayout>
     </ScrollView>

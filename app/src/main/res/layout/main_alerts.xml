@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/alerts_speed_alert_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="@string/speed_alert" />
+
+    <EditText
+        android:id="@+id/alerts_speed_alert_entry"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:inputType="number"
+        android:gravity="center"
+        app:layout_constraintBaseline_toBaselineOf="@id/alerts_speed_alert_text"
+        app:layout_constraintEnd_toStartOf="@+id/alerts_speed_alert_check" />
+
+    <CheckBox
+        android:id="@+id/alerts_speed_alert_check"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+    <TextView
+        android:id="@+id/alerts_charge_alert_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="@string/charge_alert"
+        app:layout_constraintTop_toBottomOf="@+id/alerts_speed_alert_text" />
+
+    <EditText
+        android:id="@+id/alerts_charge_alert_entry"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:inputType="number"
+        android:gravity="center"
+        app:layout_constraintBaseline_toBaselineOf="@id/alerts_charge_alert_text"
+        app:layout_constraintEnd_toStartOf="@+id/alerts_charge_alert_check"
+        />
+
+    <CheckBox
+        android:id="@+id/alerts_charge_alert_check"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/alerts_speed_alert_check"
+        android:padding="10dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/alerts_speed_alert_check" />
+
+</android.support.constraint.ConstraintLayout>

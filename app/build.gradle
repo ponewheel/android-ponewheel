@@ -49,31 +49,16 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     testCompile "junit:junit:4.12"
     testCompile "org.mockito:mockito-core:2.10.0"
-    testCompile("org.powermock:powermock-api-mockito:1.6.2") {
-        exclude module: "hamcrest-core"
-        exclude module: "objenesis"
-    }
-    testCompile("org.powermock:powermock-module-junit4:1.6.2") {
-        exclude module: "hamcrest-core"
-        exclude module: "objenesis"
-    }
-    testCompile("org.powermock:powermock-module-junit4-rule:1.6.2") {
-        exclude module: "hamcrest-core"
-        exclude module: "objenesis"
-    }
-    testCompile("org.powermock:powermock-module-junit4-rule-agent:1.6.2") {
-        exclude module: "hamcrest-core"
-        exclude module: "objenesis"
-    }
-    androidTestCompile "com.android.support:support-annotations:$googleSupportVersion"
-    androidTestCompile "com.android.support.test:runner:0.4.1"
-    androidTestCompile "com.android.support.test:rules:0.4.1"
-    androidTestCompile "com.android.support.test.espresso:espresso-core:2.2.1"
-    androidTestCompile "com.android.support.test.espresso:espresso-intents:2.2.1"
-    androidTestCompile "com.android.support.test.uiautomator:uiautomator-v18:2.1.1"
-    androidTestCompile "org.hamcrest:hamcrest-core:1.1"
-    androidTestCompile "org.hamcrest:hamcrest-integration:1.1"
-    androidTestCompile "org.hamcrest:hamcrest-library:1.1"
+
+    androidTestImplementation "com.android.support:support-annotations:$googleSupportVersion"
+    androidTestImplementation "com.android.support.test:runner:0.4.1"
+    androidTestImplementation "com.android.support.test:rules:0.4.1"
+    androidTestImplementation "com.android.support.test.espresso:espresso-core:2.2.1"
+    androidTestImplementation "com.android.support.test.espresso:espresso-intents:2.2.1"
+    androidTestImplementation "com.android.support.test.uiautomator:uiautomator-v18:2.1.1"
+    androidTestImplementation "org.hamcrest:hamcrest-core:1.1"
+    androidTestImplementation "org.hamcrest:hamcrest-integration:1.1"
+    androidTestImplementation "org.hamcrest:hamcrest-library:1.1"
 
     implementation "org.greenrobot:eventbus:3.0.0"
     // http://greenrobot.org/eventbus/documentation/how-to-get-started/
@@ -102,7 +87,7 @@ dependencies {
     implementation "android.arch.persistence.room:runtime:1.0.0"
     annotationProcessor "android.arch.persistence.room:compiler:1.0.0"
 
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
 
 }
 

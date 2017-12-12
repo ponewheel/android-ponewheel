@@ -77,6 +77,20 @@
         android:summary="This option turns on location support to save to your routes. Your location is never shared."
         android:title="Gather and log locations" />
 
+    <EditTextPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="0"
+        android:key="speedAlert"
+        android:summary="Set the speed you wish to start the alert (0 = off)."
+        android:title="Speed Alert" />
+    <EditTextPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="0"
+        android:key="chargeAlert"
+        android:summary="Set the battery percentage (0 = off)."
+        android:title="Charge Alert" />
 
     <!-- <ListPreference     android:title="Download Details"
                         android:summary="Select the kind of data that you would like to download"
