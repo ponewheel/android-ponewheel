@@ -51,6 +51,7 @@ import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
 import net.kwatts.powtools.util.BluetoothUtilImpl;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
+import net.kwatts.powtools.view.AlertsMvpController;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -70,6 +71,8 @@ import io.reactivex.Single;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
+
+import static net.kwatts.powtools.model.OWDevice.MockOnewheelCharacteristicSpeed;
 
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
 // https://github.com/alt236/Bluetooth-LE-Library---Android
@@ -113,6 +116,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     Ride ride;
     private DisposableObserver<Address> rxLocationObserver;
     Date latestMoment;
+    private AlertsMvpController alertsController;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event){
@@ -206,6 +210,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             }
         });
+
+        alertsController.handleChargePercentage(percent);
     }
     public void deviceConnectedTimer(final boolean start) {
         runOnUiThread(() -> {
@@ -228,13 +234,17 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mContext = this;
         bluetoothUtil = new BluetoothUtilImpl();
 
+
         EventBus.getDefault().register(this);
         // TODO unbind in onPause or whatever is recommended by goog
         bindService(new Intent(this, VibrateService.class), mVibrateConnection, Context.BIND_AUTO_CREATE);
 
         initWakelock();
 
+        // this line won't compile? File -> Invalidate caches https://stackoverflow.com/a/42824662/247325
         mBinding = DataBindingUtil.setContentView(this, net.kwatts.powtools.R.layout.activity_main);
+
+        alertsController = new AlertsMvpController(this);
 
         setupDarkModes(savedInstanceState);
 
@@ -320,6 +330,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     ride = new Ride();
                     App.dbExecute(database -> ride.id = database.rideDao().insert(ride));
                 }
+            }
+        });
+
+        mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+            @Override
+            public void onPropertyChanged(Observable observable, int i) {
+                alertsController.handleSpeed(mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get());
             }
         });
     }
@@ -510,6 +527,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             bluetoothUtil.reconnect(this);
         }
 
+        alertsController.recaptureMedia(this);
+
         this.invalidateOptionsMenu();
     }
 
@@ -521,6 +540,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         if (rxLocationObserver != null) {
             rxLocationObserver.dispose();
         }
+
+        alertsController.releaseMedia();
     }
 
     @Override
@@ -529,6 +550,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         switch (key) {
             case SharedPreferencesUtil.METRIC_UNITS:
                 mOWDevice.refreshCharacteristics();
+                refreshMetricViews();
                 break;
 
             case SharedPreferencesUtil.DARK_NIGHT_MODE:
@@ -554,6 +576,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 Log.d(TAG, "onSharedPreferenceChanged: " + key);
         }
 
+    }
+
+    private void refreshMetricViews() {
+        // TODO Auto convert the speed alert for the user or meh?
     }
 
     // Services

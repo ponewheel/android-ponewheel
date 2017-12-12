@@ -37,6 +37,11 @@
     <string name="duration">Duration</string>
     <string name="delete">Delete?</string>
     <string name="trip_connected_time">TRIP CONNECTED TIME</string>
+    <string name="speed_alert">Speed alert</string>
+    <string name="charge_alert">Charge alert</string>
+    <string name="_95">95</string>
+    <string name="_17">17</string>
+    <string name="_27">27</string>
 
     <string-array name="ow_ridemode_array">
         <item>CLASSIC</item>

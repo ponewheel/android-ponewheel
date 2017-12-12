@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/colorPrimary"
-    android:padding="10dp"
     tools:context="net.kwatts.powtools.RidesListActivity">
 
     <ImageView
@@ -21,7 +20,7 @@
         android:id="@+id/rides_row_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="5dp"
+        android:layout_margin="13dp"
         android:layout_centerVertical="true"
         android:layout_toEndOf="@id/rides_row_thumbnail"
         tools:text="09-20-2017"/>
@@ -36,7 +35,7 @@
     <CheckBox
         android:id="@+id/rides_row_checkbox"
         android:layout_alignParentEnd="true"
-        android:layout_marginEnd="5dp"
+        android:padding="14dp"
         android:layout_centerVertical="true"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />

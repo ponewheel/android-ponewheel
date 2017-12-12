@@ -4,7 +4,12 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-public class SharedPreferencesUtil {
+import net.kwatts.powtools.App;
+
+import static net.kwatts.powtools.view.AlertsMvpController.ENGLISH_DEFAULT_SPEED_ALARM;
+import static net.kwatts.powtools.view.AlertsMvpController.METRIC_DEFAULT_SPEED_ALARM;
+
+public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPreferences{
 
     public static final String METRIC_UNITS = "metricUnits";
     private static final String DAY_NIGHT_MODE = "dayNightMode";
@@ -18,14 +23,28 @@ public class SharedPreferencesUtil {
     public static final String DEVICE_RECONNECT = "deviceReconnect";
     public static final String OW_MAC_ADDRESS = "ow_mac_address";
     public static final String OW_MAC_NAME = "ow_mac_name";
+    private static final String CHARGE_ALERT = "CHARGE_ALERT";
+    public static final String SPEED_ALERT = "SPEED_ALERT";
+    private static final String CHARGE_ALERT_ENABLED = "CHARGE_ALERT_ENABLED";
+    private static final String SPEED_ALERT_ENABLED = "SPEED_ALERT_ENABLED";
 
     private SharedPreferences mSharedPref;
 
 
     public SharedPreferencesUtil(Context context) {
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+    }
 
+    public void putInt(int value, String key) {
+        SharedPreferences.Editor editor = mSharedPref.edit();
+        editor.putInt(key, value);
+        editor.commit();
+    }
 
+    public void putBool(boolean value, String key) {
+        SharedPreferences.Editor editor = mSharedPref.edit();
+        editor.putBoolean(key, value);
+        editor.commit();
     }
 
     public boolean isEulaAgreed() {
@@ -100,5 +119,42 @@ public class SharedPreferencesUtil {
 
     public boolean isMetric() {
         return mSharedPref.getBoolean(METRIC_UNITS, false);
+    }
+
+    public float getSpeedAlert() {
+
+        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
+        float defaultSpeedAlert = isMetric ? METRIC_DEFAULT_SPEED_ALARM : ENGLISH_DEFAULT_SPEED_ALARM;
+
+        return mSharedPref.getFloat(SPEED_ALERT, defaultSpeedAlert);
+    }
+
+    public void saveSpeedAlert(float speedAlert) {
+        SharedPreferences.Editor editor = mSharedPref.edit();
+        editor.putFloat(SPEED_ALERT, speedAlert);
+        editor.commit();
+    }
+    public int getChargeAlert() {
+        return mSharedPref.getInt(CHARGE_ALERT, 95);
+    }
+
+    public void saveChargeAlert(int chargeAlert) {
+        putInt(chargeAlert, CHARGE_ALERT);
+    }
+
+    public void saveChargeAlertEnabled(boolean isChargeAlertEnabled) {
+        putBool(isChargeAlertEnabled, CHARGE_ALERT_ENABLED);
+    }
+
+    public boolean getChargeAlertEnabled() {
+        return mSharedPref.getBoolean(CHARGE_ALERT_ENABLED, false);
+    }
+
+    public void saveSpeedAlertEnabled(boolean isSpeedAlertEnabled) {
+        putBool(isSpeedAlertEnabled, SPEED_ALERT_ENABLED);
+    }
+
+    public boolean getSpeedAlertEnabled() {
+        return mSharedPref.getBoolean(SPEED_ALERT_ENABLED, false);
     }
 }
