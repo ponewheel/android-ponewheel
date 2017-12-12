@@ -301,7 +301,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 //            }
 //        });
 
-        mOWDevice.refresh();
+        mOWDevice.setupCharacteristics();
         mOWDevice.isConnected.set(false);
 
         //mOWDevice.bluetoothLe.set("Off");
@@ -528,7 +528,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         Log.i(TAG, "onSharedPreferenceChanged callback");
         switch (key) {
             case SharedPreferencesUtil.METRIC_UNITS:
-                mOWDevice.refresh();
+                mOWDevice.refreshCharacteristics();
                 break;
 
             case SharedPreferencesUtil.DARK_NIGHT_MODE:

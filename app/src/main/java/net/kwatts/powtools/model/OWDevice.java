@@ -21,8 +21,10 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 import static net.kwatts.powtools.util.Util.cel2far;
@@ -98,6 +100,13 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public static final String OnewheelCharacteristicUNKNOWN2 = "e659f31e-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicUNKNOWN3 = "e659f31f-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicUNKNOWN4 = "e659f320-ea98-11e3-ac10-0800200c9a66";
+
+    public static final String MockOnewheelCharacteristicMotorTemp = "MockOnewheelCharacteristicMotorTemp";
+    public static final String MockOnewheelCharacteristicOdometer = "MockOnewheelCharacteristicOdometer";
+    public static final String MockOnewheelCharacteristicMaxSpeed = "MockOnewheelCharacteristicMaxSpeed";
+    public static final String MockOnewheelCharacteristicPad1 = "MockOnewheelCharacteristicPad1";
+    public static final String MockOnewheelCharacteristicPad2 = "MockOnewheelCharacteristicPad2";
+    public static final String MockOnewheelCharacteristicSpeed = "MockOnewheelCharacteristicSpeed";
     private Address gpsLocation;
 
     public void setGpsLocation(Address gpsLocation) {
@@ -177,6 +186,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
     public List<DeviceCharacteristic> deviceReadCharacteristics = new ArrayList<>();
     public List<DeviceCharacteristic> deviceNotifyCharacteristics = new ArrayList<>();
+    Map<String, DeviceCharacteristic> characteristics = new HashMap<>();
 
     public List<DeviceCharacteristic> getReadCharacteristics() {
         return deviceReadCharacteristics;
@@ -204,7 +214,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     /* This method is the main dictionary for the BLE Device. It contains the map for each
        Device attribute and contains the UUID, value, and display string for the UI.
      */
-    public void refresh() {
+    public void setupCharacteristics() {
         deviceReadCharacteristics.clear();
         deviceNotifyCharacteristics.clear();
 
@@ -228,11 +238,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             uuid.set(OnewheelCharacteristicLifetimeOdometer);
             key.set("lifetime_odometer");
             value.set("");
-            if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                ui_name.set("LIFETIME ODOMETER (KM)");
-            } else {
-                ui_name.set("LIFETIME ODOMETER (MILES)");
-            }
+            //ui_name set in refresh();
             ui_enabled.set(true);
         }});
 /*
@@ -279,13 +285,10 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
         {{
+            uuid.set(MockOnewheelCharacteristicSpeed);
             key.set("speed");
             value.set("0.0");
-            if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                ui_name.set("(KMH)");
-            } else {
-                ui_name.set("(MPH)");
-            }
+            //ui_name set in refresh();
             ui_enabled.set(true);
             enabled.set(true);
         }});
@@ -311,6 +314,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
         {{
+            uuid.set(MockOnewheelCharacteristicPad1);
             key.set("rider_detected_pad1");
             value.set("");
             ui_name.set("PAD1");
@@ -319,6 +323,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
         {{
+            uuid.set(MockOnewheelCharacteristicPad2);
             key.set("rider_detected_pad2");
             value.set("");
             ui_name.set("PAD2");
@@ -328,26 +333,20 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
         {{
+            uuid.set(MockOnewheelCharacteristicMaxSpeed);
             key.set("speed_max");
             value.set("");
-            if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                ui_name.set("Trip Top Speed: ");
-            } else {
-                ui_name.set("Trip Top Speed: ");
-            }
+            ui_name.set("Trip Top Speed: ");
             ui_enabled.set(true);
             enabled.set(true);
         }});
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
         {{
+            uuid.set(MockOnewheelCharacteristicOdometer);
             key.set("odometer");
             value.set("");
-            if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                ui_name.set("TRIP ODOMETER (KMS)");
-            } else {
-                ui_name.set("TRIP ODOMETER (MILES)");
-            }
+            //ui_name set in refresh();
             ui_enabled.set(true);
             enabled.set(true);
         }});
@@ -449,24 +448,17 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             uuid.set(OnewheelCharacteristicTemperature);
             key.set("controller_temp");
             value.set("");
-            if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                ui_name.set("CONTROLLER TEMP (C)");
-            } else {
-                ui_name.set("CONTROLLER TEMP (F)");
-            }
+            //ui_name set in refresh();
             ui_enabled.set(true);
             enabled.set(true);
         }});
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
         {{
+            uuid.set(MockOnewheelCharacteristicMotorTemp);
             key.set("motor_temp");
             value.set("");
-            if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                ui_name.set("MOTOR TEMP (C)");
-            } else {
-                ui_name.set("MOTOR TEMP (F)");
-            }
+            //ui_name set in refresh();
             ui_enabled.set(true);
             enabled.set(true);
         }});
@@ -521,7 +513,25 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         }}); */
 
 
+        characteristics.clear();
+        for (DeviceCharacteristic deviceNotifyCharacteristic : deviceNotifyCharacteristics) {
+            characteristics.put(deviceNotifyCharacteristic.uuid.get(), deviceNotifyCharacteristic);
+        }
+        for (DeviceCharacteristic deviceNotifyCharacteristic : deviceReadCharacteristics) {
+            characteristics.put(deviceNotifyCharacteristic.uuid.get(), deviceNotifyCharacteristic);
+        }
 
+
+        refreshCharacteristics();
+    }
+
+    public void refreshCharacteristics() {
+        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
+        characteristics.get(MockOnewheelCharacteristicSpeed).ui_name.set(isMetric ? "(KMH)" : "(MPH)");
+        characteristics.get(MockOnewheelCharacteristicOdometer).ui_name.set("TRIP ODOMETER " + (isMetric ? "(KM)" : "(MILES)"));
+        characteristics.get(OnewheelCharacteristicLifetimeOdometer).ui_name.set("LIFETIME ODOMETER " + (isMetric ? "(KM)" : "(MILES)"));
+        characteristics.get(OnewheelCharacteristicTemperature).ui_name.set("CONTROLLER TEMP " + (isMetric ? "(C)" : "(F)"));
+        characteristics.get(MockOnewheelCharacteristicMotorTemp).ui_name.set("MOTOR TEMP " + (isMetric ? "(C)" : "(F)"));
     }
 
 
@@ -642,11 +652,13 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         case 15:
                             dc.value.set("ErrorRiderDetectZone"+s_error_code);
                             break;
-                            default:
-                                dc.value.set(s_error_code);
-                                break;
+                        default:
+                            dc.value.set(s_error_code);
+                            break;
                     }
+                    break;
                     default:
+                        break;
                 }
             }
         }
