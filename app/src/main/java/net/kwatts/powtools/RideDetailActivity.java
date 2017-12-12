@@ -54,6 +54,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import timber.log.Timber;
@@ -65,11 +67,11 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     public static final SimpleDateFormat FILE_FORMAT_DATE = new SimpleDateFormat("yyyy-MM-dd_HH_mm", Locale.US);
 
 
-    ArrayMap<Long, LatLng> timeLocationMap = new ArrayMap<>();
+    Map<Long, LatLng> timeLocationMap = new ArrayMap<>();
     private SupportMapFragment mapFragment;
     GoogleMap googleMap;
-    HashSet<Marker> mapMarkers = new HashSet<>();
-    private ShareActionProvider mShareActionProvider;
+    Set<Marker> mapMarkers = new HashSet<>();
+    private ShareActionProvider shareActionProvider;
     private boolean isDatasetReady = false;
     private boolean isMapReady = false;
     private int mapCameraPadding;
@@ -297,7 +299,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         // store action provider
         shareMenuItem = menu.findItem(R.id.menu_item_share);
         shareMenuItem.setVisible(false);
-        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(shareMenuItem);
+        shareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(shareMenuItem);
 
         // Create share intent
         shareFileIntent = new Intent();
@@ -310,10 +312,10 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     }
 
     private void setShareIntent(Intent shareIntent) {
-        if (mShareActionProvider != null) {
-            mShareActionProvider.setShareIntent(shareIntent);
+        if (shareActionProvider != null) {
+            shareActionProvider.setShareIntent(shareIntent);
             // unable to modify the intent?! wtf android
-//            mShareActionProvider.setOnShareTargetSelectedListener((source, intent) -> false);
+//            shareActionProvider.setOnShareTargetSelectedListener((source, intent) -> false);
         }
     }
 
@@ -359,9 +361,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
             public void onValueSelected(Entry entry, Highlight h) {
                 Long entryX = (long) entry.getX();
                 if (timeLocationMap.containsKey(entryX)) {
-                    for (Marker mapMarker : mapMarkers) {
-                        mapMarker.remove();
-                    }
+                    clearAllMarkersFromMap();
                     LatLng latLng = timeLocationMap.get(entryX);
                     mapMarkers.add(googleMap.addMarker(new MarkerOptions().position(latLng)));
                 }
@@ -369,9 +369,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 
             @Override
             public void onNothingSelected() {
-                for (Marker mapMarker : mapMarkers) {
-                    mapMarker.remove();
-                }
+                clearAllMarkersFromMap();
             }
         });
 
@@ -461,9 +459,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
             public void onValueSelected(Entry entry, Highlight h) {
                 Long entryX = (long) entry.getX();
                 if (timeLocationMap.containsKey(entryX)) {
-                    for (Marker mapMarker : mapMarkers) {
-                        mapMarker.remove();
-                    }
+                    clearAllMarkersFromMap();
                     LatLng latLng = timeLocationMap.get(entryX);
                     mapMarkers.add(googleMap.addMarker(new MarkerOptions().position(latLng)));
                 }
@@ -471,9 +467,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 
             @Override
             public void onNothingSelected() {
-                for (Marker mapMarker : mapMarkers) {
-                    mapMarker.remove();
-                }
+                clearAllMarkersFromMap();
             }
         });
 
@@ -564,9 +558,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
             public void onValueSelected(Entry entry, Highlight h) {
                 Long entryX = (long) entry.getX();
                 if (timeLocationMap.containsKey(entryX)) {
-                    for (Marker mapMarker : mapMarkers) {
-                        mapMarker.remove();
-                    }
+                    clearAllMarkersFromMap();
                     LatLng latLng = timeLocationMap.get(entryX);
                     mapMarkers.add(googleMap.addMarker(new MarkerOptions().position(latLng)));
                 }
@@ -574,9 +566,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 
             @Override
             public void onNothingSelected() {
-                for (Marker mapMarker : mapMarkers) {
-                    mapMarker.remove();
-                }
+                clearAllMarkersFromMap();
             }
         });
 
@@ -626,6 +616,13 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 
         YAxis rightAxis = lineChart.getAxisRight();
         rightAxis.setEnabled(false);
+    }
+
+    private void clearAllMarkersFromMap() {
+        for (Marker mapMarker : mapMarkers) {
+            mapMarker.remove();
+        }
+        mapMarkers.clear();
     }
 
     private void setupDatasetWithDefaultValues(LineDataSet dataSet) {
