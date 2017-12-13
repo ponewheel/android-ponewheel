@@ -541,6 +541,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             rxLocationObserver.dispose();
         }
 
+        // TODO this is not ideal but is recommended because it saves battery
         alertsController.releaseMedia();
     }
 
