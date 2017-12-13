@@ -11,7 +11,6 @@ import android.widget.TextView;
 
 import com.rey.material.widget.SnackBar;
 
-import net.kwatts.powtools.App;
 import net.kwatts.powtools.R;
 
 import java.util.Locale;
@@ -90,11 +89,17 @@ public class AlertsView implements AlertsMvpController.View{
 
     @Override
     public void playSound(boolean shouldPlay) {
-        if (shouldPlay && !mediaPlayer.isPlaying()) {
-            mediaPlayer.start();
-            mediaPlayer.setLooping(true);
+        if (mediaPlayer == null) {
+            return;
+        }
+
+        if (shouldPlay) {
+            if (!mediaPlayer.isPlaying()) {
+                mediaPlayer.start();
+                mediaPlayer.setLooping(true);
+            }
         } else {
-            mediaPlayer.stop();
+            mediaPlayer.pause();
         }
     }
 
