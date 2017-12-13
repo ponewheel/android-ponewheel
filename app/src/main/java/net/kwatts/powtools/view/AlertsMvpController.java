@@ -14,8 +14,8 @@ public class AlertsMvpController {
     public interface View {
         void setPresenter(Presenter alertsPresenter);
         void showNumberFormatError();
-        void setChargeVisibility(boolean isChecked);
-        void setSpeedVisibility(boolean isChecked);
+        void setChargeEnabled(boolean isChecked);
+        void setSpeedEnabled(boolean isChecked);
         void setSpeedAlert(float speedAlert);
         void setChargeAlert(int chargeAlert);
         void releaseMedia();

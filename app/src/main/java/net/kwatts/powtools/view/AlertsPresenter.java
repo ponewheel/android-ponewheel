@@ -18,8 +18,8 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
 
         view.setPresenter(this);
 
-        view.setChargeVisibility(this.sharedPreferences.getChargeAlertEnabled());
-        view.setSpeedVisibility(this.sharedPreferences.getSpeedAlertEnabled());
+        view.setChargeEnabled(this.sharedPreferences.getChargeAlertEnabled());
+        view.setSpeedEnabled(this.sharedPreferences.getSpeedAlertEnabled());
 
         view.setSpeedAlert(this.sharedPreferences.getSpeedAlert());
         view.setChargeAlert(this.sharedPreferences.getChargeAlert());
@@ -28,7 +28,7 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
 
     @Override
     public void onChargeAlertCheckChanged(boolean isChecked) {
-        view.setChargeVisibility(isChecked);
+        view.setChargeEnabled(isChecked);
         sharedPreferences.saveChargeAlertEnabled(isChecked);
     }
 
@@ -47,7 +47,7 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
 
     @Override
     public void onSpeedAlertCheckChanged(boolean isChecked) {
-        view.setSpeedVisibility(isChecked);
+        view.setSpeedEnabled(isChecked);
         sharedPreferences.saveSpeedAlertEnabled(isChecked);
     }
 

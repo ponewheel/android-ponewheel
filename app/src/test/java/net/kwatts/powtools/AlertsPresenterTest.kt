@@ -81,8 +81,8 @@ class AlertsPresenterTest {
 
         val alertsPresenter = AlertsPresenter(view, sharedPreferences)
 
-        verify(view, times(1)).setSpeedVisibility(false)
-        verify(view, times(1)).setChargeVisibility(false)
+        verify(view, times(1)).setSpeedEnabled(false)
+        verify(view, times(1)).setChargeEnabled(false)
     }
 
     @Test
@@ -92,8 +92,8 @@ class AlertsPresenterTest {
 
         val alertsPresenter = AlertsPresenter(view, sharedPreferences)
 
-        verify(view, times(1)).setSpeedVisibility(true)
-        verify(view, times(1)).setChargeVisibility(true)
+        verify(view, times(1)).setSpeedEnabled(true)
+        verify(view, times(1)).setChargeEnabled(true)
     }
 
     @Test
@@ -203,7 +203,7 @@ class AlertsPresenterTest {
             onSpeedAlertCheckChanged(true)
             onSpeedAlertCheckChanged(false)
         }
-        verify(view, times(4)).setChargeVisibility(boolCapture.capture())
+        verify(view, times(4)).setChargeEnabled(boolCapture.capture())
         Assert.assertEquals(listOf(true, false, true, false), boolCapture.allValues)
     }
 
