@@ -116,13 +116,16 @@ public class AlertsView implements AlertsMvpController.View{
     }
 
     @Override
-    public void setChargeVisibility(boolean isChecked) {
-        alertChargeEntryView.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+    public void setChargeEnabled(boolean isEnabled) {
+        alertChargeEntryView.setVisibility(isEnabled ? View.VISIBLE : View.GONE);
+        alertChargeCheckView.setChecked(isEnabled);
+
     }
 
     @Override
-    public void setSpeedVisibility(boolean isChecked) {
-        alertSpeedEntryView.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+    public void setSpeedEnabled(boolean isEnabled) {
+        alertSpeedEntryView.setVisibility(isEnabled ? View.VISIBLE : View.GONE);
+        alertSpeedCheckView.setChecked(isEnabled);
     }
 
     @Override
