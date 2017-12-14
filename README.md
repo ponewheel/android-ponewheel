@@ -1,5 +1,5 @@
 # pOneWheel  <a style="margin-bottom: 0;" href='https://play.google.com/store/apps/details?id=net.kwatts.powtools'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' height="80px"/></a>
-[![CircleCI](https://circleci.com/gh/ponewheel/android-ponewheel.svg?style=svg)](https://circleci.com/gh/ponewheel/android-ponewheel)  [![API](https://img.shields.io/badge/API-21%2B-green.svg?style=flat)](https://android-arsenal.com/api?level=21) [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/mit-license.php)
+[![CircleCI](https://img.shields.io/circleci/project/github/ponewheel/android-ponewheel.svg)](https://circleci.com/gh/ponewheel/android-ponewheel) [![API](https://img.shields.io/badge/API-21%2B-green.svg?style=flat)](https://android-arsenal.com/api?level=21) [![MIT License](https://img.shields.io/github/license/ponewheel/android-ponewheel.svg)](https://opensource.org/licenses/mit-license.php)
 
 This repository contains the source code for the pOneWheel app.
 
