@@ -20,7 +20,7 @@ import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicSpeed;
 
 public class BluetoothUtilMockImpl implements BluetoothUtil{
     private MainActivity mainActivity;
-    private OWDevice mOWDevice;
+    private OWDevice owDevice;
     Handler mockLoopHandler = new Handler();
     private boolean isScanning = false;
 
@@ -29,7 +29,7 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     public void init(MainActivity mainActivity, OWDevice mOWDevice) {
         Timber.d("init");
         this.mainActivity = mainActivity;
-        this.mOWDevice = mOWDevice;
+        this.owDevice = mOWDevice;
     }
 
     @Override
@@ -60,7 +60,7 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     @Override
     public boolean isConnected() {
         Timber.d("isConnected");
-        return mOWDevice.isConnected.get();
+        return owDevice.isConnected.get();
     }
 
     @Override
@@ -78,13 +78,12 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     }
 
     private void onConnected() {
-        mOWDevice.isConnected.set(true);
-        mainActivity.updateBatteryRemaining(100);
+        owDevice.isConnected.set(true);
 
         String deviceMacAddress = "MAC1234";
         String deviceMacName = "Ocho";
-        mOWDevice.deviceMacAddress.set(deviceMacAddress);
-        mOWDevice.deviceMacName.set(deviceMacName);
+        owDevice.deviceMacAddress.set(deviceMacAddress);
+        owDevice.deviceMacName.set(deviceMacName);
 
         setIntCharacteristic(OnewheelCharacteristicHardwareRevision, 1);
         setIntCharacteristic(OnewheelCharacteristicFirmwareRevision, 2);
@@ -96,6 +95,8 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
             public void run() {
                 Timber.d("on Mock Loop");
                 setIntCharacteristic(OnewheelCharacteristicSpeed, random.nextInt(600));
+                mainActivity.updateBatteryRemaining(random.nextInt(20) + 80);
+
                 mockLoopHandler.postDelayed(this, App.INSTANCE.getSharedPreferences().getLoggingFrequency());
             }
         };
@@ -105,7 +106,7 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     void setIntCharacteristic(String characteristic2, int v) {
         BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(UUID.fromString(characteristic2), 0, 0);
         characteristic.setValue(Util.intToShortBytes(v));
-        mOWDevice.processUUID(characteristic);
+        owDevice.processUUID(characteristic);
     }
 
 
