@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-import net.kwatts.powtools.App;
-
 import static net.kwatts.powtools.view.AlertsMvpController.ENGLISH_DEFAULT_SPEED_ALARM;
 import static net.kwatts.powtools.view.AlertsMvpController.METRIC_DEFAULT_SPEED_ALARM;
 
@@ -28,44 +26,44 @@ public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPre
     private static final String CHARGE_ALERT_ENABLED = "CHARGE_ALERT_ENABLED";
     private static final String SPEED_ALERT_ENABLED = "SPEED_ALERT_ENABLED";
 
-    private SharedPreferences mSharedPref;
+    private SharedPreferences androidSharedPreferences;
 
 
     public SharedPreferencesUtil(Context context) {
-        mSharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        androidSharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
     }
 
     public void putInt(int value, String key) {
-        SharedPreferences.Editor editor = mSharedPref.edit();
+        SharedPreferences.Editor editor = androidSharedPreferences.edit();
         editor.putInt(key, value);
         editor.commit();
     }
 
     public void putBool(boolean value, String key) {
-        SharedPreferences.Editor editor = mSharedPref.edit();
+        SharedPreferences.Editor editor = androidSharedPreferences.edit();
         editor.putBoolean(key, value);
         editor.commit();
     }
 
     public boolean isEulaAgreed() {
-        return mSharedPref.getBoolean(EULA_AGREE, false);
+        return androidSharedPreferences.getBoolean(EULA_AGREE, false);
     }
     public void setEulaAgreed(boolean isAgreed) {
-        SharedPreferences.Editor editor = mSharedPref.edit();
+        SharedPreferences.Editor editor = androidSharedPreferences.edit();
         editor.putBoolean(EULA_AGREE, isAgreed);
         editor.commit();
     }
 
     public int getLoggingFrequency() {
         try {
-            return Integer.valueOf(mSharedPref.getString(LOGGING_FREQUENCY, "1000"));
+            return Integer.valueOf(androidSharedPreferences.getString(LOGGING_FREQUENCY, "1000"));
 
         } catch (ClassCastException e) {
-            int logFrequency =  mSharedPref.getInt(LOGGING_FREQUENCY, 1000);
+            int logFrequency =  androidSharedPreferences.getInt(LOGGING_FREQUENCY, 1000);
 
             // TODO remove this at some point in the future when everyone is int (
             // PreferencesActivity doesn't like ints
-            mSharedPref.edit()
+            androidSharedPreferences.edit()
                     .remove(LOGGING_FREQUENCY)
                     .putString(LOGGING_FREQUENCY, logFrequency+"")
                     .apply();
@@ -75,67 +73,66 @@ public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPre
     }
 
     public boolean isDayNightMode() {
-        return mSharedPref.getBoolean(DAY_NIGHT_MODE, false);
+        return androidSharedPreferences.getBoolean(DAY_NIGHT_MODE, false);
     }
 
     public boolean isDarkNightMode() {
-        return mSharedPref.getBoolean(DARK_NIGHT_MODE, false);
+        return androidSharedPreferences.getBoolean(DARK_NIGHT_MODE, false);
     }
 
     public boolean isLoggingEnabled() {
-        return mSharedPref.getBoolean(TRIP_LOGGING, false);
+        return androidSharedPreferences.getBoolean(TRIP_LOGGING, false);
     }
 
     public boolean isLocationsEnabled() {
-        return mSharedPref.getBoolean(LOG_LOCATIONS, false);
+        return androidSharedPreferences.getBoolean(LOG_LOCATIONS, false);
     }
 
     public void registerListener(SharedPreferences.OnSharedPreferenceChangeListener listener) {
-        mSharedPref.registerOnSharedPreferenceChangeListener(listener);
+        androidSharedPreferences.registerOnSharedPreferenceChangeListener(listener);
     }
 
     public Boolean isDebugging() {
-        return mSharedPref.getBoolean(DEBUG_WINDOW, false);
+        return androidSharedPreferences.getBoolean(DEBUG_WINDOW, false);
     }
 
     public Boolean isOneWheelPlus() {
-        return mSharedPref.getBoolean(ONE_WHEEL_PLUS, false);
+        return androidSharedPreferences.getBoolean(ONE_WHEEL_PLUS, false);
     }
 
     public void removeListener(SharedPreferences.OnSharedPreferenceChangeListener listener) {
-        mSharedPref.unregisterOnSharedPreferenceChangeListener(listener);
+        androidSharedPreferences.unregisterOnSharedPreferenceChangeListener(listener);
     }
 
     public boolean shouldAutoReconnect() {
-        return mSharedPref.getBoolean(DEVICE_RECONNECT, false);
+        return androidSharedPreferences.getBoolean(DEVICE_RECONNECT, false);
     }
 
     public void saveMacAddress(String macAdress, String macAddressName) {
-        SharedPreferences.Editor editor = mSharedPref.edit();
+        SharedPreferences.Editor editor = androidSharedPreferences.edit();
         editor.putString(OW_MAC_ADDRESS, macAdress);
         editor.putString(OW_MAC_NAME,macAddressName);
         editor.commit();
     }
 
     public boolean isMetric() {
-        return mSharedPref.getBoolean(METRIC_UNITS, false);
+        return androidSharedPreferences.getBoolean(METRIC_UNITS, false);
     }
 
     public float getSpeedAlert() {
 
-        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
-        float defaultSpeedAlert = isMetric ? METRIC_DEFAULT_SPEED_ALARM : ENGLISH_DEFAULT_SPEED_ALARM;
+        float defaultSpeedAlert = isMetric() ? METRIC_DEFAULT_SPEED_ALARM : ENGLISH_DEFAULT_SPEED_ALARM;
 
-        return mSharedPref.getFloat(SPEED_ALERT, defaultSpeedAlert);
+        return androidSharedPreferences.getFloat(SPEED_ALERT, defaultSpeedAlert);
     }
 
     public void saveSpeedAlert(float speedAlert) {
-        SharedPreferences.Editor editor = mSharedPref.edit();
+        SharedPreferences.Editor editor = androidSharedPreferences.edit();
         editor.putFloat(SPEED_ALERT, speedAlert);
         editor.commit();
     }
     public int getChargeAlert() {
-        return mSharedPref.getInt(CHARGE_ALERT, 95);
+        return androidSharedPreferences.getInt(CHARGE_ALERT, 95);
     }
 
     public void saveChargeAlert(int chargeAlert) {
@@ -147,7 +144,7 @@ public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPre
     }
 
     public boolean getChargeAlertEnabled() {
-        return mSharedPref.getBoolean(CHARGE_ALERT_ENABLED, false);
+        return androidSharedPreferences.getBoolean(CHARGE_ALERT_ENABLED, false);
     }
 
     public void saveSpeedAlertEnabled(boolean isSpeedAlertEnabled) {
@@ -155,6 +152,6 @@ public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPre
     }
 
     public boolean getSpeedAlertEnabled() {
-        return mSharedPref.getBoolean(SPEED_ALERT_ENABLED, false);
+        return androidSharedPreferences.getBoolean(SPEED_ALERT_ENABLED, false);
     }
 }
