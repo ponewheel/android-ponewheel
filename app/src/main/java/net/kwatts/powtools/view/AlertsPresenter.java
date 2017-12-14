@@ -31,6 +31,10 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
     public void onChargeAlertCheckChanged(boolean isChecked) {
         view.setChargeEnabled(isChecked);
         sharedPreferences.saveChargeAlertEnabled(isChecked);
+        if (!isChecked && isChargeAlarmPlaying) {
+            isChargeAlarmPlaying = false;
+            view.playSound(false);
+        }
     }
 
     @Override
@@ -50,6 +54,10 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
     public void onSpeedAlertCheckChanged(boolean isChecked) {
         view.setSpeedEnabled(isChecked);
         sharedPreferences.saveSpeedAlertEnabled(isChecked);
+        if (!isChecked && isSpeedAlarmPlaying) {
+            isSpeedAlarmPlaying = false;
+            view.playSound(false);
+        }
     }
 
     @Override
@@ -94,6 +102,7 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
             isChargeAlarmPlaying = true;
             view.playSound(true);
         } else if (percent < chargeAlert && isChargeAlarmPlaying) {
+            isChargeAlarmPlaying = false;
             view.playSound(false);
         }
     }
