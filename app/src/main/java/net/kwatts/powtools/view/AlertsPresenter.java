@@ -9,7 +9,8 @@ import timber.log.Timber;
 public class AlertsPresenter implements AlertsMvpController.Presenter {
 
     private AlertsMvpController.View view;
-    private boolean isAlarmPlaying;
+    private boolean isChargeAlarmPlaying;
+    private boolean isSpeedAlarmPlaying;
     private SharedPreferences sharedPreferences;
 
     public AlertsPresenter(@NonNull AlertsMvpController.View view, @NonNull SharedPreferences sharedPreferences) {
@@ -75,11 +76,11 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
         float speedAlert = sharedPreferences.getSpeedAlert();
         boolean isEnabled = sharedPreferences.getSpeedAlertEnabled();
 
-        if (speed >= speedAlert && !isAlarmPlaying && isEnabled) {
-            isAlarmPlaying = true;
+        if (isEnabled && !isSpeedAlarmPlaying && speed >= speedAlert) {
+            isSpeedAlarmPlaying = true;
             view.playSound(true);
-        } else if (speed < speedAlert && isAlarmPlaying) {
-            isAlarmPlaying = false;
+        } else if (speed < speedAlert && isSpeedAlarmPlaying) {
+            isSpeedAlarmPlaying = false;
             view.playSound(false);
         }
     }
@@ -89,10 +90,10 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
         float chargeAlert = sharedPreferences.getChargeAlert();
         boolean isEnabled = sharedPreferences.getChargeAlertEnabled();
 
-        if (percent >= chargeAlert && !isAlarmPlaying && isEnabled) {
-            isAlarmPlaying = true;
+        if (isEnabled && !isChargeAlarmPlaying && percent >= chargeAlert) {
+            isChargeAlarmPlaying = true;
             view.playSound(true);
-        } else if (percent < chargeAlert && isAlarmPlaying) {
+        } else if (percent < chargeAlert && isChargeAlarmPlaying) {
             view.playSound(false);
         }
     }
