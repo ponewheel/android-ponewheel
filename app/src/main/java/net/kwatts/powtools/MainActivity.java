@@ -50,7 +50,8 @@ import net.kwatts.powtools.loggers.PlainTextFileLogger;
 import net.kwatts.powtools.model.OWDevice;
 import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
-import net.kwatts.powtools.util.BluetoothUtilMockImpl;
+import net.kwatts.powtools.util.BluetoothUtilImpl;
+import net.kwatts.powtools.util.debugdrawer.DebugDrawerMockBle;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 import net.kwatts.powtools.view.AlertsMvpController;
 
@@ -68,6 +69,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+import io.palaima.debugdrawer.DebugDrawer;
+import io.palaima.debugdrawer.commons.SettingsModule;
 import io.reactivex.Single;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
@@ -233,8 +236,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         super.onCreate(savedInstanceState);
 
         mContext = this;
-        bluetoothUtil = new BluetoothUtilMockImpl();
-//        bluetoothUtil = new BluetoothUtilImpl();
 
 
         EventBus.getDefault().register(this);
@@ -272,6 +273,25 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         initBatteryChart();
         initLightSettings();
         initRideModeButtons();
+
+        new DebugDrawer.Builder(this)
+                .modules(
+                        new DebugDrawerMockBle(this),
+                        new SettingsModule(this)
+                ).build();
+    }
+
+    public BluetoothUtil getBluetoothUtil() {
+        if (bluetoothUtil == null) {
+            bluetoothUtil = new BluetoothUtilImpl();
+        }
+
+        return bluetoothUtil;
+    }
+
+    public void provideBluetoothUtil(BluetoothUtil bluetoothUtil){
+        this.bluetoothUtil = bluetoothUtil;
+        bluetoothUtil.init(this, mOWDevice);
     }
 
     private void initWakelock() {
@@ -336,7 +356,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 alertsController.handleSpeed(mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get());
             }
         });
-        bluetoothUtil.init(this, mOWDevice);
+        getBluetoothUtil().init(this, mOWDevice);
     }
 
     long getMillisSinceLastMoment() {
@@ -397,7 +417,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             menu.findItem(R.id.menu_scan).setVisible(false);
             //menu.findItem(R.id.menu_ow_light_on).setVisible(true);
             //menu.findItem(R.id.menu_ow_ridemode).setVisible(true);
-        } else if (!bluetoothUtil.isScanning()) {
+        } else if (!getBluetoothUtil().isScanning()) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
             menu.findItem(R.id.menu_disconnect).setVisible(false);
@@ -427,7 +447,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 getPermissions().subscribe(new DisposableSingleObserver<Boolean>() {
                            @Override
                            public void onSuccess(Boolean aBoolean) {
-                               bluetoothUtil.startScanning();
+                               getBluetoothUtil().startScanning();
                                // TODO move this to where we're actually connected to device? (or maybe its better here so we can achieve a location lock before logging)
                                if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
                                    startLocationScan();
@@ -442,13 +462,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                 break;
             case R.id.menu_stop:
-                bluetoothUtil.stopScanning();
+                getBluetoothUtil().stopScanning();
                 this.invalidateOptionsMenu();
 
                 break;
             case R.id.menu_disconnect:
                 mOWDevice.isConnected.set(false);
-                bluetoothUtil.disconnect();
+                getBluetoothUtil().disconnect();
                 updateLog("Disconnected from device by user.");
                 deviceConnectedTimer(false);
                 mLoggingHandler.removeCallbacksAndMessages(null);
@@ -520,10 +540,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     protected void onResume() {
         super.onResume();
 
-        if (bluetoothUtil.isConnected()) {
+        if (getBluetoothUtil().isConnected()) {
             mOWDevice.bluetoothStatus.set("Connected");
         } else {
-            bluetoothUtil.reconnect(this);
+            getBluetoothUtil().reconnect(this);
         }
 
         alertsController.recaptureMedia(this);
@@ -677,9 +697,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         @Override
         public void run() {
             if ((frontBlinkCount % 2) == 0) {
-                mOWDevice.setCustomLights(bluetoothUtil, 0, 0, 60);
+                mOWDevice.setCustomLights(getBluetoothUtil(), 0, 0, 60);
             } else {
-                mOWDevice.setCustomLights(bluetoothUtil, 0, 0, 0);
+                mOWDevice.setCustomLights(getBluetoothUtil(), 0, 0, 0);
             }
             frontBlinkCount++;
         }
@@ -692,9 +712,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         @Override
         public void run() {
             if ((backBlinkCount % 2) == 0) {
-                mOWDevice.setCustomLights(bluetoothUtil, 1, 1, 60);
+                mOWDevice.setCustomLights(getBluetoothUtil(), 1, 1, 60);
             } else {
-                mOWDevice.setCustomLights(bluetoothUtil, 1, 1, 0);
+                mOWDevice.setCustomLights(getBluetoothUtil(), 1, 1, 0);
             }
             backBlinkCount++;
         }
@@ -718,10 +738,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
                     updateLog("LIGHTS ON");
-                    mOWDevice.setLights(bluetoothUtil, 1);
+                    mOWDevice.setLights(getBluetoothUtil(), 1);
                 } else {
                     updateLog("LIGHTS OFF");
-                    mOWDevice.setLights(bluetoothUtil, 0);
+                    mOWDevice.setLights(getBluetoothUtil(), 0);
                 }
             }
         });
@@ -730,10 +750,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
                     updateLog("CUSTOM LIGHTS ON");
-                    mOWDevice.setLights(bluetoothUtil, 2);
+                    mOWDevice.setLights(getBluetoothUtil(), 2);
                 } else {
                     updateLog("CUSTOM LIGHTS OFF");
-                    mOWDevice.setLights(bluetoothUtil, 0);
+                    mOWDevice.setLights(getBluetoothUtil(), 0);
 
                 }
             }
@@ -743,9 +763,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mFrontBright.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
-                    mOWDevice.setCustomLights(bluetoothUtil, 0,0,60);
+                    mOWDevice.setCustomLights(getBluetoothUtil(), 0,0,60);
                  } else {
-                    mOWDevice.setCustomLights(bluetoothUtil, 0,0,30);
+                    mOWDevice.setCustomLights(getBluetoothUtil(), 0,0,30);
                  }
             }
 
@@ -754,9 +774,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mBackBright.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
-                    mOWDevice.setCustomLights(bluetoothUtil, 1,1,60);
+                    mOWDevice.setCustomLights(getBluetoothUtil(), 1,1,60);
                 } else {
-                    mOWDevice.setCustomLights(bluetoothUtil, 1,1,30);
+                    mOWDevice.setCustomLights(getBluetoothUtil(), 1,1,30);
 
                 }
             }
@@ -826,10 +846,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 Log.d(TAG, "mOWDevice.setRideMode button pressed:" + position);
                 if (mOWDevice.isOneWheelPlus.get()) {
                     updateLog("Ridemode changed to:" + position + 4);
-                    mOWDevice.setRideMode(bluetoothUtil,position + 4); // ow+ ble value for ridemode 4,5,6,7,8 (delirium)
+                    mOWDevice.setRideMode(getBluetoothUtil(),position + 4); // ow+ ble value for ridemode 4,5,6,7,8 (delirium)
                 } else {
                     updateLog("Ridemode changed to:" + position + 1);
-                    mOWDevice.setRideMode(bluetoothUtil,position + 1); // ow uses 1,2,3 (expert)
+                    mOWDevice.setRideMode(getBluetoothUtil(),position + 1); // ow uses 1,2,3 (expert)
                 }
             } else {
                 Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
