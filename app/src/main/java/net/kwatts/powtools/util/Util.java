@@ -2,6 +2,8 @@ package net.kwatts.powtools.util;
 import android.accounts.AccountManager;
 import android.accounts.Account;
 import android.content.*;
+import android.support.annotation.IntRange;
+
 import java.util.*;
 /**
  * Created by kwatts on 6/15/16.
@@ -36,6 +38,15 @@ public class Util {
      */
     public static short byteToShort(byte[] v) {
         return (short)((v[1] << 8) + (v[0] & 0xff));
+    }
+
+    private static final byte[] twoBytes = new byte[2];
+    public static byte[] intToShortBytes(@IntRange(from = -32768, to = 32767) int v) {
+
+        twoBytes[0] = (byte) (v >> 8 & 0xff);
+        twoBytes[1] = (byte) (v & 0xff);
+
+        return twoBytes;
     }
 
     // 1 byte/8-bit signed two's complement (-128 to 127)

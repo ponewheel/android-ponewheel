@@ -69,6 +69,10 @@ dependencies {
         transitive = true
     }
 
+    debugImplementation 'io.palaima.debugdrawer:debugdrawer:0.7.0'
+    implementation 'io.palaima.debugdrawer:debugdrawer-commons:0.7.0'
+    releaseImplementation 'io.palaima.debugdrawer:debugdrawer-no-op:0.7.0'
+
     implementation 'com.jakewharton.timber:timber:4.5.1'
 
     implementation "com.github.PhilJay:MPAndroidChart:v3.0.2"

@@ -10,15 +10,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import net.kwatts.powtools.adapters.RideListAdapter;
-import net.kwatts.powtools.database.Attribute;
-import net.kwatts.powtools.database.Moment;
-import net.kwatts.powtools.database.Ride;
 import net.kwatts.powtools.database.RideRow;
+import net.kwatts.powtools.util.debugdrawer.DebugDrawerAddDummyRide;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
+import io.palaima.debugdrawer.DebugDrawer;
+import io.palaima.debugdrawer.commons.SettingsModule;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.observers.DisposableSingleObserver;
@@ -47,14 +46,17 @@ public class RidesListActivity extends AppCompatActivity {
 
         recyclerView.setAdapter(rideListAdapter);
 
+
+        new DebugDrawer.Builder(this)
+                .modules(
+                        new DebugDrawerAddDummyRide(this),
+                        new SettingsModule(this)
+                ).build();
     }
 
     @Override public boolean onCreateOptionsMenu(Menu menu) {
 
         menu.add(0, MENU_ITEM_DELETE, 0, "Delete");
-        if (BuildConfig.DEBUG) {
-            menu.add(0, MENU_ITEM_ADD_RANDO, 0, "Add Dummy");
-        }
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -62,14 +64,11 @@ public class RidesListActivity extends AppCompatActivity {
     @Override public boolean onOptionsItemSelected(MenuItem item) {
 
         switch (item.getItemId()) {
-            case 0:
+            case MENU_ITEM_DELETE:
                 deleteSelectedRides();
 
                 break;
-            case 1:
-                insertSampleRidesOrDebug();
 
-                break;
         }
 
         return super.onOptionsItemSelected(item);
@@ -98,52 +97,8 @@ public class RidesListActivity extends AppCompatActivity {
 
     }
 
-    private void insertSampleRidesOrDebug() {
-        App.dbExecute(database -> {
 
-            //for (Ride ride : database.rideDao().getAll()) {
-            //    Log.d(TAG, "ride = " + ride);
-            //}
-
-            // Insert sample rides
-            Ride ride = new Ride();
-            long rideId = database.rideDao().insert(ride);
-            RideRow newRideRow = new RideRow();
-            newRideRow.rideId = rideId;
-
-            Calendar calendar = Calendar.getInstance();
-            Moment moment;
-            int rideLength = (int) (Math.random() * 58);
-            for (int i = 0; i < rideLength; i++) {
-                calendar.add(Calendar.MINUTE, 1);
-                moment = new Moment(rideId, calendar.getTime());
-
-                moment.setGpsLat(37.7891223 + i*.001);
-                moment.setGpsLong(-122.4118449 + Math.sin(i) * .001);
-
-                long momentId = database.momentDao().insert(moment);
-
-                Attribute attribute = new Attribute();
-                attribute.setMomentId(momentId);
-                attribute.setKey("speed");
-                attribute.setValue(""+i);
-
-                database.attributeDao().insert(attribute);
-
-                if (i == 0) {
-                    newRideRow.minEventDate = calendar.getTime();
-                } else if (i == rideLength - 1) {
-                    newRideRow.maxEventDate = calendar.getTime();
-                }
-            }
-
-            rideListAdapter.getRideList().add(newRideRow);
-            runOnUiThread(() -> rideListAdapter.notifyItemInserted(rideListAdapter.getRideList().size()-1));
-
-        });
-    }
-
-    private void refreshList() {
+    public void refreshList() {
         Single.fromCallable(() -> App.INSTANCE.db.rideDao().getRideRowList())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -166,4 +121,6 @@ public class RidesListActivity extends AppCompatActivity {
                     }
                 });
     }
+
+
 }

@@ -1,7 +1,6 @@
 package net.kwatts.powtools.util;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -105,8 +104,10 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             mainActivity.deviceConnectedTimer(true);
             mOWDevice.isConnected.set(true);
             App.INSTANCE.acquireWakeLock();
-            mOWDevice.deviceMacAddress.set(mGatt.getDevice().toString());
-            mOWDevice.deviceMacName.set(mGatt.getDevice().getName());
+            String deviceMacAddress = mGatt.getDevice().toString();
+            String deviceMacName = mGatt.getDevice().getName();
+            mOWDevice.deviceMacAddress.set(deviceMacAddress);
+            mOWDevice.deviceMacName.set(deviceMacName);
             App.INSTANCE.getSharedPreferences().saveMacAddress(
                     mOWDevice.deviceMacAddress.get(),
                     mOWDevice.deviceMacName.get()
@@ -357,7 +358,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
 
     @Override
-    public void reconnect(Activity activity) {
+    public void reconnect(MainActivity activity) {
         Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
     }

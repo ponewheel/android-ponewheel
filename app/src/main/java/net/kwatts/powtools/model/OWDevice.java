@@ -27,6 +27,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
+import timber.log.Timber;
+
 import static net.kwatts.powtools.util.Util.cel2far;
 import static net.kwatts.powtools.util.Util.milesToKilometers;
 import static net.kwatts.powtools.util.Util.revolutionsToKilometers;
@@ -116,6 +118,8 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public Address getGpsLocation() {
         return gpsLocation;
     }
+
+
 /*
 0x0000 = e659F301-ea98-11e3-ac10-0800200c9a66 (OnewheelServiceUUID)
 0x001a = e659F301-ea98-11e3-ac10-0800200c9a66 (OnewheelCharacteristicSerialNumber)
