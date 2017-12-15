@@ -11,7 +11,7 @@ jobs:
       - image: circleci/android:api-27-alpha
     environment:
       - _JAVA_OPTIONS: "-Xmx1024m"
-      - JVM_OPTS: -Xmx1024m -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2
+      - JVM_OPTS: -Xmx1024m -XX:ParallelGCThreads=1 -XX:ConcGCThreads=1 -XX:ParallelGCThreads=1 -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
     steps:
       - checkout
       - run:
@@ -24,14 +24,14 @@ jobs:
           key: gradle-{{ checksum "build.gradle" }}-{{ checksum "app/build.gradle" }}
       - run:
           name: Download Dependencies
-          command: ./gradlew --no-daemon --stacktrace androidDependencies
+          command: ./gradlew --no-daemon --stacktrace -PdisablePreDex androidDependencies
       - save_cache:
           paths:
             - ~/.gradle
           key: gradle-{{ checksum "build.gradle" }}-{{ checksum "app/build.gradle" }}
       - run:
           name: Android build
-          command: ./gradlew --no-daemon --stacktrace --max-workers 2 assemble check
+          command: ./gradlew --no-daemon --stacktrace --max-workers 1 -PdisablePreDex assemble check
       - store_artifacts:
           path: app/build/reports
           destination: reports
