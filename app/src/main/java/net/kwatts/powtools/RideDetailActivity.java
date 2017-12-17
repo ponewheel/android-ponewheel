@@ -341,22 +341,22 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         if (values.isEmpty()) {
             return;
         }
-        LineChart lineChart = findViewById(R.id.ride_detail_speed_chart);
-        assert lineChart != null;
+        LineChart speedChart = findViewById(R.id.ride_detail_speed_chart);
+        assert speedChart != null;
         LineDataSet dataSet = new LineDataSet(values, "Label");
         setupDatasetWithDefaultValues(dataSet);
 
 
         LineData lineData = new LineData(dataSet);
-        lineChart.setData(lineData);
-        lineChart.notifyDataSetChanged();
+        speedChart.setData(lineData);
+        speedChart.notifyDataSetChanged();
 
-        lineChart.getDescription().setEnabled(false);
+        speedChart.getDescription().setEnabled(false);
 
         // enable touch gestures
-        lineChart.setTouchEnabled(true);
-        lineChart.setOnChartGestureListener(new LockScrollbarGestureListener(scrollView));
-        lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+        speedChart.setTouchEnabled(true);
+        speedChart.setOnChartGestureListener(new LockScrollbarGestureListener(scrollView));
+        speedChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(Entry entry, Highlight h) {
                 Long entryX = (long) entry.getX();
@@ -372,27 +372,26 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                 clearAllMarkersFromMap();
             }
         });
-
-        lineChart.setDragDecelerationFrictionCoef(0.9f);
+        speedChart.setDoubleTapToZoomEnabled(false);
+        speedChart.setDragDecelerationEnabled(false);
 
         // enable scaling and dragging
-        lineChart.setDragEnabled(true);
-        lineChart.setScaleEnabled(false);
-        lineChart.setDrawGridBackground(false);
-        lineChart.setHighlightPerDragEnabled(true);
+        speedChart.setDragEnabled(true);
+        speedChart.setScaleEnabled(false);
+        speedChart.setDrawGridBackground(false);
+        speedChart.setHighlightPerDragEnabled(true);
 
         // set an alternative background color
-        lineChart.setBackgroundColor(Color.WHITE);
-        lineChart.setViewPortOffsets(0f, 0f, 0f, 0f);
+        speedChart.setBackgroundColor(Color.WHITE);
 
         // add data
-        lineChart.invalidate();
+        speedChart.invalidate();
 
         // get the legend (only possible after setting data)
-        Legend l = lineChart.getLegend();
+        Legend l = speedChart.getLegend();
         l.setEnabled(false);
 
-        XAxis xAxis = lineChart.getXAxis();
+        XAxis xAxis = speedChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.TOP_INSIDE);
 //        xAxis.setTypeface(mTfLight);
         xAxis.setTextSize(10f);
@@ -407,7 +406,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
             return minutes +"m";
         });
 
-        YAxis leftAxis = lineChart.getAxisLeft();
+        YAxis leftAxis = speedChart.getAxisLeft();
         leftAxis.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART);
 //        leftAxis.setTypeface(mTfLight);
         leftAxis.setTextColor(ColorTemplate.getHoloBlue());
@@ -417,12 +416,13 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 //        leftAxis.setYOffset(-9f);
         leftAxis.setTextColor(Color.rgb(255, 192, 56));
 
-        YAxis rightAxis = lineChart.getAxisRight();
+        YAxis rightAxis = speedChart.getAxisRight();
         rightAxis.setEnabled(false);
     }
 
     private void setupPadsChart(List<Entry> pad1Values, List<Entry> pad2Values) {
         LineChart lineChart = findViewById(R.id.ride_detail_pads_chart);
+//        LineChart lineChart = null;//findViewById(R.id.ride_detail_pads_chart);
         assert lineChart != null;
         Timber.d("pad1 size" + pad1Values.size());
         Timber.d("pad2 size" + pad2Values.size());
@@ -457,6 +457,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(Entry entry, Highlight h) {
+                Timber.d("pads chart onValueSelected");
                 Long entryX = (long) entry.getX();
                 if (timeLocationMap.containsKey(entryX)) {
                     clearAllMarkersFromMap();
@@ -470,8 +471,8 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                 clearAllMarkersFromMap();
             }
         });
+        lineChart.setDoubleTapToZoomEnabled(false);
 
-        lineChart.setDragDecelerationFrictionCoef(0.9f);
 
         // enable scaling and dragging
         lineChart.setDragEnabled(true);
@@ -481,7 +482,6 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 
         // set an alternative background color
         lineChart.setBackgroundColor(Color.WHITE);
-        lineChart.setViewPortOffsets(0f, 0f, 0f, 0f);
 
         // add data
         lineChart.invalidate();
@@ -556,6 +556,8 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(Entry entry, Highlight h) {
+                Timber.d("temp chart onValueSelected");
+
                 Long entryX = (long) entry.getX();
                 if (timeLocationMap.containsKey(entryX)) {
                     clearAllMarkersFromMap();
@@ -569,6 +571,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                 clearAllMarkersFromMap();
             }
         });
+        lineChart.setDoubleTapToZoomEnabled(false);
 
         lineChart.setDragDecelerationFrictionCoef(0.9f);
 
@@ -580,7 +583,6 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 
         // set an alternative background color
         lineChart.setBackgroundColor(Color.WHITE);
-        lineChart.setViewPortOffsets(0f, 0f, 0f, 0f);
 
         // add data
         lineChart.invalidate();
@@ -618,7 +620,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         rightAxis.setEnabled(false);
     }
 
-    private void clearAllMarkersFromMap() {
+    void clearAllMarkersFromMap() {
         for (Marker mapMarker : mapMarkers) {
             mapMarker.remove();
         }
