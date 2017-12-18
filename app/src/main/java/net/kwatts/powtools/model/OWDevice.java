@@ -140,7 +140,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public static final String OnewheelCharacteristicLightsFront = "e659f30d-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicOdometer = "e659f30a-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicSafetyHeadroom = "e659f317-ea98-11e3-ac10-0800200c9a66";
-    public static final String OnewheelCharacteristicSpeed = "e659f30b-ea98-11e3-ac10-0800200c9a66";
+    public static final String OnewheelCharacteristicSpeedRpm = "e659f30b-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicTripRegenAmpHours = "e659f314-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicTripTotalAmpHours = "e659f313-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicUartSerialRead = "e659f3fe-ea98-11e3-ac10-0800200c9a66";
@@ -152,10 +152,10 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
 
     public static final String MockOnewheelCharacteristicMotorTemp = "MockOnewheelCharacteristicMotorTemp";
     public static final String MockOnewheelCharacteristicOdometer = "MockOnewheelCharacteristicOdometer";
+    public static final String MockOnewheelCharacteristicSpeed = "MockOnewheelCharacteristicMaxSpeed";
     public static final String MockOnewheelCharacteristicMaxSpeed = "MockOnewheelCharacteristicMaxSpeed";
     public static final String MockOnewheelCharacteristicPad1 = "MockOnewheelCharacteristicPad1";
     public static final String MockOnewheelCharacteristicPad2 = "MockOnewheelCharacteristicPad2";
-    public static final String MockOnewheelCharacteristicSpeed = "MockOnewheelCharacteristicSpeed";
     private Address gpsLocation;
 
     public void setGpsLocation(Address gpsLocation) {
@@ -274,7 +274,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY_INITIAL,     "BATTERY AT START (%)"));        // 4
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLastErrorCode,    KEY_LAST_ERROR_CODE,     "LAST ERROR CODE"));             // 5
 
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicSpeed,        KEY_SPEED,               ""));                          // 0
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicSpeedRpm,         KEY_SPEED_RPM,           "SPEED (RPM)"));                          // 0
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY,             "Battery"));                   // 1
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicStatusError,      KEY_RIDER_DETECTED,      "RIDER"));                     // 2
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicPad1,         KEY_RIDER_DETECTED_PAD_1,"PAD1"));                      // 3
@@ -284,7 +284,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicOdometer,         KEY_ODOMETER_TIRE_REVS,  "TRIP ODOMETER (TIRE REVS)")); // 7
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTripTotalAmpHours,KEY_TRIP_AMPS,           "TRIP USED Ah (Amp hours)"));  // 8
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTripRegenAmpHours,KEY_TRIP_AMPS_REGEN,     "TRIP GAINED Ah (Amp hours)"));// 9
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicSpeed,            KEY_SPEED,               "SPEED (RPM)"));               // 10
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicSpeed,                                       KEY_SPEED,               ""));               // 10
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryVoltage,   KEY_BATTERY_VOLTAGE,     "BATTERY (Voltage)"));         // 11
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryCells,     KEY_BATTERY_CELLS,       "BATTERY CELLS (Voltage)"));   // 12
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicCurrentAmps,      KEY_CURRENT_AMPS,        "BATTERY CURRENT (Amps)"));    // 13
@@ -518,47 +518,37 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
     public void processSpeed(byte[] incomingValue, DeviceCharacteristic dc) {
-        int i_speed = unsignedShort(incomingValue);
-        dc.value.set(Integer.toString(i_speed));
-        DeviceCharacteristic dc_speed = getDeviceCharacteristicByKey(KEY_SPEED);
-        if (dc_speed != null) {
-            if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                dc_speed.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToKilometersPerHour((double) i_speed)));
-            } else {
-                dc_speed.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToMilesPerHour((double) i_speed)));
-            }
-        }
-        DeviceCharacteristic dc_speed_max = getDeviceCharacteristicByKey(KEY_SPEED_MAX);
-        if (dc_speed_max != null) {
-            if (i_speed > maxSpeed.get()) {
-                if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                    dc_speed_max.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToKilometersPerHour((double) i_speed)));
-                } else {
-                    dc_speed_max.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToMilesPerHour((double) i_speed)));
-                }
-                maxSpeed.set(i_speed);
-            }
+        int speed = unsignedShort(incomingValue);
+        setFormattedSpeedWithMetricPreference(dc, speed);
+        DeviceCharacteristic maxSpeedCharacteristic = characteristics.get(MockOnewheelCharacteristicMaxSpeed);
+        if (speed > maxSpeed.get()) {
+            setFormattedSpeedWithMetricPreference(maxSpeedCharacteristic, speed);
+            maxSpeed.set(speed);
         }
     }
 
     public void processTemp(BluetoothGattCharacteristic incomingCharacteristic) {
         int controllerTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
         int motorTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
 
-        setFormattedTempWithMetricPreference(isMetric, characteristics.get(OnewheelCharacteristicTemperature).value, controllerTemp);
-        setFormattedTempWithMetricPreference(isMetric, characteristics.get(MockOnewheelCharacteristicMotorTemp).value, motorTemp);
+        setFormattedTempWithMetricPreference(characteristics.get(OnewheelCharacteristicTemperature), controllerTemp);
+        setFormattedTempWithMetricPreference(characteristics.get(MockOnewheelCharacteristicMotorTemp), motorTemp);
     }
 
-    public void setFormattedTempWithMetricPreference(boolean isMetric, ObservableField<String> value, int temp) {
-        value.set(String.format(Locale.getDefault(), "%.2f", isMetric ? (double) temp : cel2far(temp)));
+    public void setFormattedTempWithMetricPreference(DeviceCharacteristic deviceCharacteristic, int temp) {
+        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
+        deviceCharacteristic.value.set(String.format(Locale.getDefault(), "%.2f", isMetric ? (double) temp : cel2far(temp)));
+    }
+
+    public void setFormattedSpeedWithMetricPreference(DeviceCharacteristic deviceCharacteristic, double speed) {
+        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
+        deviceCharacteristic.value.set(String.format(Locale.getDefault(), "%3.2f", isMetric ? rpmToKilometersPerHour((double) speed) : rpmToMilesPerHour((double) speed)));
     }
 
     public void processBatteryTemp(BluetoothGattCharacteristic incomingCharacteristic, DeviceCharacteristic dc) {
         int batteryTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
 
-        setFormattedTempWithMetricPreference(isMetric, characteristics.get(OnewheelCharacteristicTemperature).value, batteryTemp);
+        setFormattedTempWithMetricPreference(characteristics.get(OnewheelCharacteristicTemperature), batteryTemp);
     }
 
     public void processUnknownUuid(String incomingUuid, byte[] incomingValue) {
