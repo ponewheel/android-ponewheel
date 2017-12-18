@@ -27,6 +27,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
+import timber.log.Timber;
+
 import static net.kwatts.powtools.util.Util.cel2far;
 import static net.kwatts.powtools.util.Util.milesToKilometers;
 import static net.kwatts.powtools.util.Util.revolutionsToKilometers;
