@@ -27,8 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import timber.log.Timber;
-
 import static net.kwatts.powtools.util.Util.cel2far;
 import static net.kwatts.powtools.util.Util.milesToKilometers;
 import static net.kwatts.powtools.util.Util.revolutionsToKilometers;
@@ -294,7 +292,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             value.set("0.0");
             //ui_name set in refresh();
             ui_enabled.set(true);
-            enabled.set(true);
+            enabled.set(false);
         }});
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -323,6 +321,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             value.set("");
             ui_name.set("PAD1");
             ui_enabled.set(true);
+            enabled.set(false);
         }});
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -332,7 +331,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             value.set("");
             ui_name.set("PAD2");
             ui_enabled.set(true);
-            enabled.set(true);
+            enabled.set(false);
         }});
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -342,7 +341,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             value.set("");
             ui_name.set("Trip Top Speed: ");
             ui_enabled.set(true);
-            enabled.set(true);
+            enabled.set(false);
         }});
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -352,7 +351,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             value.set("");
             //ui_name set in refresh();
             ui_enabled.set(true);
-            enabled.set(true);
+            enabled.set(false);
         }});
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -464,7 +463,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             value.set("");
             //ui_name set in refresh();
             ui_enabled.set(true);
-            enabled.set(true);
+            enabled.set(false);
         }});
 
 
