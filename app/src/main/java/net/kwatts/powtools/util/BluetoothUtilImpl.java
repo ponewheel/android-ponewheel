@@ -120,7 +120,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                 if (uuid != null) {
                     BluetoothGattCharacteristic localCharacteristic = owGatService.getCharacteristic(UUID.fromString(uuid));
                     if (localCharacteristic != null) {
-                        if (isCharacteristicNotifiable(localCharacteristic)) {
+                        if (isCharacteristicNotifiable(localCharacteristic) && deviceCharacteristic.isNotifyCharacteristic) {
                             mGatt.setCharacteristicNotification(localCharacteristic, true);
                             BluetoothGattDescriptor descriptor = localCharacteristic.getDescriptor(UUID.fromString(OWDevice.OnewheelConfigUUID));
                             Log.d(TAG, "descriptorWriteQueue.size:" + descriptorWriteQueue.size());
