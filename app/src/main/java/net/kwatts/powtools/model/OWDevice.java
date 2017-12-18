@@ -88,6 +88,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public final ObservableInt lifetimeOdometer = new ObservableInt();
     public final ObservableInt lightMode = new ObservableInt();
 
+    double[] amp_cells = new double[16];
 
 
     public static final String OnewheelServiceUUID = "e659f300-ea98-11e3-ac10-0800200c9a66";
@@ -790,11 +791,10 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                     case OnewheelCharacteristicCurrentAmps:
                         // Wh = mAh × V / 1000
                         // battery is 3.5Amps
-                        int i_cells_1 = unsignedByte(incomingValue[0]);
-                        double[] amp_cells = new double[15];
-                        if(i_cells_1 < amp_cells.length && i_cells_1 >= 0) {
+                        int cellIdentifier = unsignedByte(incomingValue[0]);
+                        if(cellIdentifier < amp_cells.length && cellIdentifier >= 0) {
                             int var3 = unsignedByte(incomingValue[1]);
-                            amp_cells[i_cells_1] = (double)var3 / 50.0D;
+                            amp_cells[cellIdentifier] = (double)var3 / 50.0D;
                         }
                         StringBuilder amps_string = new StringBuilder();
                         for (int x = 0;x < amp_cells.length;++x) {
@@ -811,7 +811,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                         //dc.value.set(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1).toString());
                         //int camps = unsignedByte(c_value[1]);
                         //double d_camps = (double)camps / 50.0D;
-                        //currentAmps.set("cells:" + i_cells_1 + " value:" + d_camps);
+                        //currentAmps.set("cells:" + cellIdentifier + " value:" + d_camps);
                         //int i_currentamps = unsignedShort(c_value);
                         //double d_currentapps = Double.valueOf((double) i_currentamps / 50.0D);
                         //currentAmps.set(Double.toString(d_currentapps));
