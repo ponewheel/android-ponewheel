@@ -45,6 +45,7 @@
     <string name="speed">Speed</string>
     <string name="pads">Rider Pads</string>
     <string name="temp">Temperature</string>
+    <string name="power">Power</string>
 
     <string-array name="ow_ridemode_array">
         <item>CLASSIC</item>

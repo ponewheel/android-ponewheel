@@ -42,6 +42,7 @@ import net.kwatts.powtools.components.LockableScrollView;
 import net.kwatts.powtools.database.Attribute;
 import net.kwatts.powtools.database.Moment;
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
+import net.kwatts.powtools.model.OWDevice;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -114,6 +115,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
             List<Entry> timePad2Map = new ArrayList<>();
             List<Entry> timeControllerTempMap = new ArrayList<>();
             List<Entry> timeMotorTempMap = new ArrayList<>();
+            List<Entry> timeBatteryMap = new ArrayList<>();
 
             for (Moment moment : moments) {
                 long time = moment.getDate().getTime();
@@ -132,16 +134,18 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                             && !attribute.getValue().equals("")) {
                         String value = attribute.getValue();
                         Timber.d("value" + value + " key " + attribute.getKey());
-                        if (Attribute.KEY_SPEED.equals(attribute.getKey())) {
+                        if (OWDevice.KEY_SPEED.equals(attribute.getKey())) {
                             timeSpeedMap.add(new Entry(time, Float.valueOf(value)));
-                        } else if (Attribute.KEY_PAD1.equals(attribute.getKey())) {
+                        } else if (OWDevice.KEY_RIDER_DETECTED_PAD_1.equals(attribute.getKey())) {
                             timePad1Map.add(new Entry(time, "true".equals(value) ? 1 : 0));
-                        } else if (Attribute.KEY_PAD2.equals(attribute.getKey())) {
+                        } else if (OWDevice.KEY_RIDER_DETECTED_PAD_2.equals(attribute.getKey())) {
                             timePad2Map.add(new Entry(time, "true".equals(value) ? 1 : 0));
-                        } else if (Attribute.KEY_CONTROLLER_TEMP.equals(attribute.getKey())) {
+                        } else if (OWDevice.KEY_CONTROLLER_TEMP.equals(attribute.getKey())) {
                             timeControllerTempMap.add(new Entry(time, Float.valueOf(value)));
-                        } else if (Attribute.KEY_MOTOR_TEMP.equals(attribute.getKey())) {
+                        } else if (OWDevice.KEY_MOTOR_TEMP.equals(attribute.getKey())) {
                             timeMotorTempMap.add(new Entry(time, Float.valueOf(value)));
+                        } else if (OWDevice.KEY_BATTERY.equals(attribute.getKey())) {
+                            timeBatteryMap.add(new Entry(time, Float.valueOf(value)));
                         }
                     }
                 }
@@ -154,10 +158,13 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                 setupSpeedChart(timeSpeedMap);
                 setupPadsChart(timePad1Map, timePad2Map);
                 setupTempChart(timeControllerTempMap, timeMotorTempMap);
+                setupBatteryChart(timeBatteryMap);
             } );
 
         });
     }
+
+
 
     private synchronized void checkDataAndMapReady() {
         if (isMapReady && isDatasetReady) {
@@ -356,22 +363,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         // enable touch gestures
         speedChart.setTouchEnabled(true);
         speedChart.setOnChartGestureListener(new LockScrollbarGestureListener(scrollView));
-        speedChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
-            @Override
-            public void onValueSelected(Entry entry, Highlight h) {
-                Long entryX = (long) entry.getX();
-                if (timeLocationMap.containsKey(entryX)) {
-                    clearAllMarkersFromMap();
-                    LatLng latLng = timeLocationMap.get(entryX);
-                    mapMarkers.add(googleMap.addMarker(new MarkerOptions().position(latLng)));
-                }
-            }
-
-            @Override
-            public void onNothingSelected() {
-                clearAllMarkersFromMap();
-            }
-        });
+        addDragListenerMarkerMaker(speedChart);
         speedChart.setDoubleTapToZoomEnabled(false);
         speedChart.setDragDecelerationEnabled(false);
 
@@ -420,6 +412,25 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         rightAxis.setEnabled(false);
     }
 
+    private void addDragListenerMarkerMaker(LineChart speedChart) {
+        speedChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @Override
+            public void onValueSelected(Entry entry, Highlight h) {
+                Long entryX = (long) entry.getX();
+                if (timeLocationMap.containsKey(entryX)) {
+                    clearAllMarkersFromMap();
+                    LatLng latLng = timeLocationMap.get(entryX);
+                    mapMarkers.add(googleMap.addMarker(new MarkerOptions().position(latLng)));
+                }
+            }
+
+            @Override
+            public void onNothingSelected() {
+                clearAllMarkersFromMap();
+            }
+        });
+    }
+
     private void setupPadsChart(List<Entry> pad1Values, List<Entry> pad2Values) {
         LineChart lineChart = findViewById(R.id.ride_detail_pads_chart);
 //        LineChart lineChart = null;//findViewById(R.id.ride_detail_pads_chart);
@@ -454,23 +465,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         // enable touch gestures
         lineChart.setTouchEnabled(true);
         lineChart.setOnChartGestureListener(new LockScrollbarGestureListener(scrollView));
-        lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
-            @Override
-            public void onValueSelected(Entry entry, Highlight h) {
-                Timber.d("pads chart onValueSelected");
-                Long entryX = (long) entry.getX();
-                if (timeLocationMap.containsKey(entryX)) {
-                    clearAllMarkersFromMap();
-                    LatLng latLng = timeLocationMap.get(entryX);
-                    mapMarkers.add(googleMap.addMarker(new MarkerOptions().position(latLng)));
-                }
-            }
-
-            @Override
-            public void onNothingSelected() {
-                clearAllMarkersFromMap();
-            }
-        });
+        addDragListenerMarkerMaker(lineChart);
         lineChart.setDoubleTapToZoomEnabled(false);
 
 
@@ -512,7 +507,6 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         leftAxis.setDrawGridLines(false);
         leftAxis.setGranularityEnabled(true);
         leftAxis.setGranularity(1f);
-        leftAxis.setAxisMinimum(0f);
 //        leftAxis.setYOffset(-9f);
         leftAxis.setTextColor(Color.rgb(255, 192, 56));
         leftAxis.setValueFormatter(((value, axis) -> value > .5f ? "On" : "Off"));
@@ -521,11 +515,92 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         rightAxis.setEnabled(false);
     }
 
+    private void setupBatteryChart(List<Entry> timeBatteryMap) {
+        LineChart lineChart = findViewById(R.id.ride_detail_battery_chart);
+        assert lineChart != null;
+        Timber.d("pad1 size" + timeBatteryMap.size());
+//        Timber.d("pad2 size" + pad2Values.size());
+        ArrayList<ILineDataSet> sets = new ArrayList<>();
+        if (!timeBatteryMap.isEmpty()) {
+            LineDataSet dataSet = new LineDataSet(timeBatteryMap, "Battery Percentage");
+            setupDatasetWithDefaultValues(dataSet);
+            sets.add(dataSet);
+        }
+//        if (!pad2Values.isEmpty()) {
+//            LineDataSet dataSet2 = new LineDataSet(pad2Values, "Pad2");
+//            setupDatasetWithDefaultValues(dataSet2);
+//            dataSet2.setColor(ColorTemplate.MATERIAL_COLORS[1]);
+//            dataSet2.setFillColor(ColorTemplate.MATERIAL_COLORS[1]);
+//            sets.add(dataSet2);
+//        }
+
+        if (timeBatteryMap.isEmpty()) {
+//        if (pad1Values.isEmpty() && pad2Values.isEmpty()) {
+            return;
+        }
+
+        LineData lineData = new LineData(sets);
+        lineChart.setData(lineData);
+
+        lineChart.notifyDataSetChanged();
+
+        lineChart.getDescription().setEnabled(false);
+
+        // enable touch gestures
+        lineChart.setTouchEnabled(true);
+        lineChart.setOnChartGestureListener(new LockScrollbarGestureListener(scrollView));
+        addDragListenerMarkerMaker(lineChart);
+        lineChart.setDoubleTapToZoomEnabled(false);
+
+
+        // enable scaling and dragging
+        lineChart.setDragEnabled(true);
+        lineChart.setScaleEnabled(false);
+        lineChart.setDrawGridBackground(false);
+        lineChart.setHighlightPerDragEnabled(true);
+
+        // set an alternative background color
+        lineChart.setBackgroundColor(Color.WHITE);
+
+        // add data
+        lineChart.invalidate();
+
+        // get the legend (only possible after setting data)
+        Legend legend = lineChart.getLegend();
+        legend.setEnabled(true);
+
+        XAxis xAxis = lineChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.TOP_INSIDE);
+//        xAxis.setTypeface(mTfLight);
+        xAxis.setTextSize(10f);
+        xAxis.setTextColor(Color.BLACK);
+        xAxis.setDrawAxisLine(false);
+        xAxis.setDrawGridLines(false);
+        xAxis.setTextColor(Color.rgb(255, 192, 56));
+        xAxis.setCenterAxisLabels(true);
+//        xAxis.setGranularity(1f); // one hour
+        xAxis.setValueFormatter((value, axis) -> {
+            long minutes = TimeUnit.MILLISECONDS.toMinutes((long) value);
+            return minutes + "m";
+        });
+
+        YAxis leftAxis = lineChart.getAxisLeft();
+        leftAxis.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART);
+//        leftAxis.setTypeface(mTfLight);
+        leftAxis.setTextColor(ColorTemplate.getHoloBlue());
+        leftAxis.setDrawGridLines(false);
+        leftAxis.setGranularityEnabled(true);
+        leftAxis.setAxisMinimum(0f);
+//        leftAxis.setYOffset(-9f);
+        leftAxis.setTextColor(Color.rgb(255, 192, 56));
+
+        YAxis rightAxis = lineChart.getAxisRight();
+        rightAxis.setEnabled(false);
+    }
+
     private void setupTempChart(List<Entry> timeControllerTempMap, List<Entry> timeMotorTempMap) {
         LineChart lineChart = findViewById(R.id.ride_detail_temp_chart);
         assert lineChart != null;
-        Timber.d("pad1 size" + timeControllerTempMap.size());
-        Timber.d("pad2 size" + timeMotorTempMap.size());
         ArrayList<ILineDataSet> sets = new ArrayList<>();
         if (!timeControllerTempMap.isEmpty()) {
             LineDataSet dataSet = new LineDataSet(timeControllerTempMap, "Controller Temp");
@@ -553,27 +628,10 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         // enable touch gestures
         lineChart.setTouchEnabled(true);
         lineChart.setOnChartGestureListener(new LockScrollbarGestureListener(scrollView));
-        lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
-            @Override
-            public void onValueSelected(Entry entry, Highlight h) {
-                Timber.d("temp chart onValueSelected");
 
-                Long entryX = (long) entry.getX();
-                if (timeLocationMap.containsKey(entryX)) {
-                    clearAllMarkersFromMap();
-                    LatLng latLng = timeLocationMap.get(entryX);
-                    mapMarkers.add(googleMap.addMarker(new MarkerOptions().position(latLng)));
-                }
-            }
+        addDragListenerMarkerMaker(lineChart);
 
-            @Override
-            public void onNothingSelected() {
-                clearAllMarkersFromMap();
-            }
-        });
         lineChart.setDoubleTapToZoomEnabled(false);
-
-        lineChart.setDragDecelerationFrictionCoef(0.9f);
 
         // enable scaling and dragging
         lineChart.setDragEnabled(true);

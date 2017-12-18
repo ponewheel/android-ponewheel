@@ -58,6 +58,18 @@
                 android:id="@+id/ride_detail_temp_chart"
                 android:layout_width="match_parent"
                 android:layout_height="150dp" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/power"
+                android:textSize="16sp"
+                android:padding="13dp"
+                android:textStyle="bold" />
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/ride_detail_battery_chart"
+                android:layout_width="match_parent"
+                android:layout_height="150dp" />
         </LinearLayout>
 
     </net.kwatts.powtools.components.LockableScrollView>
