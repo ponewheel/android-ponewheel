@@ -75,8 +75,10 @@ import io.reactivex.Single;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
+import timber.log.Timber;
 
-import static net.kwatts.powtools.model.OWDevice.MockOnewheelCharacteristicSpeedLabel;
+import static net.kwatts.powtools.model.OWDevice.MockOnewheelCharacteristicSpeed;
+
 
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
 // https://github.com/alt236/Bluetooth-LE-Library---Android
@@ -350,13 +352,22 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             }
         });
 
-        mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeedLabel).value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+        mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-                alertsController.handleSpeed(mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeedLabel).value.get());
+                alertsController.handleSpeed(mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get());
             }
         });
         getBluetoothUtil().init(this, mOWDevice);
+    }
+
+    private void logOnChange(OWDevice.DeviceCharacteristic deviceCharacteristic) {
+        deviceCharacteristic.value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+            @Override
+            public void onPropertyChanged(Observable observable, int i) {
+                Timber.d(deviceCharacteristic.key.get() + " = " + deviceCharacteristic.value.get());
+            }
+        });
     }
 
     long getMillisSinceLastMoment() {

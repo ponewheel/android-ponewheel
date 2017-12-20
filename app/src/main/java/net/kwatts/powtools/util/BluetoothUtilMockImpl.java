@@ -16,7 +16,7 @@ import timber.log.Timber;
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicFirmwareRevision;
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicHardwareRevision;
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicLifetimeOdometer;
-import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicSpeed;
+import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicSpeedRpm;
 
 public class BluetoothUtilMockImpl implements BluetoothUtil{
     private MainActivity mainActivity;
@@ -94,7 +94,7 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
             @Override
             public void run() {
                 Timber.d("on Mock Loop");
-                setIntCharacteristic(OnewheelCharacteristicSpeed, random.nextInt(600));
+                setIntCharacteristic(OnewheelCharacteristicSpeedRpm, random.nextInt(600));
                 mainActivity.updateBatteryRemaining(random.nextInt(20) + 80);
 
                 mockLoopHandler.postDelayed(this, App.INSTANCE.getSharedPreferences().getLoggingFrequency());
