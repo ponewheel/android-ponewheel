@@ -39,8 +39,8 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import net.kwatts.powtools.components.LockScrollbarGestureListener;
 import net.kwatts.powtools.components.LockableScrollView;
-import net.kwatts.powtools.database.Attribute;
-import net.kwatts.powtools.database.Moment;
+import net.kwatts.powtools.database.entities.Attribute;
+import net.kwatts.powtools.database.entities.Moment;
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
 import net.kwatts.powtools.model.OWDevice;
 

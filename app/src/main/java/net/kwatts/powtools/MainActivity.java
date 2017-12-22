@@ -41,9 +41,9 @@ import com.google.android.gms.location.LocationRequest;
 import com.patloew.rxlocation.RxLocation;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
-import net.kwatts.powtools.database.Attribute;
-import net.kwatts.powtools.database.Moment;
-import net.kwatts.powtools.database.Ride;
+import net.kwatts.powtools.database.entities.Attribute;
+import net.kwatts.powtools.database.entities.Moment;
+import net.kwatts.powtools.database.entities.Ride;
 import net.kwatts.powtools.events.NotificationEvent;
 import net.kwatts.powtools.events.VibrateEvent;
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
@@ -64,6 +64,7 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -121,7 +122,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     PieChart mBatteryChart;
     Ride ride;
     private DisposableObserver<Address> rxLocationObserver;
-    Date latestMoment;
     private AlertsMvpController alertsController;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -343,9 +343,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-                boolean hasMinutePassed = latestMoment == null || // to short circuit the next line
-                        TimeUnit.MINUTES.toMillis(1) > getMillisSinceLastMoment();
-                if (mOWDevice.isConnected.get() && (ride == null || hasMinutePassed)) {
+
+
+                if (mOWDevice.isConnected.get() && isNewOrNotContinuousRide()) {
                     ride = new Ride();
                     App.dbExecute(database -> ride.id = database.rideDao().insert(ride));
                 }
@@ -370,8 +370,19 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         });
     }
 
-    long getMillisSinceLastMoment() {
-        return new Date().getTime() - latestMoment.getTime();
+    boolean isNewOrNotContinuousRide() {
+
+        if (ride == null) {
+            return true;
+        }
+        if (ride.end == null) {
+            Timber.e("isNewOrNotContinuousRide: unexpected state, ride.end not set");
+            return true;
+        }
+
+        long millisSinceLastMoment = new Date().getTime() - ride.end.getTime();
+        // Not continuous is defined as 1 min break. Maybe configurable in the future.
+        return TimeUnit.MINUTES.toMillis(1) > millisSinceLastMoment;
     }
 
     private void showEula() {
@@ -665,31 +676,33 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     private void persistMoment() throws Exception {
 //        mTextFileLogger.write(mOWDevice);
-        latestMoment = new Date();
-        Moment moment = new Moment(ride.id, latestMoment);
-        moment.rideId = ride.id;
 
         App.dbExecute(database -> {
+            Date latestMoment = new Date();
+
+            if (ride.start == null) {
+                ride.start = latestMoment;
+            }
+            ride.end = latestMoment;
+
+            Moment moment = new Moment(ride.id, latestMoment);
+            moment.rideId = ride.id;
             long momentId = database.momentDao().insert(moment);
+            List<Attribute> attributes = new ArrayList<>();
             for (OWDevice.DeviceCharacteristic deviceReadCharacteristic : mOWDevice.getNotifyCharacteristics()) {
                 Attribute attribute = new Attribute();
                 attribute.setMomentId(momentId);
                 attribute.setValue(deviceReadCharacteristic.value.get());
-//                attribute.setUuid(deviceReadCharacteristic.uuid.get());
-//                attribute.setUiName(deviceReadCharacteristic.uuid.get());
                 attribute.setKey(deviceReadCharacteristic.key.get());
 
-                database.attributeDao().insert(attribute);
+                attributes.add(attribute);
+            }
+            database.attributeDao().insertAll(attributes);
+            if (mOWDevice.getGpsLocation() != null) {
+                moment.setGpsLat(mOWDevice.getGpsLocation().getLatitude());
+                moment.setGpsLong(mOWDevice.getGpsLocation().getLongitude());
             }
         });
-
-
-
-        if (mOWDevice.getGpsLocation() != null) {
-            moment.setGpsLat(mOWDevice.getGpsLocation().getLatitude());
-            moment.setGpsLong(mOWDevice.getGpsLocation().getLongitude());
-        }
-
     }
 
 

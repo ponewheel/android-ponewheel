@@ -1,16 +1,21 @@
 package net.kwatts.powtools.util;
-import android.accounts.AccountManager;
+
 import android.accounts.Account;
-import android.content.*;
+import android.accounts.AccountManager;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.support.annotation.IntRange;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 /**
  * Created by kwatts on 6/15/16.
  */
 public class Util {
 
-
+    public static ProgressDialog showProgressDialog(Context context) {
+        return ProgressDialog.show(context, "", "Please wait");
+    }
     public static String getUsername(Context c) {
         AccountManager manager = AccountManager.get(c);
         Account[] accounts = manager.getAccountsByType("com.google");

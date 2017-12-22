@@ -1,4 +1,4 @@
-package net.kwatts.powtools.database;
+package net.kwatts.powtools.database.entities;
 
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
@@ -29,7 +29,7 @@ public class Moment {
     private Date date;
 
     /**
-     * @deprecated Not for public use, use @link(net.kwatts.powtools.database.Moment#Moment(long, java.util.Date))
+     * @deprecated Not for public use, use @link(net.kwatts.powtools.database.entities.Moment#Moment(long, java.util.Date))
      */
     public Moment() {}
 

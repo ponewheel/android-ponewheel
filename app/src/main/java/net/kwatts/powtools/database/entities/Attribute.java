@@ -1,8 +1,9 @@
-package net.kwatts.powtools.database;
+package net.kwatts.powtools.database.entities;
 
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.ForeignKey;
+import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.Nullable;
 
@@ -31,6 +32,9 @@ public class Attribute {
     @Nullable
     private String key;
 
+    @Ignore
+    private Moment moment;
+
     public void setMomentId(long momentId) {
         this.momentId = momentId;
     }
@@ -49,5 +53,13 @@ public class Attribute {
 
     public String getKey() {
         return key;
+    }
+
+    public void setMoment(Moment moment) {
+        this.moment = moment;
+    }
+
+    public Moment getMoment() {
+        return moment;
     }
 }
