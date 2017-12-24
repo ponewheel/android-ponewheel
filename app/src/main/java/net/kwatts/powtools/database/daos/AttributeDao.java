@@ -26,13 +26,6 @@ public abstract class AttributeDao {
     @Insert
     public abstract void insertAll(List<Attribute> attributes);
 
-    public void insertAllCascadeMoment(List<Attribute> attributes) {
-        for (Attribute attribute : attributes) {
-            attribute.momentId = attribute.getMoment().id;
-        }
-        insertAll(attributes);
-    }
-
     @Query("SELECT distinct(\"key\") " +
             "FROM Attribute " +
             "INNER JOIN Moment on moment_id = moment.id " +

@@ -1,6 +1,7 @@
 package net.kwatts.powtools.database.daos;
 
 import android.arch.persistence.room.Dao;
+import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
@@ -19,8 +20,8 @@ public interface RideDao {
     long insert(Ride ride);
 
     @Update
-    public void updateRide(Ride ride);
+    void updateRide(Ride ride);
 
-    @Query("DELETE from RIDE where id = :rideId")
-    void delete(long rideId);
+    @Delete
+    void delete(List<Ride> rides);
 }

@@ -55,11 +55,4 @@ public class Attribute {
         return key;
     }
 
-    public void setMoment(Moment moment) {
-        this.moment = moment;
-    }
-
-    public Moment getMoment() {
-        return moment;
-    }
 }

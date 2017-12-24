@@ -19,4 +19,7 @@ public interface MomentDao {
 
     @Insert
     void insertAll(List<Moment> moments);
+
+    @Query("SELECT max(id) FROM Moment")
+    long getMaxId();
 }

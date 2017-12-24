@@ -99,11 +99,9 @@ public class RidesListActivity extends AppCompatActivity {
         progressDialogHandler.show();
         App.dbExecute(database -> {
             final List<Ride> checkedItems = rideListAdapter.getCheckedItems();
-            for (int i = 0; i < checkedItems.size(); i++) {
-                Ride checkedItem = checkedItems.get(i);
-                database.rideDao().delete(checkedItem.id);
-                rideListAdapter.getRideList().remove(checkedItem);
-            }
+
+            rideListAdapter.getRideList().removeAll(checkedItems);
+            database.rideDao().delete(checkedItems);
             rideListAdapter.getCheckedItems().clear();
 
             runOnUiThread(() -> {
@@ -112,6 +110,7 @@ public class RidesListActivity extends AppCompatActivity {
             });
         });
     }
+
 
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.tool_bar);
@@ -125,12 +124,12 @@ public class RidesListActivity extends AppCompatActivity {
 
     public void refreshList() {
         disposable = Single.fromCallable(() -> {
-            Timber.d("fetching ride row list");
-            List<Ride> rideRowList = App.INSTANCE.db.rideDao().getAll();
-            Timber.d("rideRowList.size() = " + rideRowList.size());
-            return rideRowList;
+                    Timber.d("fetching ride row list");
+                    List<Ride> rideRowList = App.INSTANCE.db.rideDao().getAll();
+                    Timber.d("rideRowList.size() = " + rideRowList.size());
+                    return rideRowList;
 
-        })
+                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeWith(new DisposableSingleObserver<List<Ride>>() {

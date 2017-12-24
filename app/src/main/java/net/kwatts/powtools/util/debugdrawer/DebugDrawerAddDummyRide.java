@@ -70,70 +70,72 @@ public class DebugDrawerAddDummyRide implements DebugModule, LifecycleObserver {
             Timber.d("rideLength = " + rideLength);
             List<Attribute> attributes = new ArrayList<>();
             List<Moment> moments = new ArrayList<>();
+            long momentId = database.momentDao().getMaxId();
             for (int i = 0; i < rideLength; i++) {
                 calendar.add(Calendar.MINUTE, 1);
                 moment = new Moment(rideId, calendar.getTime());
+                moment.id = ++momentId;
 
                 moment.setGpsLat(37.7891223 + i * .001);
                 moment.setGpsLong(-122.4118449 + Math.sin(i) * .001);
 
                 moments.add(moment);
                 Attribute attribute = new Attribute();
-                attribute.setMoment(moment);
+                attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_SPEED);
                 attribute.setValue("" + i);
                 attributes.add(attribute);
 
                 attribute = new Attribute();
-                attribute.setMoment(moment);
+                attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_RIDER_DETECTED_PAD_1);
                 attribute.setValue(Math.random() > .3 ? "true" : null);
                 attributes.add(attribute);
 
                 attribute = new Attribute();
-                attribute.setMoment(moment);
+                attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_RIDER_DETECTED_PAD_2);
                 attribute.setValue(Math.random() > .3 ? "true" : null);
                 attributes.add(attribute);
 
 
                 attribute = new Attribute();
-                attribute.setMoment(moment);
+                attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_CONTROLLER_TEMP);
                 attribute.setValue("" + (Math.sin(i) * 10.0 + 80));
                 attributes.add(attribute);
 
 
                 attribute = new Attribute();
-                attribute.setMoment(moment);
+                attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_MOTOR_TEMP);
                 attribute.setValue("" + (Math.sin(i) * 20.0 + 90));
                 attributes.add(attribute);
 
 
                 attribute = new Attribute();
-                attribute.setMoment(moment);
+                attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_BATTERY);
                 attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 100, 0));
                 attributes.add(attribute);
 
 
                 attribute = new Attribute();
-                attribute.setMoment(moment);
+                attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_BATTERY_VOLTAGE);
                 attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 53.6, 43.1));
                 attributes.add(attribute);
 
 
                 attribute = new Attribute();
-                attribute.setMoment(moment);
+                attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_TRIP_AMPS);
                 attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 0, 3000));
                 attributes.add(attribute);
 
 
                 attribute = new Attribute();
-                attribute.setMoment(moment);
+                attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_CURRENT_AMPS);
                 attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 0, 3000));
                 attributes.add(attribute);
@@ -146,7 +148,7 @@ public class DebugDrawerAddDummyRide implements DebugModule, LifecycleObserver {
             }
             database.rideDao().updateRide(ride);
             database.momentDao().insertAll(moments);
-            database.attributeDao().insertAllCascadeMoment(attributes);
+            database.attributeDao().insertAll(attributes);
 
             List<Ride> rideList = ridesListActivity.getRideListAdapter().getRideList();
             rideList.add(ride);
