@@ -43,6 +43,7 @@ import net.kwatts.powtools.database.entities.Attribute;
 import net.kwatts.powtools.database.entities.Moment;
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
 import net.kwatts.powtools.model.OWDevice;
+import net.kwatts.powtools.util.ProgressDialogHandler;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -79,6 +80,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     private MenuItem shareMenuItem;
     private Intent shareFileIntent;
     private LockableScrollView scrollView;
+    private ProgressDialogHandler progressDialogHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +88,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         Log.d(TAG, "onCreate: ");
         setContentView(R.layout.activity_ride_detail);
 
+        progressDialogHandler = new ProgressDialogHandler(this);
         scrollView = findViewById(R.id.ride_detail_scroll_view);
         timeLocationMap.clear();
         retrieveData();
@@ -105,6 +108,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     }
 
     private void retrieveData() {
+        progressDialogHandler.show();
         App.dbExecute(database -> {
             long rideId = getIntent().getLongExtra(RIDE_ID, -1);
             List<Moment> moments = database.momentDao().getFromRide(rideId);
@@ -168,6 +172,8 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 
     private synchronized void checkDataAndMapReady() {
         if (isMapReady && isDatasetReady) {
+            progressDialogHandler.dismiss();
+
             runOnUiThread(() -> {
                 googleMap.addPolyline(
                         new PolylineOptions().clickable(true).add(
@@ -298,6 +304,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
             runOnUiThread(() -> shareMenuItem.setVisible(true));
         });
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

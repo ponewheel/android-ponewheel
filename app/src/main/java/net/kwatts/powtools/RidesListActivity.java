@@ -11,6 +11,7 @@ import android.view.MenuItem;
 
 import net.kwatts.powtools.adapters.RideListAdapter;
 import net.kwatts.powtools.database.entities.Ride;
+import net.kwatts.powtools.util.ProgressDialogHandler;
 import net.kwatts.powtools.util.debugdrawer.DebugDrawerAddDummyRide;
 
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ public class RidesListActivity extends AppCompatActivity {
 
     RideListAdapter rideListAdapter;
     private Disposable disposable;
+    private ProgressDialogHandler progressDialogHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,8 +42,7 @@ public class RidesListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_rides_list);
 
         setupToolbar();
-
-
+        progressDialogHandler = new ProgressDialogHandler(this);
 
         RecyclerView recyclerView = findViewById(R.id.ride_list_view);
         rideListAdapter = new RideListAdapter(this, new ArrayList<>());
@@ -95,6 +96,7 @@ public class RidesListActivity extends AppCompatActivity {
     }
 
     private void deleteSelectedRides() {
+        progressDialogHandler.show();
         App.dbExecute(database -> {
             final List<Ride> checkedItems = rideListAdapter.getCheckedItems();
             for (int i = 0; i < checkedItems.size(); i++) {
@@ -103,7 +105,11 @@ public class RidesListActivity extends AppCompatActivity {
                 rideListAdapter.getRideList().remove(checkedItem);
             }
             rideListAdapter.getCheckedItems().clear();
-            runOnUiThread(() -> rideListAdapter.notifyDataSetChanged());
+
+            runOnUiThread(() -> {
+                rideListAdapter.notifyDataSetChanged();
+                progressDialogHandler.dismiss();
+            });
         });
     }
 

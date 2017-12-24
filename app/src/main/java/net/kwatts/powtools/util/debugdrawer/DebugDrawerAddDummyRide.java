@@ -1,6 +1,5 @@
 package net.kwatts.powtools.util.debugdrawer;
 
-import android.app.ProgressDialog;
 import android.arch.lifecycle.Lifecycle;
 import android.arch.lifecycle.LifecycleObserver;
 import android.arch.lifecycle.OnLifecycleEvent;
@@ -17,6 +16,7 @@ import net.kwatts.powtools.database.entities.Attribute;
 import net.kwatts.powtools.database.entities.Moment;
 import net.kwatts.powtools.database.entities.Ride;
 import net.kwatts.powtools.model.OWDevice;
+import net.kwatts.powtools.util.ProgressDialogHandler;
 import net.kwatts.powtools.util.Util;
 
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ import timber.log.Timber;
 
 public class DebugDrawerAddDummyRide implements DebugModule, LifecycleObserver {
     private RidesListActivity ridesListActivity;
-    private ProgressDialog progressDialog;
+    private ProgressDialogHandler progressDialogHandler;
 
     public DebugDrawerAddDummyRide(RidesListActivity mainActivity) {
         this.ridesListActivity = mainActivity;
@@ -38,6 +38,7 @@ public class DebugDrawerAddDummyRide implements DebugModule, LifecycleObserver {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @NonNull ViewGroup parent) {
         View view = inflater.inflate(R.layout.debug_drawer_add_ride, parent, false);
+        progressDialogHandler = new ProgressDialogHandler(ridesListActivity);
 
         Button mockBle = view.findViewById(R.id.debug_drawer_add_ride);
         mockBle.setOnClickListener(v -> {
@@ -49,7 +50,7 @@ public class DebugDrawerAddDummyRide implements DebugModule, LifecycleObserver {
 
 
     private void insertSampleRidesOrDebug() {
-        progressDialog = Util.showProgressDialog(ridesListActivity);
+        progressDialogHandler.show();
 
         App.dbExecute(database -> {
 
@@ -152,7 +153,7 @@ public class DebugDrawerAddDummyRide implements DebugModule, LifecycleObserver {
 
             ridesListActivity.runOnUiThread(() -> {
                 ridesListActivity.getRideListAdapter().notifyItemInserted(rideList.size()-1);
-                progressDialog.dismiss();
+                progressDialogHandler.dismiss();
             });
         });
     }
@@ -175,10 +176,6 @@ public class DebugDrawerAddDummyRide implements DebugModule, LifecycleObserver {
     @Override @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     public void onPause() {
         Timber.d("onPause: ");
-        if (progressDialog != null) {
-            progressDialog.dismiss();
-            progressDialog = null;
-        }
     }
 
     @Override
@@ -190,9 +187,5 @@ public class DebugDrawerAddDummyRide implements DebugModule, LifecycleObserver {
     @Override
     public void onStop() {
         Timber.d("onStop: ");
-        if (progressDialog != null) {
-            progressDialog.dismiss();
-            progressDialog = null;
-        }
     }
 }
