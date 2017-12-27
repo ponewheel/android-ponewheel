@@ -662,6 +662,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 ride.start = latestMoment;
             }
             ride.end = latestMoment;
+            database.rideDao().updateRide(ride);
 
             Moment moment = new Moment(ride.id, latestMoment);
             moment.rideId = ride.id;
