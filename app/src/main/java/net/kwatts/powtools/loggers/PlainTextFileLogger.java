@@ -2,74 +2,26 @@ package net.kwatts.powtools.loggers;
 
 import android.os.Environment;
 import android.support.annotation.NonNull;
-import android.util.ArrayMap;
 
-import com.github.mikephil.charting.data.Entry;
-import com.google.android.gms.maps.model.LatLng;
-
-import net.kwatts.powtools.DeviceInterface;
 import net.kwatts.powtools.RideDetailActivity;
-import net.kwatts.powtools.model.OWDevice;
+import net.kwatts.powtools.database.Database;
+import net.kwatts.powtools.database.entities.Attribute;
+import net.kwatts.powtools.database.entities.Moment;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.StringTokenizer;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import timber.log.Timber;
-
-/**
- * Created by kwatts on 4/21/16.
- */
 
 public class PlainTextFileLogger  {
     public static final String TAG = RideDetailActivity.class.getSimpleName();
 
-    private File file;
-    protected final String name = "TXT";
     private static final String ONEWHEEL_LOGGING_PATH = "powlogs";
-
-
-    public PlainTextFileLogger(File file) {
-        this.file = file;
-    }
-
-
-    public void write(DeviceInterface dev) throws Exception {
-
-
-        boolean wasFileNew = file.createNewFile();
-
-        FileOutputStream writer = new FileOutputStream(file, true);
-        BufferedOutputStream output = new BufferedOutputStream(writer);
-
-        if (wasFileNew) {
-            output.write(dev.getCSVHeader().getBytes());
-
-        }
-
-
-
-        output.write(dev.toCSV().getBytes());
-        output.flush();
-        output.close();
-       // Files.addToMediaDatabase(file, "text/csv");
-    }
-
-    public void annotate(String description, OWDevice dev) throws Exception {
-        // TODO Auto-generated method stub
-
-    }
-
-    public String getName() {
-        return name;
-    }
 
     public static boolean createDirIfNotExists(String path) {
         boolean ret = true;
@@ -86,77 +38,74 @@ public class PlainTextFileLogger  {
     @NonNull
     public static String getLoggingPath() {
         String logPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + ONEWHEEL_LOGGING_PATH;
-        PlainTextFileLogger.createDirIfNotExists(logPath);
+        createDirIfNotExists(logPath);
         return logPath;
     }
 
-    public static void getEntriesFromFile(String fileName, ArrayList<Entry> timeSpeedMap, ArrayMap<Long, LatLng> latLngs) {
-        String logFileLocation = PlainTextFileLogger.getLoggingPath() + "/" + fileName;
-        Timber.d("logFile = " + logFileLocation);
-
-        BufferedReader bufferedReader = null;
-        FileReader fileReader = null;
-
-        try {
-
-            fileReader = new FileReader(logFileLocation);
-            bufferedReader = new BufferedReader(fileReader);
-
-            String currentLine;
-
-            bufferedReader.readLine(); // ignore
-
-            Long referenceTime = null;
-            while ((currentLine = bufferedReader.readLine()) != null) {
-//                Timber.d(currentLine);
-                StringTokenizer stringTokenizer = new StringTokenizer(currentLine, ",");
-
-                Date date;
-                //Timber.d("now = " + OWDevice.SIMPLE_DATE_FORMAT.format(new Date()));
-                String dateString = stringTokenizer.nextToken();
-                try {
-                    date = OWDevice.SIMPLE_DATE_FORMAT.parse(dateString);
-                } catch (ParseException e) {
-                    //Timber.d("now (old)= " + OWDevice.OLD_SIMPLE_DATE_FORMAT.format(new Date()));
-                    date = OWDevice.OLD_SIMPLE_DATE_FORMAT.parse(dateString);
-
-                }
-
-
-                String speed = stringTokenizer.nextToken();
-                long time = date.getTime();
-                if (referenceTime == null) {
-                    referenceTime = time;
-                }
-                time = time - referenceTime;
-                timeSpeedMap.add(new Entry(time, Float.valueOf(speed)));
-
-                if (currentLine.contains("LOC=(")) {
-                    int startLocation = currentLine.indexOf("LOC=(") + "LOC=(".length();
-                    int commaLocation = currentLine.indexOf(',', startLocation);
-                    int endParenLocation = currentLine.indexOf(')', commaLocation);
-                    String longLocation = currentLine.substring(commaLocation + 1, endParenLocation);
-                    String latLocation = currentLine.substring(startLocation, commaLocation);
-                    LatLng latLng = new LatLng(Double.parseDouble(longLocation), Double.parseDouble(latLocation));
-                    latLngs.put(time, latLng);
-                }
-            }
-        } catch (Exception e) {
-            Timber.e(e);
-        } finally {
-
-            try {
-
-                if (bufferedReader != null)
-                    bufferedReader.close();
-
-                if (fileReader != null)
-                    fileReader.close();
-
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-
+    public static File createLogFile(long rideId, String rideDate, Database database) {
+        File file = new File( PlainTextFileLogger.getLoggingPath() + "/owlogs_" + rideDate + ".csv");
+        if (file.exists()) {
+            boolean deleted = file.delete();
+            Timber.d("deleted?" + deleted);
         }
+        try {
+            FileOutputStream writer = new FileOutputStream(file, true);
+            BufferedOutputStream output = new BufferedOutputStream(writer);
+
+            StringBuilder stringBuilder = new StringBuilder();
+            List<String> headers = database.attributeDao().getDistinctKeysFromRide(rideId);
+            HashMap<String, String> keyValueOrderKeeper = new LinkedHashMap<>();
+            headers.add(0, "time");
+            headers.add("gps_lat");
+            headers.add("gps_long");
+            for (String header : headers) {
+                if (stringBuilder.length() > 0) {
+                    stringBuilder.append(',');
+                }
+                stringBuilder.append(header);
+                keyValueOrderKeeper.put(header, "");
+            }
+            stringBuilder.append('\n');
+            output.write(stringBuilder.toString().getBytes());
+
+            List<Moment> moments = database.momentDao().getFromRide(rideId);
+//                Long referenceTime = null;
+            for (Moment moment : moments) {
+                stringBuilder.setLength(0); // reset
+                keyValueOrderKeeper.values().clear();
+
+                long time = moment.getDate().getTime();
+
+                // do we need relative time?
+//                    if (referenceTime == null) {
+//                        referenceTime = time;
+//                    }
+//                    time = time - referenceTime;
+                stringBuilder.append(Long.toString(time));
+
+                List<Attribute> attributes = database.attributeDao().getFromMoment(moment.id);
+                for (Attribute attribute : attributes) {
+                    keyValueOrderKeeper.put(attribute.getKey(), attribute.getValue());
+                }
+                keyValueOrderKeeper.put("gps_lat", moment.getGpsLat());
+                keyValueOrderKeeper.put("gps_long", moment.getGpsLong());
+
+                for (String value : keyValueOrderKeeper.values()) {
+                    if (stringBuilder.length() > 0) {
+                        stringBuilder.append(',');
+                    }
+                    stringBuilder.append(value);
+                }
+                stringBuilder.append('\n');
+                output.write(stringBuilder.toString().getBytes());
+            }
+
+            output.flush();
+            output.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return file;
     }
 }
