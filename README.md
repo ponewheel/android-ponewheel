@@ -13,6 +13,7 @@ We plan to get a new release with all the new features, bug fixes, etc on the Go
 
 > How can I help?
 
+We'd love for you to test the open beta! Sign up at [Google Play Beta] 
 For questions, to report bugs, or suggestions and feature requests, head over to the [Github Ponewheel Issues] page. If you'd like to contribute, please fork this repository and contribute back using pull requests.
 
 
@@ -29,3 +30,4 @@ Special thanks to,
 [Contributors]: https://github.com/ponewheel/android-ponewheel/graphs/contributors
 [OneWheel]: https://onewheel.com/
 [Google Play]: https://play.google.com/store/apps/details?id=net.kwatts.powtools
+[Google Play Beta]: https://play.google.com/apps/testing/net.kwatts.powtools
