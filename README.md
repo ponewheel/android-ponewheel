@@ -13,8 +13,7 @@ We plan to get a new release with all the new features, bug fixes, etc on the Go
 
 > How can I help?
 
-We'd love for you to test the open beta! Sign up at [Google Play Beta] 
-For questions, to report bugs, or suggestions and feature requests, head over to the [Github Ponewheel Issues] page. If you'd like to contribute, please fork this repository and contribute back using pull requests.
+We'd love for you to test the open beta! Sign up at [Google Play Beta]. For questions, to report bugs, or suggestions and feature requests, head over to the [Github Ponewheel Issues] page. If you'd like to contribute, please fork this repository and contribute back using pull requests.
 
 
 Special thanks to,
