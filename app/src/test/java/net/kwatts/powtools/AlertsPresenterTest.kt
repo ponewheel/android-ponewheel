@@ -15,8 +15,8 @@ import org.mockito.junit.MockitoJUnitRunner
 @RunWith(MockitoJUnitRunner::class)
 class AlertsPresenterTest {
 
-    private val sharedPreferences: SharedPreferences = mock(SharedPreferences::class.java)
-    private val view: AlertsMvpController.View = mock(AlertsMvpController.View::class.java)
+    val sharedPreferences: SharedPreferences = mock(SharedPreferences::class.java)
+    val view: AlertsMvpController.View = mock(AlertsMvpController.View::class.java)
 
     private val boolCapture = ArgumentCaptor.forClass(Boolean::class.java)
 

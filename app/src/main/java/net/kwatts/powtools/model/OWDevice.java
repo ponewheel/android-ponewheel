@@ -28,6 +28,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
+import timber.log.Timber;
+
 import static net.kwatts.powtools.util.Util.cel2far;
 import static net.kwatts.powtools.util.Util.milesToKilometers;
 import static net.kwatts.powtools.util.Util.revolutionsToKilometers;
@@ -495,23 +497,21 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         //bmsCtrlComms.set(Boolean.toString(deviceStatus.bmsCtrlComms));
         //icsuFault.set(Boolean.toString(deviceStatus.icsuFault));
         //icsvFault.set(Boolean.toString(deviceStatus.icsvFault));
+
+        characteristics.get(MockOnewheelCharacteristicPad1).value.set(Boolean.toString(deviceStatus.riderDetectPad1));
+        characteristics.get(MockOnewheelCharacteristicPad2).value.set(Boolean.toString(deviceStatus.riderDetectPad2));
         dc.value.set(Boolean.toString(deviceStatus.riderDetected));
-        for (DeviceCharacteristic dc2 : deviceNotifyCharacteristics) {
-            if (dc2.key.get().equals("rider_detected_pad1")) {
-                dc2.value.set(Boolean.toString(deviceStatus.riderDetectPad1));
-            }
-            if (dc2.key.get().equals("rider_detected_pad2")) {
-                dc2.value.set(Boolean.toString(deviceStatus.riderDetectPad2));
-            }
-            if (dc2.key.get().equals("charging")) {
-                dc2.value.set(Boolean.toString(deviceStatus.charging));
-            }
-        }
+//        for (DeviceCharacteristic dc2 : deviceNotifyCharacteristics) {
+//            // TODO 'charging' is commented out, I think @kwatkins said its not working
+//            if (dc2.key.get().equals("charging")) {
+//                dc2.value.set(Boolean.toString(deviceStatus.charging));
+//            }
+//        }
     }
 
     public void processOdometer(byte[] incomingValue, DeviceCharacteristic dc) {
         int i_odometer = unsignedShort(incomingValue);
-        DeviceCharacteristic dc_odometer = getDeviceCharacteristicByKey("odometer");
+        DeviceCharacteristic dc_odometer = getDeviceCharacteristicByKey(KEY_ODOMETER);
         if (dc_odometer != null) {
                 if (App.INSTANCE.getSharedPreferences().isMetric()) {
                     dc_odometer.value.set(String.format(Locale.getDefault(),"%3.2f", revolutionsToKilometers((double) i_odometer)));
@@ -540,6 +540,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         int motorTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
 
         setFormattedTempWithMetricPreference(characteristics.get(OnewheelCharacteristicTemperature), controllerTemp);
+        Timber.d("controllerTemp = " + controllerTemp);
         setFormattedTempWithMetricPreference(characteristics.get(MockOnewheelCharacteristicMotorTemp), motorTemp);
     }
 

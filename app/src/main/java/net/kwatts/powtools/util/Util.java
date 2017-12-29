@@ -5,6 +5,7 @@ import android.accounts.AccountManager;
 import android.content.Context;
 import android.support.annotation.IntRange;
 
+import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 /**
@@ -49,6 +50,9 @@ public class Util {
         twoBytes[1] = (byte) (v & 0xff);
 
         return twoBytes;
+    }
+    public static byte[] boolToShortBytes(boolean b) {
+        return new byte[0];
     }
 
     // 1 byte/8-bit signed two's complement (-128 to 127)
@@ -105,6 +109,14 @@ public class Util {
         return 60.0D * (35.0D * paramDouble) / 63360.0D;
     }
 
+    public static void printBits(String prompt, BitSet b, int numBits) {
+        System.out.print(prompt + " ");
+        for (int i = 0; i < numBits; i++) {
+            System.out.print(b.get(i) ? "1" : "0");
+        }
+        System.out.println();
+    }
+
     public static String bytesToHex(byte c[]) {
         StringBuilder sb = new StringBuilder();
         for (byte b : c) {
@@ -133,4 +145,6 @@ public class Util {
     public static double linearTransform(double x, double a, double b, double c, double d) {
         return (x-a)/(b-a) * (d-c) + c;
     }
+
+
 }

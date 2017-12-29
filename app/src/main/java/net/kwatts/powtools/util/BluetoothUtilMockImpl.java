@@ -1,11 +1,13 @@
 package net.kwatts.powtools.util;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Handler;
 
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.MainActivity;
+import net.kwatts.powtools.model.DeviceStatus;
 import net.kwatts.powtools.model.OWDevice;
 
 import java.util.Random;
@@ -17,9 +19,11 @@ import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicFirmwareR
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicHardwareRevision;
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicLifetimeOdometer;
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicSpeedRpm;
+import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicStatusError;
+import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicTemperature;
 
 public class BluetoothUtilMockImpl implements BluetoothUtil{
-    private MainActivity mainActivity;
+    MainActivity mainActivity;
     private OWDevice owDevice;
     Handler mockLoopHandler = new Handler();
     private boolean isScanning = false;
@@ -91,10 +95,31 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
 
         Random random = new Random();
         Runnable runnable = new Runnable() {
+            @SuppressLint("VisibleForTests")
             @Override
             public void run() {
                 Timber.d("on Mock Loop");
                 setIntCharacteristic(OnewheelCharacteristicSpeedRpm, random.nextInt(600));
+
+                byte[] temp = new byte[2];
+                int controllerTemp = (int) Util.far2cel(random.nextInt(30) + 90);
+                temp[0] = (byte) controllerTemp;  // controller temp
+                temp[1] = (byte) ((int) Util.far2cel(random.nextInt(30) + 120)); // motor temp
+                setByteCharacteristic(OnewheelCharacteristicTemperature, temp);
+
+                byte[] deviceStatus = DeviceStatus.toByteArray(
+                        random.nextBoolean(),
+                        random.nextBoolean(),
+                        random.nextBoolean(),
+                        random.nextBoolean(),
+
+                        random.nextBoolean(),
+                        random.nextBoolean(),
+                        random.nextBoolean(),
+                        random.nextBoolean()
+                );
+
+                setByteCharacteristic(OnewheelCharacteristicStatusError, deviceStatus);
                 mainActivity.updateBatteryRemaining(random.nextInt(20) + 80);
 
                 mockLoopHandler.postDelayed(this, App.INSTANCE.getSharedPreferences().getLoggingFrequency());
@@ -103,8 +128,20 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
         mockLoopHandler.postDelayed(runnable, App.INSTANCE.getSharedPreferences().getLoggingFrequency());
     }
 
-    void setIntCharacteristic(String characteristic2, int v) {
-        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(UUID.fromString(characteristic2), 0, 0);
+    void setBoolCharacteristic(String mockOnewheelCharacteristic, boolean v) {
+        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(UUID.fromString(mockOnewheelCharacteristic), 0, 0);
+        characteristic.setValue(Util.boolToShortBytes(v));
+        owDevice.processUUID(characteristic);
+    }
+
+    void setByteCharacteristic(String mockOnewheelCharacteristic, byte[] v) {
+        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(UUID.fromString(mockOnewheelCharacteristic), 0, 0);
+        characteristic.setValue(v);
+        owDevice.processUUID(characteristic);
+    }
+
+    void setIntCharacteristic(String mockOnewheelCharacteristic, int v) {
+        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(UUID.fromString(mockOnewheelCharacteristic), 0, 0);
         characteristic.setValue(Util.intToShortBytes(v));
         owDevice.processUUID(characteristic);
     }
