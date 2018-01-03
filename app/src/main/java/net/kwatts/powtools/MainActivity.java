@@ -46,7 +46,6 @@ import net.kwatts.powtools.database.entities.Moment;
 import net.kwatts.powtools.database.entities.Ride;
 import net.kwatts.powtools.events.NotificationEvent;
 import net.kwatts.powtools.events.VibrateEvent;
-import net.kwatts.powtools.loggers.PlainTextFileLogger;
 import net.kwatts.powtools.model.OWDevice;
 import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
@@ -60,12 +59,9 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.honorato.multistatetogglebutton.MultiStateToggleButton;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -109,7 +105,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     public VibrateService mVibrateService;
     private android.os.Handler mLoggingHandler = new Handler();
-    private PlainTextFileLogger mTextFileLogger;
 
     private Context mContext;
     ScrollView mScrollView;
@@ -639,21 +634,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     public void initLogging() {
         if (ONEWHEEL_LOGGING) {
-            String dateTimeString = new SimpleDateFormat("yyyy-MM-dd_HH_mm", Locale.US).format(new Date());
-
-            File owLogFile = new File( PlainTextFileLogger.getLoggingPath() + "/owlogs_" + dateTimeString + ".csv");
-            updateLog("Logging device to " + owLogFile.getAbsolutePath());
-            Toast.makeText(
-                    mContext,
-                    String.format(
-                            Locale.getDefault(),
-                            "All OW activity will be logged to %s every %d ms.",
-                            owLogFile.getAbsolutePath(),
-                            App.INSTANCE.getSharedPreferences().getLoggingFrequency()
-                    ),
-                    Toast.LENGTH_LONG)
-                .show();
-            mTextFileLogger = new PlainTextFileLogger(owLogFile);
             Runnable deviceFileLogger = new Runnable() {
                 @Override
                 public void run() {
@@ -675,8 +655,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     private void persistMoment() throws Exception {
-//        mTextFileLogger.write(mOWDevice);
-
         App.dbExecute(database -> {
             Date latestMoment = new Date();
 
