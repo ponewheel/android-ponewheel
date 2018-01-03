@@ -9,6 +9,7 @@ import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
 import android.location.Address;
 import android.util.Log;
+import android.util.SparseArray;
 
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.DeviceInterface;
@@ -26,8 +27,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-
-import timber.log.Timber;
 
 import static net.kwatts.powtools.util.Util.cel2far;
 import static net.kwatts.powtools.util.Util.milesToKilometers;
@@ -51,17 +50,65 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public static final SimpleDateFormat OLD_SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
 
+    public static final String KEY_MOTOR_TEMP = "motor_temp";
+    public static final String KEY_CONTROLLER_TEMP = "controller_temp";
+    public static final String KEY_SPEED_MAX = "speed_max";
+    public static final String KEY_SPEED = "speed";
+
+    public static final String KEY_HARDWARE_REVISION = "hardware_revision";
+    public static final String KEY_FIRMWARE_REVISION = "firmware_revision";
+    public static final String KEY_LIFETIME_ODOMETER = "lifetime_odometer";
+    public static final String KEY_LIGHTING_MODE = "lighting_mode";
+    public static final String KEY_BATTERY_INITIAL = "battery_initial";
+    public static final String KEY_LAST_ERROR_CODE = "last_error_code";
+    public static final String KEY_BATTERY = "battery";
+    public static final String KEY_RIDER_DETECTED = "rider_detected";
+    public static final String KEY_RIDER_DETECTED_PAD_1 = "rider_detected_pad1";
+    public static final String KEY_RIDER_DETECTED_PAD_2 = "rider_detected_pad2";
+    public static final String KEY_ODOMETER = "odometer";
+    public static final String KEY_ODOMETER_TIRE_REVS = "odometer_tire_revs";
+    public static final String KEY_TRIP_AMPS = "trip_amps";
+    public static final String KEY_TRIP_AMPS_REGEN = "trip_amps_regen";
+    public static final String KEY_SPEED_RPM = "speed_rpm";
+    public static final String KEY_BATTERY_VOLTAGE = "battery_voltage";
+    public static final String KEY_BATTERY_CELLS = "battery_cells";
+    public static final String KEY_CURRENT_AMPS = "current_amps";
+    public static final String KEY_TILT_ANGLE_PITCH = "tilt_angle_pitch";
+    public static final String KEY_TILT_ANGLE_ROLL = "tilt_angle_roll";
+    public static final String KEY_RIDE_MODE = "ride_mode";
+
+    public static SparseArray<String> ERROR_CODE_MAP = new SparseArray<>();
+    {
+        ERROR_CODE_MAP.append(1, "ErrorBMSLowBattery");
+        ERROR_CODE_MAP.append(2, "ErrorVoltageLow");
+        ERROR_CODE_MAP.append(3, "ErrorVoltageHigh");
+        ERROR_CODE_MAP.append(4, "ErrorFallDetected");
+        ERROR_CODE_MAP.append(5, "ErrorPickupDetected");
+        ERROR_CODE_MAP.append(6, "ErrorOverCurrentDetected");
+        ERROR_CODE_MAP.append(7, "ErrorOverTemperature");
+        ERROR_CODE_MAP.append(8, "ErrorBadGyro");
+        ERROR_CODE_MAP.append(9, "ErrorBadAccelerometer");
+        ERROR_CODE_MAP.append(10, "ErrorBadCurrentSensor");
+        ERROR_CODE_MAP.append(11, "ErrorBadHallSensors");
+        ERROR_CODE_MAP.append(12, "ErrorBadMotor");
+        ERROR_CODE_MAP.append(13, "ErrorOvercurrent13");
+        ERROR_CODE_MAP.append(14, "ErrorOvercurrent14");
+        ERROR_CODE_MAP.append(15, "ErrorRiderDetectZone");
+    }
 
     public final ObservableField<Boolean> isConnected = new ObservableField<>();
     public final ObservableField<Boolean> showDebugWindow = new ObservableField<>();
 
     public final ObservableField<Boolean> isOneWheelPlus = new ObservableField<>();
 
-    public final ObservableDouble maxSpeed = new ObservableDouble();
+    public final ObservableDouble maxSpeedRpm = new ObservableDouble();
     public final ObservableInt maxTiltAnglePitch = new ObservableInt();
     public final ObservableInt maxTiltAngleRoll = new ObservableInt();
     public final ObservableInt lifetimeOdometer = new ObservableInt();
     public final ObservableInt lightMode = new ObservableInt();
+
+    private double[] ampCells = new double[16];
+    private double[] batteryVoltageCells = new double[15];
 
 
 
@@ -93,7 +140,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public static final String OnewheelCharacteristicLightsFront = "e659f30d-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicOdometer = "e659f30a-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicSafetyHeadroom = "e659f317-ea98-11e3-ac10-0800200c9a66";
-    public static final String OnewheelCharacteristicSpeed = "e659f30b-ea98-11e3-ac10-0800200c9a66";
+    public static final String OnewheelCharacteristicSpeedRpm = "e659f30b-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicTripRegenAmpHours = "e659f314-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicTripTotalAmpHours = "e659f313-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicUartSerialRead = "e659f3fe-ea98-11e3-ac10-0800200c9a66";
@@ -103,12 +150,14 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public static final String OnewheelCharacteristicUNKNOWN3 = "e659f31f-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicUNKNOWN4 = "e659f320-ea98-11e3-ac10-0800200c9a66";
 
+    // These 'dummy' fields don't really sync with the device, but maintain consistency throughout the app.
     public static final String MockOnewheelCharacteristicMotorTemp = "MockOnewheelCharacteristicMotorTemp";
     public static final String MockOnewheelCharacteristicOdometer = "MockOnewheelCharacteristicOdometer";
+    public static final String MockOnewheelCharacteristicSpeed = "MockOnewheelCharacteristicSpeed";
     public static final String MockOnewheelCharacteristicMaxSpeed = "MockOnewheelCharacteristicMaxSpeed";
     public static final String MockOnewheelCharacteristicPad1 = "MockOnewheelCharacteristicPad1";
     public static final String MockOnewheelCharacteristicPad2 = "MockOnewheelCharacteristicPad2";
-    public static final String MockOnewheelCharacteristicSpeed = "MockOnewheelCharacteristicSpeed";
+
     private Address gpsLocation;
 
     public void setGpsLocation(Address gpsLocation) {
@@ -118,7 +167,6 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public Address getGpsLocation() {
         return gpsLocation;
     }
-
 
 /*
 0x0000 = e659F301-ea98-11e3-ac10-0800200c9a66 (OnewheelServiceUUID)
@@ -169,24 +217,20 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         public final ObservableField<String> uuid = new ObservableField<>();
         public final ObservableField<String> key = new ObservableField<>();
         public final ObservableField<String> value = new ObservableField<>();
-        public final ObservableField<Boolean> enabled = new ObservableField<>();
-        public final ObservableField<Boolean> ui_enabled = new ObservableField<>();
         public final ObservableField<String> ui_name = new ObservableField<>();
-    }
+        public final boolean isNotifyCharacteristic;
 
-    public void setDeviceCharacteristicDisplay(String key,String value) {
-        for (DeviceCharacteristic dc : deviceReadCharacteristics) {
-            if (dc.value.get().equals(key)) {
-                dc.ui_name.set(value);
-            }
+        public DeviceCharacteristic(String uuid, String key, String ui_name) {
+            this(uuid, key, ui_name, true);
         }
-        for (DeviceCharacteristic dc : deviceNotifyCharacteristics) {
-            if (dc.value.get().equals(key)) {
-                dc.ui_name.set(value);
-            }
+
+        public DeviceCharacteristic(String uuid, String key, String ui_name, boolean isNotifyCharacteristic) {
+            this.uuid.set(uuid);
+            this.key.set(key);
+            this.ui_name.set(ui_name);
+            this.isNotifyCharacteristic = isNotifyCharacteristic;
         }
     }
-
 
     public List<DeviceCharacteristic> deviceReadCharacteristics = new ArrayList<>();
     public List<DeviceCharacteristic> deviceNotifyCharacteristics = new ArrayList<>();
@@ -214,7 +258,6 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
 
-
     /* This method is the main dictionary for the BLE Device. It contains the map for each
        Device attribute and contains the UUID, value, and display string for the UI.
      */
@@ -222,262 +265,40 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceReadCharacteristics.clear();
         deviceNotifyCharacteristics.clear();
 
-        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-            uuid.set(OnewheelCharacteristicHardwareRevision);
-            key.set("hardware_revision");
-            value.set("");
-            ui_name.set("HARDWARE REVISION");
-            ui_enabled.set(true);
-        }});
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicHardwareRevision, KEY_HARDWARE_REVISION, "HARDWARE REVISION"));            // 0
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicFirmwareRevision, KEY_FIRMWARE_REVISION, "FIRMWARE REVISION"));            // 1
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLifetimeOdometer, KEY_LIFETIME_ODOMETER, ""));                             // 2
 
-        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-            uuid.set(OnewheelCharacteristicFirmwareRevision);
-            key.set("firmware_revision");
-            value.set("");
-            ui_name.set("FIRMWARE REVISION");
-            ui_enabled.set(true);
-        }});
+//                deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLifetimeAmpHours,"lifetime_amps","LIFETIME AMPS (HOURS)")
 
-        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-            uuid.set(OnewheelCharacteristicLifetimeOdometer);
-            key.set("lifetime_odometer");
-            value.set("");
-            //ui_name set in refresh();
-            ui_enabled.set(true);
-        }});
-/*
-                deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-                    uuid.set(OnewheelCharacteristicLifetimeAmpHours);
-                    key.set("lifetime_amps");
-                    value.set("");
-                    ui_name.set("LIFETIME AMPS (HOURS)");
-                    ui_enabled.set(true);
-                }}); */
-        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-            uuid.set(OnewheelCharacteristicLightingMode);
-            key.set("lighting_mode");
-            value.set("");
-            ui_name.set("LIGHTS");
-            ui_enabled.set(true);
-        }});
-                /*
-                deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-                    uuid.set(OnewheelCharacteristicRidingMode);
-                    key.set("ride_mode");
-                    value.set("");
-                    ui_name.set("RIDING MODE");
-                    ui_enabled.set(false);
-                }}); */
-        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-            uuid.set(OnewheelCharacteristicBatteryRemaining);
-            key.set("battery_initial");
-            value.set("");
-            ui_name.set("BATTERY AT START (%)");
-            ui_enabled.set(true);
-        }});
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLightingMode,    KEY_LIGHTING_MODE,"LIGHTS"));                             // 3
 
+//        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,"ride_mode","RIDING MODE"{{
+//            ui_enabled.set(false);
+//        }});
 
-        deviceReadCharacteristics.add(new DeviceCharacteristic() {{
-            uuid.set(OnewheelCharacteristicLastErrorCode);
-            key.set("last_error_code");
-            value.set("");
-            ui_name.set("LAST ERROR CODE");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY_INITIAL,     "BATTERY AT START (%)"));        // 4
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLastErrorCode,    KEY_LAST_ERROR_CODE,     "LAST ERROR CODE"));             // 5
 
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(MockOnewheelCharacteristicSpeed);
-            key.set("speed");
-            value.set("0.0");
-            //ui_name set in refresh();
-            ui_enabled.set(true);
-            enabled.set(false);
-        }});
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicBatteryRemaining);
-            key.set("battery");
-            value.set("0");
-            ui_name.set("Battery");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicStatusError);
-            key.set("rider_detected");
-            value.set("");
-            ui_name.set("RIDER");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(MockOnewheelCharacteristicPad1);
-            key.set("rider_detected_pad1");
-            value.set("");
-            ui_name.set("PAD1");
-            ui_enabled.set(true);
-            enabled.set(false);
-        }});
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(MockOnewheelCharacteristicPad2);
-            key.set("rider_detected_pad2");
-            value.set("");
-            ui_name.set("PAD2");
-            ui_enabled.set(true);
-            enabled.set(false);
-        }});
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(MockOnewheelCharacteristicMaxSpeed);
-            key.set("speed_max");
-            value.set("");
-            ui_name.set("Trip Top Speed: ");
-            ui_enabled.set(true);
-            enabled.set(false);
-        }});
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(MockOnewheelCharacteristicOdometer);
-            key.set("odometer");
-            value.set("");
-            //ui_name set in refresh();
-            ui_enabled.set(true);
-            enabled.set(false);
-        }});
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicOdometer);
-            key.set("odometer_tire_revs");
-            value.set("");
-            ui_name.set("TRIP ODOMETER (TIRE REVS)");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicTripTotalAmpHours);
-            key.set("trip_amps");
-            value.set("");
-            ui_name.set("TRIP USED Ah (Amp hours)");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicTripRegenAmpHours);
-            key.set("trip_amps_regen");
-            value.set("");
-            ui_name.set("TRIP GAINED Ah (Amp hours)");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicSpeed);
-            key.set("speed_rpm");
-            value.set("");
-            ui_name.set("SPEED (RPM)");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicBatteryVoltage);
-            key.set("battery_voltage");
-            value.set("");
-            ui_name.set("BATTERY (Voltage)");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicBatteryCells);
-            key.set("battery_cells");
-            value.set("");
-            ui_name.set("BATTERY CELLS (Voltage)");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicCurrentAmps);
-            key.set("current_amps");
-            value.set("");
-            ui_name.set("BATTERY CURRENT (Amps)");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicTiltAnglePitch);
-            key.set("tilt_angle_pitch");
-            value.set("");
-            ui_name.set("TILT ANGLE PITCH");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicTiltAngleRoll);
-            key.set("tilt_angle_roll");
-            value.set("");
-            ui_name.set("TILT ANGLE ROLL");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(OnewheelCharacteristicTemperature);
-            key.set("controller_temp");
-            value.set("");
-            //ui_name set in refresh();
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic()
-        {{
-            uuid.set(MockOnewheelCharacteristicMotorTemp);
-            key.set("motor_temp");
-            value.set("");
-            //ui_name set in refresh();
-            ui_enabled.set(true);
-            enabled.set(false);
-        }});
-
-
-
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic() {{
-            uuid.set(OnewheelCharacteristicRidingMode);
-            key.set("ride_mode");
-            value.set("");
-            ui_name.set("RIDING MODE");
-            ui_enabled.set(true);
-            enabled.set(true);
-        }});
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicSpeed,        KEY_SPEED,               "",false));               // 0
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY,             "Battery"));                   // 1
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicStatusError,      KEY_RIDER_DETECTED,      "RIDER"));                     // 2
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicPad1,         KEY_RIDER_DETECTED_PAD_1,"PAD1", false));                      // 3
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicPad2,         KEY_RIDER_DETECTED_PAD_2,"PAD2", false));                      // 4
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMaxSpeed,     KEY_SPEED_MAX,           "Trip Top Speed: ", false));          // 5
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicOdometer,     KEY_ODOMETER,            "", false));                          // 6
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicOdometer,         KEY_ODOMETER_TIRE_REVS,  "TRIP ODOMETER (TIRE REVS)")); // 7
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTripTotalAmpHours,KEY_TRIP_AMPS,           "TRIP USED Ah (Amp hours)"));  // 8
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTripRegenAmpHours,KEY_TRIP_AMPS_REGEN,     "TRIP GAINED Ah (Amp hours)"));// 9
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicSpeedRpm,         KEY_SPEED_RPM,               "SPEED (RPM)", true));// 10
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryVoltage,   KEY_BATTERY_VOLTAGE,     "BATTERY (Voltage)"));         // 11
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryCells,     KEY_BATTERY_CELLS,       "BATTERY CELLS (Voltage)"));   // 12
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicCurrentAmps,      KEY_CURRENT_AMPS,        "BATTERY CURRENT (Amps)"));    // 13
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTiltAnglePitch,   KEY_TILT_ANGLE_PITCH,    "TILT ANGLE PITCH"));          // 14
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTiltAngleRoll,    KEY_TILT_ANGLE_ROLL,     "TILT ANGLE ROLL"));           // 15
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTemperature,      KEY_CONTROLLER_TEMP,     ""));                          // 16
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMotorTemp,    KEY_MOTOR_TEMP,          "", false)); // 17
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,       KEY_RIDE_MODE,           "RIDING MODE"));               // 18
 
 /*
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -553,341 +374,322 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         String incomingUuid = incomingCharacteristic.getUuid().toString();
         byte[] incomingValue = incomingCharacteristic.getValue();
 
-
-        for(DeviceCharacteristic dc : deviceReadCharacteristics) {
-            String dev_uuid = dc.uuid.get();
-            if(dev_uuid != null && dev_uuid.equals(incomingUuid)) {
-                switch(dev_uuid) {
-                    case OnewheelCharacteristicHardwareRevision:
-                        dc.value.set(Integer.toString(unsignedShort(incomingValue)));
-                        break;
-                    case OnewheelCharacteristicFirmwareRevision:
-                        dc.value.set(Integer.toString(unsignedShort(incomingValue)));
-                        break;
-                    case OnewheelCharacteristicLifetimeOdometer:
-                        int i_lifetime = unsignedShort(incomingValue);
-                        lifetimeOdometer.set(i_lifetime);
-                        if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                            dc.value.set(String.format(Locale.getDefault(),"%.2f",milesToKilometers(i_lifetime)));
-                        } else {
-                            dc.value.set(Integer.toString(i_lifetime));
-                        }
-                        break;
-                    /*
-                    case OnewheelCharacteristicRidingMode:
-                        int ridemode = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-                        Log.d(TAG, "Got the ridemode from BLE:" + ridemode);
-                        dc.value.set("initial ridemode " + ridemode);
-                        // Let the UI know initial ridemode
-                        EventBus.getDefault().post(new DeviceStatusEvent("Initial ridemode set to: " + ridemode));
-                        EventBus.getDefault().post(new RideModeEvent(ridemode));
-                        break; */
-                    case OnewheelCharacteristicBatterySerial:
-                        // Battery: Lithium Iron Phosphate (LiFePo4) 48V
-                        //batterySerialNumber.set(Integer.toString(unsignedShort(c_value)));
-                        break;
-                    case OnewheelCharacteristicLightingMode:
-                        switch (unsignedShort(incomingValue)) {
-                            case 0:
-                                lightState = false;
-                                dc.value.set("0 (Off)");
-                                break;
-                            case 1:
-                                lightState = true;
-                                dc.value.set("1 (On)");
-                                break;
-                            case 2:
-                                lightState = false;
-                                dc.value.set("2 (Off)");
-                                break;
-                            case 3:
-                                lightState = false;
-                                dc.value.set("3 (Off)");
-                        }
-                        break;
-                    case OnewheelCharacteristicLastErrorCode:
-                        int error_code  = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                        int error_code2  = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-                        String s_error_code = " " + error_code + ":" + error_code2 + "";
-
-
-                        switch (error_code) {
-                        case 1:
-                            dc.value.set("ErrorBMSLowBattery"+s_error_code);
-                            break;
-                        case 2:
-                            dc.value.set("ErrorVoltageLow"+s_error_code);
-                            break;
-                        case 3:
-                            dc.value.set("ErrorVoltageHigh"+s_error_code);
-                            break;
-                        case 4:
-                            dc.value.set("ErrorFallDetected"+s_error_code);
-                            break;
-                        case 5:
-                            dc.value.set("ErrorPickupDetected"+s_error_code);
-                            break;
-                        case 6:
-                            dc.value.set("ErrorOverCurrentDetected"+s_error_code);
-                            break;
-                        case 7:
-                            dc.value.set("ErrorOverTemperature"+s_error_code);
-                            break;
-                        case 8:
-                            dc.value.set("ErrorBadGyro"+s_error_code);
-                            break;
-                        case 9:
-                            dc.value.set("ErrorBadAccelerometer"+s_error_code);
-                            break;
-                        case 10:
-                            dc.value.set("ErrorBadCurrentSensor"+s_error_code);
-                            break;
-                        case 11:
-                            dc.value.set("ErrorBadHallSensors"+s_error_code);
-                            break;
-                        case 12:
-                            dc.value.set("ErrorBadMotor"+s_error_code);
-                            break;
-                        case 13:
-                            dc.value.set("ErrorOvercurrent13"+s_error_code);
-                            break;
-                        case 14:
-                            dc.value.set("ErrorOvercurrent14"+s_error_code);
-                            break;
-                        case 15:
-                            dc.value.set("ErrorRiderDetectZone"+s_error_code);
-                            break;
-                        default:
-                            dc.value.set(s_error_code);
-                            break;
-                    }
+        DeviceCharacteristic dc = characteristics.get(incomingUuid);
+        String dev_uuid = dc.uuid.get();
+        if(dev_uuid != null && dev_uuid.equals(incomingUuid)) {
+            switch(dev_uuid) {
+                case OnewheelCharacteristicHardwareRevision:
+                    dc.value.set(Integer.toString(unsignedShort(incomingValue)));
                     break;
-                    default:
-                        break;
-                }
+                case OnewheelCharacteristicFirmwareRevision:
+                    dc.value.set(Integer.toString(unsignedShort(incomingValue)));
+                    break;
+                case OnewheelCharacteristicLifetimeOdometer:
+                    processLifetimeOdometer(incomingValue, dc);
+                    break;
+                case OnewheelCharacteristicBatterySerial:
+                    // Battery: Lithium Iron Phosphate (LiFePo4) 48V
+                    //batterySerialNumber.set(Integer.toString(unsignedShort(c_value)));
+                    break;
+                case OnewheelCharacteristicLightingMode:
+                    processLightingMode(incomingValue, dc);
+                    break;
+                case OnewheelCharacteristicLastErrorCode:
+                    processErrorCode(incomingCharacteristic, dc);
+                    break;
+                case OnewheelCharacteristicBatteryVoltage:
+                    processBatteryVoltage(incomingValue, dc);
+                    break;
+                case OnewheelCharacteristicBatteryRemaining:
+                    processBatteryRemaining(incomingCharacteristic, dc);
+                    break;
+                case OnewheelCharacteristicTiltAnglePitch:
+                    processPitch(incomingValue, dc);
+                    break;
+                case OnewheelCharacteristicTiltAngleRoll:
+                    processRoll(incomingValue, dc);
+                    break;
+                case OWDevice.OnewheelCharacteristicTiltAngleYaw:
+                    dc.value.set(Integer.toString(unsignedShort(incomingValue)));
+                    break;
+                case OnewheelCharacteristicStatusError:
+                    processStatusError(incomingValue, dc);
+                    break;
+                case OnewheelCharacteristicOdometer:
+                    processOdometer(incomingValue, dc);
+                    break;
+                case OnewheelCharacteristicSpeedRpm:
+                    processSpeedRpm(incomingValue, dc);
+                    break;
+                case OnewheelCharacteristicCurrentAmps:
+                    processCurrentAmps(incomingValue, dc);
+                    break;
+                case OnewheelCharacteristicBatteryCells:
+                    processBatteryCellsVoltage(incomingValue, dc);
+                    break;
+                case OnewheelCharacteristicTemperature:
+                    processTemp(incomingCharacteristic);
+                    break;
+                case OnewheelCharacteristicBatteryTemp:
+                    processBatteryTemp(incomingCharacteristic, dc);
+                    break;
+                case OnewheelCharacteristicSafetyHeadroom:
+                    dc.value.set(incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0).toString());
+                    break;
+                case OnewheelCharacteristicTripTotalAmpHours:
+                    processTripTotalAmpHours(incomingValue, dc);
+                    break;
+                case OnewheelCharacteristicTripRegenAmpHours:
+                    processTripRegenHours(incomingValue, dc);
+                    break;
+                case OnewheelCharacteristicLifetimeAmpHours:
+                    dc.value.set(Integer.toString(unsignedShort(incomingValue)));
+                    break;
+                case OnewheelCharacteristicRidingMode:
+                    processRidingMode(incomingValue, dc, incomingCharacteristic);
+                    break;
+                default:
+                    processUnknownUuid(incomingUuid, incomingValue);
             }
         }
 
-        for(DeviceCharacteristic dc : deviceNotifyCharacteristics) {
-            if (dc.uuid.get() != null && dc.uuid.get().equals(incomingUuid)) {
-                switch(dc.uuid.get()) {
-                    case OnewheelCharacteristicBatteryVoltage:
-                        //double d_value = Double.valueOf((double) c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1) / 10.0D);
-                        int d_volts = unsignedShort(incomingValue);
-                        double d_value = Double.valueOf((double) d_volts / 10.0D);
-                        dc.value.set(Double.toString(d_value));
-                        break;
-                    case OnewheelCharacteristicBatteryRemaining:
-                        int batteryLevel  = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+    }
 
-                        //EventBus.getDefault().post(new DeviceBatteryRemainingEvent(batteryLevel));
-                        dc.value.set(Integer.toString(batteryLevel));
-                        break;
-                    case OnewheelCharacteristicTiltAnglePitch:
-                        int i_tiltAnglePitch = unsignedShort(incomingValue);
+    public void processBatteryVoltage(byte[] incomingValue, DeviceCharacteristic dc) {
+        //double d_value = Double.valueOf((double) c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1) / 10.0D);
+        int d_volts = unsignedShort(incomingValue);
+        double d_value = Double.valueOf((double) d_volts / 10.0D);
+        dc.value.set(Double.toString(d_value));
+    }
 
-                        if (i_tiltAnglePitch > maxTiltAnglePitch.get()) {
-                            maxTiltAnglePitch.set(i_tiltAnglePitch);
+    public void processBatteryRemaining(BluetoothGattCharacteristic incomingCharacteristic, DeviceCharacteristic dc) {
+        int batteryLevel  = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
 
-                        }
-                        dc.value.set(Integer.toString(i_tiltAnglePitch));
-                        break;
-                    case OnewheelCharacteristicTiltAngleRoll:
-                        int i_tiltAngleRoll = unsignedShort(incomingValue);
+        //EventBus.getDefault().post(new DeviceBatteryRemainingEvent(batteryLevel));
+        dc.value.set(Integer.toString(batteryLevel));
+    }
 
-                        if (i_tiltAngleRoll > maxTiltAngleRoll.get()) {
-                            maxTiltAngleRoll.set(i_tiltAngleRoll);
+    public void processPitch(byte[] incomingValue, DeviceCharacteristic dc) {
+        int i_tiltAnglePitch = unsignedShort(incomingValue);
 
-                        }
-                        dc.value.set(Integer.toString(i_tiltAngleRoll));
-                        break;
-                    case OWDevice.OnewheelCharacteristicTiltAngleYaw:
-                        dc.value.set(Integer.toString(unsignedShort(incomingValue)));
-                        break;
+        if (i_tiltAnglePitch > maxTiltAnglePitch.get()) {
+            maxTiltAnglePitch.set(i_tiltAnglePitch);
 
-                    case OnewheelCharacteristicStatusError:
-                        DeviceStatus deviceStatus = DeviceStatus.from(incomingValue);
-                        //charging.set(Boolean.toString(deviceStatus.charging));
-                        //bmsCtrlComms.set(Boolean.toString(deviceStatus.bmsCtrlComms));
-                        //icsuFault.set(Boolean.toString(deviceStatus.icsuFault));
-                        //icsvFault.set(Boolean.toString(deviceStatus.icsvFault));
-                        dc.value.set(Boolean.toString(deviceStatus.riderDetected));
-                        for (DeviceCharacteristic dc2 : deviceNotifyCharacteristics) {
-                            if (dc2.key.get().equals("rider_detected_pad1")) {
-                                dc2.value.set(Boolean.toString(deviceStatus.riderDetectPad1));
-                            }
-                            if (dc2.key.get().equals("rider_detected_pad2")) {
-                                dc2.value.set(Boolean.toString(deviceStatus.riderDetectPad2));
-                            }
-                            if (dc2.key.get().equals("charging")) {
-                                dc2.value.set(Boolean.toString(deviceStatus.charging));
-                            }
-                        }
-                        break;
-                    case OnewheelCharacteristicOdometer:
-                        int i_odometer = unsignedShort(incomingValue);
-                        DeviceCharacteristic dc_odometer = getDeviceCharacteristicByKey("odometer");
-                        if (dc_odometer != null) {
-                                if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                                    dc_odometer.value.set(String.format(Locale.getDefault(),"%3.2f", revolutionsToKilometers((double) i_odometer)));
-                                } else {
-                                    dc_odometer.value.set(String.format(Locale.getDefault(),"%3.2f", revolutionsToMiles((double) i_odometer)));
-                                }
-                        }
+        }
+        dc.value.set(Integer.toString(i_tiltAnglePitch));
+    }
 
-                        dc.value.set(Integer.toString(i_odometer));
-                        break;
+    public void processRoll(byte[] incomingValue, DeviceCharacteristic dc) {
+        int i_tiltAngleRoll = unsignedShort(incomingValue);
 
-                    case OnewheelCharacteristicSpeed:
-                        int i_speed = unsignedShort(incomingValue);
-                        dc.value.set(Integer.toString(i_speed));
-                        DeviceCharacteristic dc_speed = getDeviceCharacteristicByKey("speed");
-                        if (dc_speed != null) {
-                            if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                                dc_speed.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToKilometersPerHour((double) i_speed)));
-                            } else {
-                                dc_speed.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToMilesPerHour((double) i_speed)));
-                            }
-                        }
-                        DeviceCharacteristic dc_speed_max = getDeviceCharacteristicByKey("speed_max");
-                        if (dc_speed_max != null) {
-                            if (i_speed > maxSpeed.get()) {
-                                if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                                    dc_speed_max.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToKilometersPerHour((double) i_speed)));
-                                } else {
-                                    dc_speed_max.value.set(String.format(Locale.getDefault(),"%3.2f", rpmToMilesPerHour((double) i_speed)));
-                                }
-                                maxSpeed.set(i_speed);
-                            }
-                        }
+        if (i_tiltAngleRoll > maxTiltAngleRoll.get()) {
+            maxTiltAngleRoll.set(i_tiltAngleRoll);
 
+        }
+        dc.value.set(Integer.toString(i_tiltAngleRoll));
+    }
 
-                        break;
-                    case OnewheelCharacteristicCurrentAmps:
-                        // Wh = mAh × V / 1000
-                        // battery is 3.5Amps
-                        int i_cells_1 = unsignedByte(incomingValue[0]);
-                        double[] amp_cells = new double[15];
-                        if(i_cells_1 < amp_cells.length && i_cells_1 >= 0) {
-                            int var3 = unsignedByte(incomingValue[1]);
-                            amp_cells[i_cells_1] = (double)var3 / 50.0D;
-                        }
-                        StringBuilder amps_string = new StringBuilder();
-                        for (int x = 0;x < amp_cells.length;++x) {
-                            if (amp_cells[x] == 0) {
-                                amps_string.append('-');
-                            } else {
-                                amps_string.append(amp_cells[x]);
-                            }
-                            if(x != -1 + amp_cells.length) {
-                                amps_string.append('|');
-                            }
-                        }
-                        dc.value.set(amps_string.toString());
-                        //dc.value.set(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1).toString());
-                        //int camps = unsignedByte(c_value[1]);
-                        //double d_camps = (double)camps / 50.0D;
-                        //currentAmps.set("cells:" + i_cells_1 + " value:" + d_camps);
-                        //int i_currentamps = unsignedShort(c_value);
-                        //double d_currentapps = Double.valueOf((double) i_currentamps / 50.0D);
-                        //currentAmps.set(Double.toString(d_currentapps));
-                        break;
-                    case OnewheelCharacteristicBatteryCells:
-                        int i_cells = unsignedByte(incomingValue[0]);
-                        double[] cells = new double[15];
-                        if(i_cells < cells.length && i_cells >= 0) {
-                            int var3 = unsignedByte(incomingValue[1]);
-                            cells[i_cells] = (double)var3 / 50.0D;
-                        }
-                        StringBuilder var1 = new StringBuilder();
-                        for(int var3 = 0; var3 < cells.length; ++var3) {
-                            if (cells[var3] == 0) {
-                                var1.append('-');
-                            } else {
-                                var1.append(cells[var3]);
-                            }
-                            if(var3 != -1 + cells.length) {
-                                var1.append('|');
-                            }
-                        }
-                        dc.value.set(var1.toString());
-                        break;
-                    case OnewheelCharacteristicTemperature:
-                        int controllerTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                        int motorTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-                        for (DeviceCharacteristic dc2 : deviceNotifyCharacteristics) {
-                            if (dc2.key.get().equals("controller_temp")) {
-                                if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                                    dc2.value.set(String.format(Locale.getDefault(),"%.2f", (double)controllerTemp));
-                                } else {
-                                    dc2.value.set(String.format(Locale.getDefault(),"%.2f", cel2far(controllerTemp)));
-                                }
-                            }
-
-                            if  (dc2.key.get().equals("motor_temp")) {
-                                if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                                    dc2.value.set(String.format(Locale.getDefault(),"%.2f", (double)motorTemp));
-                                } else {
-                                    dc2.value.set(String.format(Locale.getDefault(),"%.2f", cel2far(motorTemp)));
-                                }
-                            }
-                        }
-                        break;
-                    case OnewheelCharacteristicBatteryTemp:
-                        int batteryTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-                        if (App.INSTANCE.getSharedPreferences().isMetric()) {
-                            dc.value.set(String.format(Locale.getDefault(),"%.2f", (double) batteryTemp));
-                        } else {
-                            dc.value.set(String.format(Locale.getDefault(),"%.2f", cel2far(batteryTemp)));
-                        }
-                        break;
-                    case OnewheelCharacteristicSafetyHeadroom:
-                        dc.value.set(incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0).toString());
-                        break;
-                    case OnewheelCharacteristicTripTotalAmpHours:
-                        //tripTotalAmpHours.set(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1).toString());
-                        //tripTotalAmpHours.set(Integer.toString(unsignedShort(c_value)));
-                        //int i_cells_2 = unsignedByte(c_value[0]);
-                        //int camps2 = unsignedByte(c_value[1]);
-                        //double d_camps2 = (double)camps2 / 50.0D;
-                        //tripTotalAmpHours.set("cells:" + i_cells_2 + " value:" + d_camps2);
-                        int i_amphours = unsignedShort(incomingValue);
-                        double d_amphours = Double.valueOf((double) i_amphours / 50.0D);
-                        dc.value.set(Double.toString(d_amphours));
-                        break;
-                    case OnewheelCharacteristicTripRegenAmpHours:
-                        int i_tripregenamp = unsignedShort(incomingValue);
-                        double d_tripregenamp = Double.valueOf((double) i_tripregenamp / 50.0D);
-                        dc.value.set(Double.toString(d_tripregenamp));
-                        break;
-                    case OnewheelCharacteristicLifetimeAmpHours:
-                        dc.value.set(Integer.toString(unsignedShort(incomingValue)));
-                        break;
-                    case OnewheelCharacteristicRidingMode:
-                        int ridemode = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-                        dc.value.set(Integer.toString(ridemode));
-                        // Let the UI know initial ridemode
-                        EventBus.getDefault().post(new DeviceStatusEvent("Ridemode changed to: " + ridemode));
-                        //EventBus.getDefault().post(new RideModeEvent(ridemode));
-                        break;
-
-                    default:
-                        StringBuilder sb = new StringBuilder();
-                        for (byte b : incomingValue) {
-                            sb.append(String.format("%02x", b));
-                        }
-                        //this.unknownUUID.set(c_uuid);
-                        //this.unknownValue.set("hex:" + sb.toString() + " (" + Integer.toString(unsignedShort(c_value)) + ")");
-                        EventBus.getDefault().post(new DeviceStatusEvent("UNKNOWN " + incomingUuid + ":" +
-                                "hex:" + sb.toString() + " (" + Integer.toString(unsignedShort(incomingValue)) + ")"));
-                        Log.i(TAG, "UNKNOWN Device characteristic:" + incomingUuid + " value=" + sb.toString() + "|" + Integer.toString(unsignedShort(incomingValue)));
-
-
-                }
-
+    public void processStatusError(byte[] incomingValue, DeviceCharacteristic dc) {
+        DeviceStatus deviceStatus = DeviceStatus.from(incomingValue);
+        //charging.set(Boolean.toString(deviceStatus.charging));
+        //bmsCtrlComms.set(Boolean.toString(deviceStatus.bmsCtrlComms));
+        //icsuFault.set(Boolean.toString(deviceStatus.icsuFault));
+        //icsvFault.set(Boolean.toString(deviceStatus.icsvFault));
+        dc.value.set(Boolean.toString(deviceStatus.riderDetected));
+        for (DeviceCharacteristic dc2 : deviceNotifyCharacteristics) {
+            if (dc2.key.get().equals("rider_detected_pad1")) {
+                dc2.value.set(Boolean.toString(deviceStatus.riderDetectPad1));
+            }
+            if (dc2.key.get().equals("rider_detected_pad2")) {
+                dc2.value.set(Boolean.toString(deviceStatus.riderDetectPad2));
+            }
+            if (dc2.key.get().equals("charging")) {
+                dc2.value.set(Boolean.toString(deviceStatus.charging));
             }
         }
+    }
 
+    public void processOdometer(byte[] incomingValue, DeviceCharacteristic dc) {
+        int i_odometer = unsignedShort(incomingValue);
+        DeviceCharacteristic dc_odometer = getDeviceCharacteristicByKey("odometer");
+        if (dc_odometer != null) {
+                if (App.INSTANCE.getSharedPreferences().isMetric()) {
+                    dc_odometer.value.set(String.format(Locale.getDefault(),"%3.2f", revolutionsToKilometers((double) i_odometer)));
+                } else {
+                    dc_odometer.value.set(String.format(Locale.getDefault(),"%3.2f", revolutionsToMiles((double) i_odometer)));
+                }
+        }
+
+        dc.value.set(Integer.toString(i_odometer));
+    }
+
+    public void processSpeedRpm(byte[] incomingValue, DeviceCharacteristic dc) {
+        int speedRpm = unsignedShort(incomingValue);
+        dc.value.set(Integer.toString(speedRpm));
+        DeviceCharacteristic speedCharacteristic = characteristics.get(MockOnewheelCharacteristicSpeed);
+        DeviceCharacteristic maxSpeedCharacteristic = characteristics.get(MockOnewheelCharacteristicMaxSpeed);
+        setFormattedSpeedWithMetricPreference(speedCharacteristic, speedRpm);
+        if (speedRpm > maxSpeedRpm.get()) {
+            setFormattedSpeedWithMetricPreference(maxSpeedCharacteristic, speedRpm);
+            maxSpeedRpm.set(speedRpm);
+        }
+    }
+
+    public void processTemp(BluetoothGattCharacteristic incomingCharacteristic) {
+        int controllerTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+        int motorTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+
+        setFormattedTempWithMetricPreference(characteristics.get(OnewheelCharacteristicTemperature), controllerTemp);
+        setFormattedTempWithMetricPreference(characteristics.get(MockOnewheelCharacteristicMotorTemp), motorTemp);
+    }
+
+    public void setFormattedTempWithMetricPreference(DeviceCharacteristic deviceCharacteristic, int temp) {
+        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
+        deviceCharacteristic.value.set(String.format(Locale.getDefault(), "%.2f", isMetric ? (double) temp : cel2far(temp)));
+    }
+
+    public void setFormattedSpeedWithMetricPreference(DeviceCharacteristic deviceCharacteristic, double speedRpm) {
+        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
+        deviceCharacteristic.value.set(String.format(Locale.getDefault(), "%3.2f", isMetric ? rpmToKilometersPerHour((double) speedRpm) : rpmToMilesPerHour((double) speedRpm)));
+    }
+
+    public void processBatteryTemp(BluetoothGattCharacteristic incomingCharacteristic, DeviceCharacteristic dc) {
+        int batteryTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+
+        setFormattedTempWithMetricPreference(characteristics.get(OnewheelCharacteristicTemperature), batteryTemp);
+    }
+
+    public void processUnknownUuid(String incomingUuid, byte[] incomingValue) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : incomingValue) {
+            sb.append(String.format("%02x", b));
+        }
+        //this.unknownUUID.set(c_uuid);
+        //this.unknownValue.set("hex:" + sb.toString() + " (" + Integer.toString(unsignedShort(c_value)) + ")");
+        EventBus.getDefault().post(new DeviceStatusEvent("UNKNOWN " + incomingUuid + ":" +
+                "hex:" + sb.toString() + " (" + Integer.toString(unsignedShort(incomingValue)) + ")"));
+        Log.i(TAG, "UNKNOWN Device characteristic:" + incomingUuid + " value=" + sb.toString() + "|" + Integer.toString(unsignedShort(incomingValue)));
+    }
+
+    public void processTripRegenHours(byte[] incomingValue, DeviceCharacteristic dc) {
+        int i_tripregenamp = unsignedShort(incomingValue);
+        double d_tripregenamp = Double.valueOf((double) i_tripregenamp / 50.0D);
+        dc.value.set(Double.toString(d_tripregenamp));
+    }
+
+    public void processTripTotalAmpHours(byte[] incomingValue, DeviceCharacteristic dc) {
+        //tripTotalAmpHours.set(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1).toString());
+        //tripTotalAmpHours.set(Integer.toString(unsignedShort(c_value)));
+        //int i_cells_2 = unsignedByte(c_value[0]);
+        //int camps2 = unsignedByte(c_value[1]);
+        //double d_camps2 = (double)camps2 / 50.0D;
+        //tripTotalAmpHours.set("batteryVoltageCells:" + i_cells_2 + " value:" + d_camps2);
+        int i_amphours = unsignedShort(incomingValue);
+        double d_amphours = Double.valueOf((double) i_amphours / 50.0D);
+        dc.value.set(Double.toString(d_amphours));
+    }
+
+    private void processRidingMode(byte[] incomingValue, DeviceCharacteristic dc, BluetoothGattCharacteristic incomingCharacteristic) {
+        int ridemode = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+        dc.value.set(Integer.toString(ridemode));
+        // Let the UI know initial ridemode
+        EventBus.getDefault().post(new DeviceStatusEvent("Ridemode changed to: " + ridemode));
+
+
+        //EventBus.getDefault().post(new RideModeEvent(ridemode));
+//        int ridemode = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+//        Log.d(TAG, "Got the ridemode from BLE:" + ridemode);
+//        dc.value.set("initial ridemode " + ridemode);
+//        // Let the UI know initial ridemode
+//        EventBus.getDefault().post(new DeviceStatusEvent("Initial ridemode set to: " + ridemode));
+//        EventBus.getDefault().post(new RideModeEvent(ridemode));
+    }
+
+    private void processLifetimeOdometer(byte[] incomingValue, DeviceCharacteristic dc) {
+        int i_lifetime = unsignedShort(incomingValue);
+        lifetimeOdometer.set(i_lifetime);
+        if (App.INSTANCE.getSharedPreferences().isMetric()) {
+            dc.value.set(String.format(Locale.getDefault(),"%.2f",milesToKilometers(i_lifetime)));
+        } else {
+            dc.value.set(Integer.toString(i_lifetime));
+        }
+    }
+
+    public void processLightingMode(byte[] incomingValue, DeviceCharacteristic dc) {
+        switch (unsignedShort(incomingValue)) {
+            case 0:
+                lightState = false;
+                dc.value.set("0 (Off)");
+                break;
+            case 1:
+                lightState = true;
+                dc.value.set("1 (On)");
+                break;
+            case 2:
+                lightState = false;
+                dc.value.set("2 (Off)");
+                break;
+            case 3:
+                lightState = false;
+                dc.value.set("3 (Off)");
+        }
+    }
+
+    public void processErrorCode(BluetoothGattCharacteristic incomingCharacteristic, DeviceCharacteristic dc) {
+        int error_code  = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+        int error_code2  = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+
+        dc.value.set(ERROR_CODE_MAP.get(error_code, " UNKNOWN") + " " + error_code + ":" + error_code2 + "");
+    }
+
+    public void processBatteryCellsVoltage(byte[] incomingValue, DeviceCharacteristic dc) {
+        int cellIdentifier = unsignedByte(incomingValue[0]);
+        if(cellIdentifier < batteryVoltageCells.length && cellIdentifier >= 0) {
+            int var3 = unsignedByte(incomingValue[1]);
+            batteryVoltageCells[cellIdentifier] = (double)var3 / 50.0D;
+        }
+        StringBuilder var1 = new StringBuilder();
+        for(int i = 0; i < batteryVoltageCells.length; ++i) {
+            if (batteryVoltageCells[i] == 0) {
+                var1.append('-');
+            } else {
+                var1.append(batteryVoltageCells[i]);
+            }
+            if(i != batteryVoltageCells.length - 1) {
+                var1.append('|');
+            }
+        }
+        dc.value.set(var1.toString());
+    }
+
+    public void processCurrentAmps(byte[] incomingValue, DeviceCharacteristic dc) {
+
+        // Wh = mAh × V / 1000
+        // battery is 3.5Amps
+        int cellIdentifier = unsignedByte(incomingValue[0]);
+        if(cellIdentifier < ampCells.length && cellIdentifier >= 0) {
+            int var3 = unsignedByte(incomingValue[1]);
+            ampCells[cellIdentifier] = (double)var3 / 50.0D;
+        }
+        StringBuilder amps_string = new StringBuilder();
+        for (int i = 0; i < ampCells.length; ++i) {
+            if (ampCells[i] == 0) {
+                amps_string.append('-');
+            } else {
+                amps_string.append(ampCells[i]);
+            }
+            if(i != ampCells.length - 1) {
+                amps_string.append('|');
+            }
+        }
+        dc.value.set(amps_string.toString());
+        //dc.value.set(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1).toString());
+        //int camps = unsignedByte(c_value[1]);
+        //double d_camps = (double)camps / 50.0D;
+        //currentAmps.set("batteryVoltageCells:" + cellIdentifier + " value:" + d_camps);
+        //int i_currentamps = unsignedShort(c_value);
+        //double d_currentapps = Double.valueOf((double) i_currentamps / 50.0D);
+        //currentAmps.set(Double.toString(d_currentapps));
     }
 
 

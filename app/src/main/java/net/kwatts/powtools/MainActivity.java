@@ -51,8 +51,8 @@ import net.kwatts.powtools.model.OWDevice;
 import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
 import net.kwatts.powtools.util.BluetoothUtilImpl;
-import net.kwatts.powtools.util.debugdrawer.DebugDrawerMockBle;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
+import net.kwatts.powtools.util.debugdrawer.DebugDrawerMockBle;
 import net.kwatts.powtools.view.AlertsMvpController;
 
 import org.greenrobot.eventbus.EventBus;
@@ -75,8 +75,10 @@ import io.reactivex.Single;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
+import timber.log.Timber;
 
 import static net.kwatts.powtools.model.OWDevice.MockOnewheelCharacteristicSpeed;
+
 
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
 // https://github.com/alt236/Bluetooth-LE-Library---Android
@@ -357,6 +359,15 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             }
         });
         getBluetoothUtil().init(this, mOWDevice);
+    }
+
+    private void logOnChange(OWDevice.DeviceCharacteristic deviceCharacteristic) {
+        deviceCharacteristic.value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+            @Override
+            public void onPropertyChanged(Observable observable, int i) {
+                Timber.d(deviceCharacteristic.key.get() + " = " + deviceCharacteristic.value.get());
+            }
+        });
     }
 
     long getMillisSinceLastMoment() {

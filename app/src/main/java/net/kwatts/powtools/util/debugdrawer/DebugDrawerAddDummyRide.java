@@ -13,6 +13,8 @@ import net.kwatts.powtools.database.Attribute;
 import net.kwatts.powtools.database.Moment;
 import net.kwatts.powtools.database.Ride;
 import net.kwatts.powtools.database.RideRow;
+import net.kwatts.powtools.model.OWDevice;
+import net.kwatts.powtools.util.Util;
 
 import java.util.Calendar;
 
@@ -66,21 +68,63 @@ public class DebugDrawerAddDummyRide implements DebugModule {
 
                 Attribute attribute = new Attribute();
                 attribute.setMomentId(momentId);
-                attribute.setKey(Attribute.KEY_SPEED);
+                attribute.setKey(OWDevice.KEY_SPEED);
                 attribute.setValue("" + i);
                 database.attributeDao().insert(attribute);
 
                 attribute = new Attribute();
                 attribute.setMomentId(momentId);
-                attribute.setKey(Attribute.KEY_PAD1);
+                attribute.setKey(OWDevice.KEY_RIDER_DETECTED_PAD_1);
                 attribute.setValue(Math.random() > .3 ? "true" : null);
                 database.attributeDao().insert(attribute);
 
 
                 attribute = new Attribute();
                 attribute.setMomentId(momentId);
-                attribute.setKey(Attribute.KEY_PAD2);
+                attribute.setKey(OWDevice.KEY_RIDER_DETECTED_PAD_2);
                 attribute.setValue(Math.random() > .3 ? "true" : null);
+                database.attributeDao().insert(attribute);
+
+
+                attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setKey(OWDevice.KEY_CONTROLLER_TEMP);
+                attribute.setValue("" + (Math.sin(i) * 10.0 + 80));
+                database.attributeDao().insert(attribute);
+
+
+                attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setKey(OWDevice.KEY_MOTOR_TEMP);
+                attribute.setValue("" + (Math.sin(i) * 20.0 + 90));
+                database.attributeDao().insert(attribute);
+
+
+                attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setKey(OWDevice.KEY_BATTERY);
+                attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 100, 0));
+                database.attributeDao().insert(attribute);
+
+
+                attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setKey(OWDevice.KEY_BATTERY_VOLTAGE);
+                attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 53.6, 43.1));
+                database.attributeDao().insert(attribute);
+
+
+                attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setKey(OWDevice.KEY_TRIP_AMPS);
+                attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 0, 3000));
+                database.attributeDao().insert(attribute);
+
+
+                attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setKey(OWDevice.KEY_CURRENT_AMPS);
+                attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 0, 3000));
                 database.attributeDao().insert(attribute);
 
                 if (i == 0) {

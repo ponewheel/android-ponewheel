@@ -14,13 +14,6 @@ import static android.arch.persistence.room.ForeignKey.CASCADE;
         onDelete = CASCADE))
 public class Attribute {
 
-    public static final String KEY_SPEED = "speed";
-    public static final String KEY_PAD1 = "rider_detected_pad1";
-    public static final String KEY_PAD2 = "rider_detected_pad2";
-    public static final String KEY_CONTROLLER_TEMP = "controller_temp";
-    public static final String KEY_MOTOR_TEMP = "motor_temp";
-
-
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "attribute_id")
     public long id;

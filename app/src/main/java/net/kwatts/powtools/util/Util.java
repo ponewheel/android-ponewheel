@@ -110,4 +110,25 @@ public class Util {
         }
         return sb.toString();
     }
+
+    /**
+     * If your number X falls between A and B, and you would like Y to fall between C and D, you can apply the following linear transform:
+     *
+     * Y = (X-A)/(B-A) * (D-C) + C
+     *
+     * https://stackoverflow.com/a/345204/247325
+     */
+    public static float linearTransform(float x, float a, float b, float c, float d) {
+        return (x-a)/(b-a) * (d-c) + c;
+    }
+    /**
+     * If your number X falls between A and B, and you would like Y to fall between C and D, you can apply the following linear transform:
+     *
+     * Y = (X-A)/(B-A) * (D-C) + C
+     *
+     * https://stackoverflow.com/a/345204/247325
+     */
+    public static double linearTransform(double x, double a, double b, double c, double d) {
+        return (x-a)/(b-a) * (d-c) + c;
+    }
 }

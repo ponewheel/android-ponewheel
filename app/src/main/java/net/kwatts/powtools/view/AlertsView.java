@@ -82,6 +82,7 @@ public class AlertsView implements AlertsMvpController.View{
     @Override
     public void releaseMedia() {
         if (mediaPlayer != null) {
+            mediaPlayer.reset();
             mediaPlayer.release();
             mediaPlayer = null;
         }

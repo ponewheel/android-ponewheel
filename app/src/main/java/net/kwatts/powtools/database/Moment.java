@@ -6,6 +6,7 @@ import android.arch.persistence.room.ForeignKey;
 import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.Nullable;
+
 import java.util.Date;
 
 import static android.arch.persistence.room.ForeignKey.CASCADE;
@@ -73,5 +74,6 @@ public class Moment {
     public void setGpsLong(@Nullable String gpsLong) {
         this.gpsLong = gpsLong;
     }
+
 
 }
