@@ -16,8 +16,8 @@ import android.widget.TextView;
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.R;
 import net.kwatts.powtools.RideDetailActivity;
-import net.kwatts.powtools.database.Moment;
-import net.kwatts.powtools.database.RideRow;
+import net.kwatts.powtools.database.entities.Moment;
+import net.kwatts.powtools.database.entities.Ride;
 import net.kwatts.powtools.drawables.TrackDrawable;
 
 import java.text.SimpleDateFormat;
@@ -34,12 +34,12 @@ public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideVi
 
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("MM/dd/yy", Locale.ENGLISH);
     final Context context;
-    private final List<RideRow> rideRows;
-    final List<RideRow> checkedRides = new ArrayList<>();
+    private final List<Ride> rides;
+    final List<Ride> checkedRides = new ArrayList<>();
 
-    public RideListAdapter(Context context, List<RideRow> rideRows) {
+    public RideListAdapter(Context context, List<Ride> rides) {
         this.context = context;
-        this.rideRows = rideRows;
+        this.rides = rides;
     }
     @Override
     public RideViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -50,21 +50,21 @@ public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideVi
 
     @Override
     public void onBindViewHolder(RideViewHolder holder, int position) {
-        RideRow rideRow = rideRows.get(position);
+        Ride ride = rides.get(position);
 
-        holder.bind(rideRow);
+        holder.bind(ride);
     }
 
     @Override
     public int getItemCount() {
-        return rideRows.size();
+        return rides.size();
     }
 
-    public List<RideRow> getRideList() {
-        return rideRows;
+    public List<Ride> getRideList() {
+        return rides;
     }
 
-    public List<RideRow> getCheckedItems() {
+    public List<Ride> getCheckedItems() {
         return checkedRides;
     }
 
@@ -84,34 +84,34 @@ public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideVi
             checkbox = itemView.findViewById(R.id.rides_row_checkbox);
         }
 
-        void bind(RideRow rideRow) {
-            Timber.d("rideId" + rideRow.rideId + " minDate= " + rideRow.minEventDate + " max=" + rideRow.maxEventDate);
+        void bind(Ride ride) {
+            Timber.d("rideId" + ride.id + " minDate= " + ride.start + " max=" + ride.start);
 
-            loadTrack(rideRow.rideId, thumbnailView);
+            loadTrack(ride.id, thumbnailView);
 
             // TODO only show id in debug builds?
-            if (rideRow.getMinDate() != null) {
-                dateView.setText(SIMPLE_DATE_FORMAT.format(rideRow.getMinDate()));
-                //dateView.setText(SIMPLE_DATE_FORMAT.format(rideRow.getMinDate())+ " ("+rideRow.rideId + ")");
+            if (ride.start != null) {
+                dateView.setText(SIMPLE_DATE_FORMAT.format(ride.start));
+                //dateView.setText(SIMPLE_DATE_FORMAT.format(ride.getMinDate())+ " ("+ride.id + ")");
             }
             rideLengthView.setText(
-                    String.format(Locale.getDefault(),"%d%s", rideRow.getMinuteDuration(), context.getString(R.string.min_duration)));
+                    String.format(Locale.getDefault(),"%d%s", ride.getMinuteDuration(), context.getString(R.string.min_duration)));
 
             itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(context, RideDetailActivity.class);
-                intent.putExtra(RideDetailActivity.RIDE_ID, rideRow.rideId);
-                intent.putExtra(RideDetailActivity.RIDE_DATE, FILE_FORMAT_DATE.format(rideRow.getMinDate()));
+                intent.putExtra(RideDetailActivity.RIDE_ID, ride.id);
+                intent.putExtra(RideDetailActivity.RIDE_DATE, FILE_FORMAT_DATE.format(ride.start));
                 context.startActivity(intent);
             });
 
             checkbox.setOnCheckedChangeListener(null);
-            checkbox.setChecked(checkedRides.contains(rideRow));
+            checkbox.setChecked(checkedRides.contains(ride));
 
             checkbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (isChecked) {
-                    checkedRides.add(rideRow);
+                    checkedRides.add(ride);
                 } else {
-                    checkedRides.remove(rideRow);
+                    checkedRides.remove(ride);
                 }
             });
         }
@@ -119,6 +119,7 @@ public class RideListAdapter extends RecyclerView.Adapter<RideListAdapter.RideVi
 
     void loadTrack(long rideId, @NonNull ImageView imageView) {
         App.dbExecute(database -> {
+            Timber.d("loadTrack: rideId = " + rideId);
             List<Pair<Double, Double>> track = new ArrayList<>();
             List<Moment> moments = database.momentDao().getFromRide(rideId);
             for (Moment moment : moments) {

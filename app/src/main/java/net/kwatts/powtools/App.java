@@ -4,11 +4,13 @@ import android.app.Application;
 import android.arch.persistence.room.Room;
 import android.os.PowerManager;
 
+import com.facebook.stetho.Stetho;
+
 import net.kwatts.powtools.database.DBExecutor;
 import net.kwatts.powtools.database.Database;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import timber.log.Timber;
@@ -22,7 +24,7 @@ public class App extends Application {
     private SharedPreferencesUtil sharedPreferencesUtil = null;
     PowerManager.WakeLock wakeLock;
     public Database db;
-    public Executor dbExecutor;
+    public ExecutorService dbExecutor;
 
 
     public App() {
@@ -40,6 +42,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         if (BuildConfig.DEBUG) {
+            Stetho.initializeWithDefaults(this);
             Timber.plant(new Timber.DebugTree());
         }
         initWakeLock();

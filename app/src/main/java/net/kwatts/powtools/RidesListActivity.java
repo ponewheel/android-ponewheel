@@ -10,7 +10,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import net.kwatts.powtools.adapters.RideListAdapter;
-import net.kwatts.powtools.database.RideRow;
+import net.kwatts.powtools.database.entities.Ride;
+import net.kwatts.powtools.util.ProgressDialogHandler;
 import net.kwatts.powtools.util.debugdrawer.DebugDrawerAddDummyRide;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import io.palaima.debugdrawer.DebugDrawer;
 import io.palaima.debugdrawer.commons.SettingsModule;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
@@ -28,8 +30,11 @@ public class RidesListActivity extends AppCompatActivity {
 
     public static final String TAG = "RidesListActivity";
     public static final int MENU_ITEM_DELETE = 0;
-    private static final int MENU_ITEM_ADD_RANDO = 1;
+    public static final int MENU_ITEM_SELECT_ALL = 1;
+
     RideListAdapter rideListAdapter;
+    private Disposable disposable;
+    private ProgressDialogHandler progressDialogHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +42,7 @@ public class RidesListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_rides_list);
 
         setupToolbar();
+        progressDialogHandler = new ProgressDialogHandler(this);
 
         RecyclerView recyclerView = findViewById(R.id.ride_list_view);
         rideListAdapter = new RideListAdapter(this, new ArrayList<>());
@@ -47,16 +53,20 @@ public class RidesListActivity extends AppCompatActivity {
         recyclerView.setAdapter(rideListAdapter);
 
 
+        DebugDrawerAddDummyRide debugDrawerAddDummyRide = new DebugDrawerAddDummyRide(this);
         new DebugDrawer.Builder(this)
                 .modules(
-                        new DebugDrawerAddDummyRide(this),
+                        debugDrawerAddDummyRide,
                         new SettingsModule(this)
                 ).build();
+
+        getLifecycle().addObserver(debugDrawerAddDummyRide);
     }
 
     @Override public boolean onCreateOptionsMenu(Menu menu) {
 
         menu.add(0, MENU_ITEM_DELETE, 0, "Delete");
+        menu.add(0, MENU_ITEM_SELECT_ALL, 1, "Select All");
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -68,25 +78,39 @@ public class RidesListActivity extends AppCompatActivity {
                 deleteSelectedRides();
 
                 break;
-
+            case MENU_ITEM_SELECT_ALL:
+                selectAll();
+                break;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    private void deleteSelectedRides() {
-        App.dbExecute(database -> {
-            final List<RideRow> checkedItems = rideListAdapter.getCheckedItems();
-            for (int i = 0; i < checkedItems.size(); i++) {
-                RideRow checkedItem = checkedItems.get(i);
-                database.rideDao().delete(checkedItem.rideId);
-
-                int removedIndex = rideListAdapter.getRideList().indexOf(checkedItem);
-                rideListAdapter.getRideList().remove(checkedItem);
-                runOnUiThread(() -> rideListAdapter.notifyItemRemoved(removedIndex));
+    public void selectAll() {
+        for (Ride ride : rideListAdapter.getRideList()) {
+            if (!rideListAdapter.getCheckedItems().contains(ride)) {
+                rideListAdapter.getCheckedItems().add(ride);
             }
+        }
+        rideListAdapter.notifyDataSetChanged();
+    }
+
+    private void deleteSelectedRides() {
+        progressDialogHandler.show();
+        App.dbExecute(database -> {
+            final List<Ride> checkedItems = rideListAdapter.getCheckedItems();
+
+            rideListAdapter.getRideList().removeAll(checkedItems);
+            database.rideDao().delete(checkedItems);
+            rideListAdapter.getCheckedItems().clear();
+
+            runOnUiThread(() -> {
+                rideListAdapter.notifyDataSetChanged();
+                progressDialogHandler.dismiss();
+            });
         });
     }
+
 
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.tool_bar);
@@ -99,15 +123,21 @@ public class RidesListActivity extends AppCompatActivity {
 
 
     public void refreshList() {
-        Single.fromCallable(() -> App.INSTANCE.db.rideDao().getRideRowList())
+        disposable = Single.fromCallable(() -> {
+                    Timber.d("fetching ride row list");
+                    List<Ride> rideRowList = App.INSTANCE.db.rideDao().getAll();
+                    Timber.d("rideRowList.size() = " + rideRowList.size());
+                    return rideRowList;
+
+                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new DisposableSingleObserver<List<RideRow>>() {
+                .subscribeWith(new DisposableSingleObserver<List<Ride>>() {
 
                     @Override
-                    public void onSuccess(List<RideRow> rides) {
-                        for (RideRow ride : rides) {
-                            Timber.d("logFile = " + ride);
+                    public void onSuccess(List<Ride> rides) {
+                        for (Ride ride : rides) {
+                            Timber.d("ride = " + ride);
                         }
 
                         rideListAdapter.getRideList().clear();
@@ -122,5 +152,14 @@ public class RidesListActivity extends AppCompatActivity {
                 });
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        disposable.dispose();
+    }
+
+    public RideListAdapter getRideListAdapter() {
+        return rideListAdapter;
+    }
 
 }

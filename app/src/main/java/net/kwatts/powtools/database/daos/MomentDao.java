@@ -1,16 +1,25 @@
-package net.kwatts.powtools.database;
+package net.kwatts.powtools.database.daos;
 
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.Query;
 
+import net.kwatts.powtools.database.entities.Moment;
+
 import java.util.List;
 
 @Dao
 public interface MomentDao {
+
     @Query("SELECT * FROM Moment where :rideId = ride_id")
     List<Moment> getFromRide(long rideId);
 
     @Insert
     long insert(Moment moment);
+
+    @Insert
+    void insertAll(List<Moment> moments);
+
+    @Query("SELECT max(id) FROM Moment")
+    long getMaxId();
 }
