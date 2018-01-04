@@ -39,20 +39,16 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import net.kwatts.powtools.components.LockScrollbarGestureListener;
 import net.kwatts.powtools.components.LockableScrollView;
-import net.kwatts.powtools.database.Attribute;
-import net.kwatts.powtools.database.Moment;
+import net.kwatts.powtools.database.entities.Attribute;
+import net.kwatts.powtools.database.entities.Moment;
 import net.kwatts.powtools.loggers.PlainTextFileLogger;
 import net.kwatts.powtools.model.OWDevice;
+import net.kwatts.powtools.util.ProgressDialogHandler;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -79,6 +75,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     private MenuItem shareMenuItem;
     private Intent shareFileIntent;
     private LockableScrollView scrollView;
+    private ProgressDialogHandler progressDialogHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +83,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         Log.d(TAG, "onCreate: ");
         setContentView(R.layout.activity_ride_detail);
 
+        progressDialogHandler = new ProgressDialogHandler(this);
         scrollView = findViewById(R.id.ride_detail_scroll_view);
         timeLocationMap.clear();
         retrieveData();
@@ -105,6 +103,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     }
 
     private void retrieveData() {
+        progressDialogHandler.show();
         App.dbExecute(database -> {
             long rideId = getIntent().getLongExtra(RIDE_ID, -1);
             List<Moment> moments = database.momentDao().getFromRide(rideId);
@@ -168,6 +167,8 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 
     private synchronized void checkDataAndMapReady() {
         if (isMapReady && isDatasetReady) {
+            progressDialogHandler.dismiss();
+
             runOnUiThread(() -> {
                 googleMap.addPolyline(
                         new PolylineOptions().clickable(true).add(
@@ -230,74 +231,14 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         App.dbExecute(database -> {
             long rideId = getIntent().getLongExtra(RIDE_ID, -1);
             String rideDate = getIntent().getStringExtra(RIDE_DATE);
-            File file = new File( PlainTextFileLogger.getLoggingPath() + "/owlogs_" + rideDate + ".csv");
-            if (file.exists()) {
-                boolean deleted = file.delete();
-                Timber.d("deleted?" + deleted);
-            }
-            try {
-                FileOutputStream writer = new FileOutputStream(file, true);
-                BufferedOutputStream output = new BufferedOutputStream(writer);
-
-                StringBuilder stringBuilder = new StringBuilder();
-                List<String> headers = database.attributeDao().getDistinctKeysFromRide(rideId);
-                HashMap<String, String> keyValueOrderKeeper = new LinkedHashMap<>();
-                headers.add(0, "time");
-                headers.add("gps_lat");
-                headers.add("gps_long");
-                for (String header : headers) {
-                    if (stringBuilder.length() > 0) {
-                        stringBuilder.append(',');
-                    }
-                    stringBuilder.append(header);
-                    keyValueOrderKeeper.put(header, "");
-                }
-                stringBuilder.append('\n');
-                output.write(stringBuilder.toString().getBytes());
-
-                List<Moment> moments = database.momentDao().getFromRide(rideId);
-//                Long referenceTime = null;
-                for (Moment moment : moments) {
-                    stringBuilder.setLength(0); // reset
-                    keyValueOrderKeeper.values().clear();
-
-                    long time = moment.getDate().getTime();
-
-                    // do we need relative time?
-//                    if (referenceTime == null) {
-//                        referenceTime = time;
-//                    }
-//                    time = time - referenceTime;
-                    stringBuilder.append(Long.toString(time));
-
-                    List<Attribute> attributes = database.attributeDao().getFromMoment(moment.id);
-                    for (Attribute attribute : attributes) {
-                        keyValueOrderKeeper.put(attribute.getKey(), attribute.getValue());
-                    }
-                    keyValueOrderKeeper.put("gps_lat", moment.getGpsLat());
-                    keyValueOrderKeeper.put("gps_long", moment.getGpsLong());
-
-                    for (String value : keyValueOrderKeeper.values()) {
-                        if (stringBuilder.length() > 0) {
-                            stringBuilder.append(',');
-                        }
-                        stringBuilder.append(value);
-                    }
-                    stringBuilder.append('\n');
-                    output.write(stringBuilder.toString().getBytes());
-                }
-
-                output.flush();
-                output.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            File file = PlainTextFileLogger.createLogFile(rideId, rideDate, database);
 
             Uri uri = FileProvider.getUriForFile(this, "net.kwatts.powtools.fileprovider", file);
             shareFileIntent.putExtra(Intent.EXTRA_STREAM, uri);
             runOnUiThread(() -> shareMenuItem.setVisible(true));
         });
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

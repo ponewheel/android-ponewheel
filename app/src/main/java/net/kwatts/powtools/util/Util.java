@@ -1,10 +1,12 @@
 package net.kwatts.powtools.util;
-import android.accounts.AccountManager;
+
 import android.accounts.Account;
-import android.content.*;
+import android.accounts.AccountManager;
+import android.content.Context;
 import android.support.annotation.IntRange;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 /**
  * Created by kwatts on 6/15/16.
  */

@@ -1,5 +1,8 @@
 package net.kwatts.powtools.util.debugdrawer;
 
+import android.arch.lifecycle.Lifecycle;
+import android.arch.lifecycle.LifecycleObserver;
+import android.arch.lifecycle.OnLifecycleEvent;
 import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,19 +12,23 @@ import android.widget.Button;
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.R;
 import net.kwatts.powtools.RidesListActivity;
-import net.kwatts.powtools.database.Attribute;
-import net.kwatts.powtools.database.Moment;
-import net.kwatts.powtools.database.Ride;
-import net.kwatts.powtools.database.RideRow;
+import net.kwatts.powtools.database.entities.Attribute;
+import net.kwatts.powtools.database.entities.Moment;
+import net.kwatts.powtools.database.entities.Ride;
 import net.kwatts.powtools.model.OWDevice;
+import net.kwatts.powtools.util.ProgressDialogHandler;
 import net.kwatts.powtools.util.Util;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 import io.palaima.debugdrawer.base.DebugModule;
+import timber.log.Timber;
 
-public class DebugDrawerAddDummyRide implements DebugModule {
+public class DebugDrawerAddDummyRide implements DebugModule, LifecycleObserver {
     private RidesListActivity ridesListActivity;
+    private ProgressDialogHandler progressDialogHandler;
 
     public DebugDrawerAddDummyRide(RidesListActivity mainActivity) {
         this.ridesListActivity = mainActivity;
@@ -31,6 +38,7 @@ public class DebugDrawerAddDummyRide implements DebugModule {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @NonNull ViewGroup parent) {
         View view = inflater.inflate(R.layout.debug_drawer_add_ride, parent, false);
+        progressDialogHandler = new ProgressDialogHandler(ridesListActivity);
 
         Button mockBle = view.findViewById(R.id.debug_drawer_add_ride);
         mockBle.setOnClickListener(v -> {
@@ -42,6 +50,8 @@ public class DebugDrawerAddDummyRide implements DebugModule {
 
 
     private void insertSampleRidesOrDebug() {
+        progressDialogHandler.show();
+
         App.dbExecute(database -> {
 
             //for (Ride ride : database.rideDao().getAll()) {
@@ -51,91 +61,102 @@ public class DebugDrawerAddDummyRide implements DebugModule {
             // Insert sample rides
             Ride ride = new Ride();
             long rideId = database.rideDao().insert(ride);
-            RideRow newRideRow = new RideRow();
-            newRideRow.rideId = rideId;
-
+            ride.id = rideId;
+            Timber.d("rideId = " + rideId);
             Calendar calendar = Calendar.getInstance();
             Moment moment;
-            int rideLength = (int) (Math.random() * 58);
+            int rideLength = 900;
+//            int rideLength = (int) (Math.random() * 90);
+            Timber.d("rideLength = " + rideLength);
+            List<Attribute> attributes = new ArrayList<>();
+            List<Moment> moments = new ArrayList<>();
+            long momentId = database.momentDao().getMaxId();
             for (int i = 0; i < rideLength; i++) {
                 calendar.add(Calendar.MINUTE, 1);
                 moment = new Moment(rideId, calendar.getTime());
+                moment.id = ++momentId;
 
                 moment.setGpsLat(37.7891223 + i * .001);
                 moment.setGpsLong(-122.4118449 + Math.sin(i) * .001);
 
-                long momentId = database.momentDao().insert(moment);
-
+                moments.add(moment);
                 Attribute attribute = new Attribute();
                 attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_SPEED);
                 attribute.setValue("" + i);
-                database.attributeDao().insert(attribute);
+                attributes.add(attribute);
 
                 attribute = new Attribute();
                 attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_RIDER_DETECTED_PAD_1);
                 attribute.setValue(Math.random() > .3 ? "true" : null);
-                database.attributeDao().insert(attribute);
-
+                attributes.add(attribute);
 
                 attribute = new Attribute();
                 attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_RIDER_DETECTED_PAD_2);
                 attribute.setValue(Math.random() > .3 ? "true" : null);
-                database.attributeDao().insert(attribute);
+                attributes.add(attribute);
 
 
                 attribute = new Attribute();
                 attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_CONTROLLER_TEMP);
                 attribute.setValue("" + (Math.sin(i) * 10.0 + 80));
-                database.attributeDao().insert(attribute);
+                attributes.add(attribute);
 
 
                 attribute = new Attribute();
                 attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_MOTOR_TEMP);
                 attribute.setValue("" + (Math.sin(i) * 20.0 + 90));
-                database.attributeDao().insert(attribute);
+                attributes.add(attribute);
 
 
                 attribute = new Attribute();
                 attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_BATTERY);
                 attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 100, 0));
-                database.attributeDao().insert(attribute);
+                attributes.add(attribute);
 
 
                 attribute = new Attribute();
                 attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_BATTERY_VOLTAGE);
                 attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 53.6, 43.1));
-                database.attributeDao().insert(attribute);
+                attributes.add(attribute);
 
 
                 attribute = new Attribute();
                 attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_TRIP_AMPS);
                 attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 0, 3000));
-                database.attributeDao().insert(attribute);
+                attributes.add(attribute);
 
 
                 attribute = new Attribute();
                 attribute.setMomentId(momentId);
                 attribute.setKey(OWDevice.KEY_CURRENT_AMPS);
                 attribute.setValue("" + Util.linearTransform(i, 0, rideLength, 0, 3000));
-                database.attributeDao().insert(attribute);
+                attributes.add(attribute);
 
                 if (i == 0) {
-                    newRideRow.minEventDate = calendar.getTime();
+                    ride.start = calendar.getTime();
                 } else if (i == rideLength - 1) {
-                    newRideRow.maxEventDate = calendar.getTime();
+                    ride.end = calendar.getTime();
                 }
             }
+            database.rideDao().updateRide(ride);
+            database.momentDao().insertAll(moments);
+            database.attributeDao().insertAll(attributes);
 
-            ridesListActivity.refreshList();
+            List<Ride> rideList = ridesListActivity.getRideListAdapter().getRideList();
+            rideList.add(ride);
 
+            ridesListActivity.runOnUiThread(() -> {
+                ridesListActivity.getRideListAdapter().notifyItemInserted(rideList.size()-1);
+                progressDialogHandler.dismiss();
+            });
         });
     }
 
@@ -154,9 +175,9 @@ public class DebugDrawerAddDummyRide implements DebugModule {
 
     }
 
-    @Override
+    @Override @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     public void onPause() {
-
+        Timber.d("onPause: ");
     }
 
     @Override
@@ -164,8 +185,9 @@ public class DebugDrawerAddDummyRide implements DebugModule {
 
     }
 
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     @Override
     public void onStop() {
-
+        Timber.d("onStop: ");
     }
 }
