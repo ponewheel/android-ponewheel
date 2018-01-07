@@ -234,6 +234,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mContext = this;
 
+        startStatusNotification();
 
         EventBus.getDefault().register(this);
         // TODO unbind in onPause or whatever is recommended by goog
@@ -276,6 +277,26 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         new DebugDrawerMockBle(this),
                         new SettingsModule(this)
                 ).build();
+    }
+
+    private void startStatusNotification() {
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(mContext, "ponewheel")
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle("pOW status")
+                        .setColor(0x008000)
+                        .setContentText("battery: 46%")
+                        .setOngoing(true)
+                        .setAutoCancel(true);
+        android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        assert mNotifyMgr != null;
+        mNotifyMgr.notify("statusNotificationTag",0, mBuilder.build());
+    }
+
+    private void stopStatusNotification() {
+        android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        assert mNotifyMgr != null;
+        mNotifyMgr.cancel("statusNotificationTag", 0);
     }
 
     public BluetoothUtil getBluetoothUtil() {
@@ -421,6 +442,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             unbindService(mVibrateConnection);
         }
         App.INSTANCE.getSharedPreferences().removeListener(this);
+        stopStatusNotification();
         super.onDestroy();
     }
 
