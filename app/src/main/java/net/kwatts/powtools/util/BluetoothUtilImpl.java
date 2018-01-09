@@ -117,7 +117,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
             for(OWDevice.DeviceCharacteristic deviceCharacteristic: mOWDevice.getNotifyCharacteristics()) {
                 String uuid = deviceCharacteristic.uuid.get();
-                if (uuid != null) {
+                if (uuid != null && deviceCharacteristic.isNotifyCharacteristic) {
                     BluetoothGattCharacteristic localCharacteristic = owGatService.getCharacteristic(UUID.fromString(uuid));
                     if (localCharacteristic != null) {
                         if (isCharacteristicNotifiable(localCharacteristic) && deviceCharacteristic.isNotifyCharacteristic) {
