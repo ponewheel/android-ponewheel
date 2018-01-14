@@ -64,4 +64,7 @@
         <item>FRONT</item>
         <item>BACK</item>
     </string-array>
+    <string-array name="donation_options">
+        <item>PayPal</item>
+    </string-array>
 </resources>

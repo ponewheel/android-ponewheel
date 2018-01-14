@@ -10,6 +10,7 @@ import android.databinding.DataBindingUtil;
 import android.databinding.Observable;
 import android.graphics.Typeface;
 import android.location.Address;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -390,6 +391,25 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .show();
     }
 
+    private void showDonation() {
+        new MaterialDialog.Builder(this)
+                .title("Donate")
+                .content("This app is openly developed and maintained by contributors in their spare time. Show support and help fuel their OneWheel addictions :)")
+                .items(R.array.donation_options)
+                .itemsCallback(new MaterialDialog.ListCallback() {
+                    @Override
+                    public void onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
+                        if (which == 0) {
+                            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kwatkins%40gmail%2ecom&lc=US&item_name=pOneWheel%20Android%20App&no_note=1&no_shipping=1&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted"));
+                            startActivity(browserIntent);
+                        } else if (which == 1) {
+                            //TODO: Google Play
+                        }
+
+                    }
+                })
+                .show();
+    }
     private void setupDarkModes(Bundle savedInstanceState) {
         if (App.INSTANCE.getSharedPreferences().isDayNightMode()) {
             if (savedInstanceState == null) {
@@ -493,6 +513,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 break;
             case R.id.menu_about:
                 showEula();
+                break;
+            case R.id.menu_donate:
+                showDonation();
                 break;
             case R.id.menu_settings:
                 Intent i = new Intent(this, MainPreferencesActivity.class);
