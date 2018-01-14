@@ -78,6 +78,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public static final String KEY_TILT_ANGLE_PITCH = "tilt_angle_pitch";
     public static final String KEY_TILT_ANGLE_ROLL = "tilt_angle_roll";
     public static final String KEY_RIDE_MODE = "ride_mode";
+    public static final String KEY_BATTERY_TEMP = "battery_temp";
 
     public static SparseArray<String> ERROR_CODE_MAP = new SparseArray<>();
     {
@@ -301,6 +302,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTemperature,      KEY_CONTROLLER_TEMP,     ""));                          // 16
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMotorTemp,    KEY_MOTOR_TEMP,          "", false)); // 17
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,       KEY_RIDE_MODE,           "RIDING MODE"));               // 18
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP"));               // 19
 
 /*
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -430,7 +432,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                     processBatteryCellsVoltage(incomingValue, dc);
                     break;
                 case OnewheelCharacteristicTemperature:
-                    processTemp(incomingCharacteristic);
+                    processControllerAndMotorTemp(incomingCharacteristic);
                     break;
                 case OnewheelCharacteristicBatteryTemp:
                     processBatteryTemp(incomingCharacteristic, dc);
@@ -535,12 +537,12 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         }
     }
 
-    public void processTemp(BluetoothGattCharacteristic incomingCharacteristic) {
+    public void processControllerAndMotorTemp(BluetoothGattCharacteristic incomingCharacteristic) {
         int controllerTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
         int motorTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
 
         setFormattedTempWithMetricPreference(characteristics.get(OnewheelCharacteristicTemperature), controllerTemp);
-        Timber.d("controllerTemp = " + controllerTemp);
+//        Timber.d("controllerTemp = " + controllerTemp);
         setFormattedTempWithMetricPreference(characteristics.get(MockOnewheelCharacteristicMotorTemp), motorTemp);
     }
 
@@ -557,7 +559,9 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     public void processBatteryTemp(BluetoothGattCharacteristic incomingCharacteristic, DeviceCharacteristic dc) {
         int batteryTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
 
-        setFormattedTempWithMetricPreference(characteristics.get(OnewheelCharacteristicTemperature), batteryTemp);
+        Timber.d("batteryTemp = " + batteryTemp);
+
+        setFormattedTempWithMetricPreference(characteristics.get(OnewheelCharacteristicBatteryTemp), batteryTemp);
     }
 
     public void processUnknownUuid(String incomingUuid, byte[] incomingValue) {
@@ -659,6 +663,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             if(i != batteryVoltageCells.length - 1) {
                 var1.append('|');
             }
+
         }
         dc.value.set(var1.toString());
     }
