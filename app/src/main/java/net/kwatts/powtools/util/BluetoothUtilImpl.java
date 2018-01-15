@@ -40,17 +40,17 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
     private static final int REQUEST_ENABLE_BT = 1;
 
-    private Queue<BluetoothGattCharacteristic> characteristicReadQueue = new LinkedList<>();
-    private Queue<BluetoothGattDescriptor> descriptorWriteQueue = new LinkedList<>();
+    Queue<BluetoothGattCharacteristic> characteristicReadQueue = new LinkedList<>();
+    Queue<BluetoothGattDescriptor> descriptorWriteQueue = new LinkedList<>();
     private android.bluetooth.BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mBluetoothLeScanner;
-    private BluetoothGatt mGatt;
-    private BluetoothGattService owGatService;
+    BluetoothGatt mGatt;
+    BluetoothGattService owGatService;
 
     private Map<String, String> mScanResults = new HashMap<>();
 
     private MainActivity mainActivity;
-    private OWDevice mOWDevice;
+    OWDevice mOWDevice;
 
     private ScanSettings settings;
     private boolean mScanning;
@@ -236,7 +236,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         mainActivity.updateLog(s);
     }
 
-    private void scanLeDevice(final boolean enable) {
+    void scanLeDevice(final boolean enable) {
         if (enable) {
             mScanning = true;
             List<ScanFilter> filters_v2 = new ArrayList<>();

@@ -110,7 +110,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public final ObservableInt lightMode = new ObservableInt();
 
     private double[] ampCells = new double[16];
-    private double[] batteryVoltageCells = new double[15];
+    private double[] batteryVoltageCells = new double[16];
 
 
 
@@ -649,18 +649,22 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             int var3 = unsignedByte(incomingValue[1]);
             batteryVoltageCells[cellIdentifier] = (double)var3 / 50.0D;
         }
-        StringBuilder var1 = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
         for(int i = 0; i < batteryVoltageCells.length; ++i) {
             if (batteryVoltageCells[i] == 0) {
-                var1.append('-');
+                stringBuilder.append("--");
             } else {
-                var1.append(batteryVoltageCells[i]);
+                stringBuilder.append(batteryVoltageCells[i]);
             }
-            if(i != batteryVoltageCells.length - 1) {
-                var1.append('|');
+
+            if ((i+1) % 4 == 0) {
+                stringBuilder.append("\n");
+            } else if(i != batteryVoltageCells.length - 1) {
+                stringBuilder.append(',');
             }
         }
-        dc.value.set(var1.toString());
+        String batteryCellsVoltage = stringBuilder.toString();
+        dc.value.set(batteryCellsVoltage);
     }
 
     public void processCurrentAmps(byte[] incomingValue, DeviceCharacteristic dc) {
