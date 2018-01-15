@@ -19,6 +19,7 @@ import net.kwatts.powtools.util.BluetoothUtil;
 import org.greenrobot.eventbus.EventBus;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -268,41 +269,35 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceReadCharacteristics.clear();
         deviceNotifyCharacteristics.clear();
 
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicHardwareRevision, KEY_HARDWARE_REVISION, "HARDWARE REVISION"));            // 0
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicFirmwareRevision, KEY_FIRMWARE_REVISION, "FIRMWARE REVISION"));            // 1
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLifetimeOdometer, KEY_LIFETIME_ODOMETER, ""));                             // 2
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicHardwareRevision, KEY_HARDWARE_REVISION,   "HARDWARE REVISION"));            // 0
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicFirmwareRevision, KEY_FIRMWARE_REVISION,   "FIRMWARE REVISION"));            // 1
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLifetimeOdometer, KEY_LIFETIME_ODOMETER,   ""));                             // 2
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLightingMode,     KEY_LIGHTING_MODE,       "LIGHTS"));                       // 3
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY_INITIAL,     "BATTERY AT START (%)"));         // 4
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLastErrorCode,    KEY_LAST_ERROR_CODE,     "LAST ERROR CODE"));              // 5
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP"));                 // 6
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,       KEY_RIDE_MODE,           "RIDING MODE"));                  // 7
 
-//                deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLifetimeAmpHours,"lifetime_amps","LIFETIME AMPS (HOURS)")
-
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLightingMode,    KEY_LIGHTING_MODE,"LIGHTS"));                             // 3
-
-//        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,"ride_mode","RIDING MODE"{{
-//            ui_enabled.set(false);
-//        }});
-
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY_INITIAL,     "BATTERY AT START (%)"));        // 4
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLastErrorCode,    KEY_LAST_ERROR_CODE,     "LAST ERROR CODE"));             // 5
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicSpeed,        KEY_SPEED,               "",false));               // 0
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY,             "Battery"));                   // 1
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicStatusError,      KEY_RIDER_DETECTED,      "RIDER"));                     // 2
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicPad1,         KEY_RIDER_DETECTED_PAD_1,"PAD1", false));                      // 3
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicPad2,         KEY_RIDER_DETECTED_PAD_2,"PAD2", false));                      // 4
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMaxSpeed,     KEY_SPEED_MAX,           "Trip Top Speed: ", false));          // 5
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicOdometer,     KEY_ODOMETER,            "", false));                          // 6
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicPad1,         KEY_RIDER_DETECTED_PAD_1,"PAD1", false));             // 3
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicPad2,         KEY_RIDER_DETECTED_PAD_2,"PAD2", false));             // 4
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMaxSpeed,     KEY_SPEED_MAX,           "Trip Top Speed: ", false)); // 5
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicOdometer,     KEY_ODOMETER,            "", false));                 // 6
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicOdometer,         KEY_ODOMETER_TIRE_REVS,  "TRIP ODOMETER (TIRE REVS)")); // 7
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTripTotalAmpHours,KEY_TRIP_AMPS,           "TRIP USED Ah (Amp hours)"));  // 8
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTripRegenAmpHours,KEY_TRIP_AMPS_REGEN,     "TRIP GAINED Ah (Amp hours)"));// 9
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicSpeedRpm,         KEY_SPEED_RPM,               "SPEED (RPM)", true));// 10
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicSpeedRpm,         KEY_SPEED_RPM,           "SPEED (RPM)", true));// 10
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryVoltage,   KEY_BATTERY_VOLTAGE,     "BATTERY (Voltage)"));         // 11
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryCells,     KEY_BATTERY_CELLS,       "BATTERY CELLS (Voltage)"));   // 12
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicCurrentAmps,      KEY_CURRENT_AMPS,        "BATTERY CURRENT (Amps)"));    // 13
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTiltAnglePitch,   KEY_TILT_ANGLE_PITCH,    "TILT ANGLE PITCH"));          // 14
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTiltAngleRoll,    KEY_TILT_ANGLE_ROLL,     "TILT ANGLE ROLL"));           // 15
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTemperature,      KEY_CONTROLLER_TEMP,     ""));                          // 16
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMotorTemp,    KEY_MOTOR_TEMP,          "", false)); // 17
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,       KEY_RIDE_MODE,           "RIDING MODE"));               // 18
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP"));               // 19
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMotorTemp,    KEY_MOTOR_TEMP,          "", false));// 17
+
 
 /*
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -347,10 +342,9 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         for (DeviceCharacteristic deviceNotifyCharacteristic : deviceNotifyCharacteristics) {
             characteristics.put(deviceNotifyCharacteristic.uuid.get(), deviceNotifyCharacteristic);
         }
-        for (DeviceCharacteristic deviceNotifyCharacteristic : deviceReadCharacteristics) {
-            characteristics.put(deviceNotifyCharacteristic.uuid.get(), deviceNotifyCharacteristic);
+        for (DeviceCharacteristic deviceReadCharacteristic : deviceReadCharacteristics) {
+            characteristics.put(deviceReadCharacteristic.uuid.get(), deviceReadCharacteristic);
         }
-
 
         refreshCharacteristics();
     }
@@ -373,13 +367,23 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     public final ObservableField<String> deviceMacAddress = new ObservableField<>();
     public final ObservableField<String> log = new ObservableField<>();
 
+    public static float m14598a(BluetoothGattCharacteristic bluetoothGattCharacteristic) {
+        byte[] value = bluetoothGattCharacteristic.getValue();
+        if (value == null || value.length != 2) {
+            return 0.0f;
+        }
+        return (float) ByteBuffer.wrap(value).order(ByteOrder.BIG_ENDIAN).getChar();
+    }
+
     @Override
     public void processUUID(BluetoothGattCharacteristic incomingCharacteristic) {
         String incomingUuid = incomingCharacteristic.getUuid().toString();
         byte[] incomingValue = incomingCharacteristic.getValue();
 
         DeviceCharacteristic dc = characteristics.get(incomingUuid);
+
         String dev_uuid = dc.uuid.get();
+
         if(dev_uuid != null && dev_uuid.equals(incomingUuid)) {
             switch(dev_uuid) {
                 case OnewheelCharacteristicHardwareRevision:
@@ -595,19 +599,12 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
     private void processRidingMode(byte[] incomingValue, DeviceCharacteristic dc, BluetoothGattCharacteristic incomingCharacteristic) {
+
         int ridemode = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-        dc.value.set(Integer.toString(ridemode));
-        // Let the UI know initial ridemode
-        EventBus.getDefault().post(new DeviceStatusEvent("Ridemode changed to: " + ridemode));
+        String rideMode1 = Integer.toString(ridemode);
+        Timber.d("rideMode1 = " + rideMode1);
 
-
-        //EventBus.getDefault().post(new RideModeEvent(ridemode));
-//        int ridemode = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-//        Log.d(TAG, "Got the ridemode from BLE:" + ridemode);
-//        dc.value.set("initial ridemode " + ridemode);
-//        // Let the UI know initial ridemode
-//        EventBus.getDefault().post(new DeviceStatusEvent("Initial ridemode set to: " + ridemode));
-//        EventBus.getDefault().post(new RideModeEvent(ridemode));
+        dc.value.set(rideMode1);
     }
 
     private void processLifetimeOdometer(byte[] incomingValue, DeviceCharacteristic dc) {
