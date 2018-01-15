@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 
+import timber.log.Timber;
+
 public class BluetoothUtilImpl implements BluetoothUtil{
 
     private static final String TAG = "BluetoothUtil";
@@ -236,7 +238,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         mainActivity.updateLog(s);
     }
 
+
     void scanLeDevice(final boolean enable) {
+        Timber.d("scanLeDevice enable = " + enable);
         if (enable) {
             mScanning = true;
             List<ScanFilter> filters_v2 = new ArrayList<>();
@@ -261,8 +265,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             String deviceName = result.getDevice().getName();
             String deviceAddress = result.getDevice().getAddress();
 
+            Log.i(TAG, "ScanCallback.onScanResult: " + mScanResults.entrySet());
             if (!mScanResults.containsKey(deviceAddress)) {
-                Log.i(TAG, "ScanCallback.onScanResult:" + deviceName);
+                Log.i(TAG, "ScanCallback.deviceName:" + deviceName);
                 mScanResults.put(deviceAddress, deviceName);
 
                 if (deviceName == null) {
@@ -271,13 +276,15 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                     updateLog("Found " + deviceAddress + " (" + deviceName + ")");
                 }
 
-                if (deviceName != null) {
-                    if (deviceName.startsWith("ow")) {
-                        updateLog("Looks like we found our OW device (" + deviceName + ") discovering services!");
-                        connectToDevice(result.getDevice());
-                    }
+                if (deviceName != null && (deviceName.startsWith("ow") || deviceName.startsWith("Onewheel"))) {
+                    updateLog("Looks like we found our OW device (" + deviceName + ") discovering services!");
+                    connectToDevice(result.getDevice());
+                } else {
+                    Timber.d("onScanResult: found another device:" + deviceName + "-" + deviceAddress);
                 }
 
+            } else {
+                Timber.d("onScanResult: mScanResults already had our key.");
             }
 
 
