@@ -173,9 +173,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             //XXX until we figure out what's going on
             if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
                 mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-            } /* else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicRidingMode)) {
+            }  else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicRidingMode)) {
                  Log.d(TAG, "Got ride mode from the main UI thread:" + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-             } */
+             }
 
             mOWDevice.processUUID(c);
 

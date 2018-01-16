@@ -58,6 +58,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.honorato.multistatetogglebutton.MultiStateToggleButton;
+import org.honorato.multistatetogglebutton.ToggleButton;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -74,6 +75,7 @@ import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
+import static net.kwatts.powtools.model.OWDevice.KEY_RIDE_MODE;
 import static net.kwatts.powtools.model.OWDevice.MockOnewheelCharacteristicSpeed;
 
 
@@ -109,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private Context mContext;
     ScrollView mScrollView;
     Chronometer mChronometer;
-    private OWDevice mOWDevice;
+    OWDevice mOWDevice;
     net.kwatts.powtools.databinding.ActivityMainBinding mBinding;
     BluetoothUtil bluetoothUtil;
 
@@ -844,20 +846,42 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             mRideModeToggleButton.setElements(getResources().getStringArray(R.array.ow_ridemode_array));
         }
 
-        mRideModeToggleButton.setOnValueChangedListener(position -> {
+        final ToggleButton.OnValueChangedListener onToggleValueChangedListener = position -> {
             if (mOWDevice.isConnected.get()) {
                 Log.d(TAG, "mOWDevice.setRideMode button pressed:" + position);
                 if (mOWDevice.isOneWheelPlus.get()) {
                     updateLog("Ridemode changed to:" + position + 4);
-                    mOWDevice.setRideMode(getBluetoothUtil(),position + 4); // ow+ ble value for ridemode 4,5,6,7,8 (delirium)
+                    mOWDevice.setRideMode(getBluetoothUtil(), position + 4); // ow+ ble value for ridemode 4,5,6,7,8 (delirium)
                 } else {
                     updateLog("Ridemode changed to:" + position + 1);
-                    mOWDevice.setRideMode(getBluetoothUtil(),position + 1); // ow uses 1,2,3 (expert)
+                    mOWDevice.setRideMode(getBluetoothUtil(), position + 1); // ow uses 1,2,3 (expert)
                 }
             } else {
                 Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();
             }
+        };
+        mRideModeToggleButton.setOnValueChangedListener(onToggleValueChangedListener);
+        mOWDevice.getDeviceCharacteristicByKey(KEY_RIDE_MODE).value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+            @Override
+            public void onPropertyChanged(Observable observable, int i) {
+                runOnUiThread(() -> {
+
+                    String rideMode = mOWDevice.getDeviceCharacteristicByKey(KEY_RIDE_MODE).value.get();
+                    int rideModeInt = Integer.parseInt(rideMode);
+                    if (mOWDevice.isOneWheelPlus.get()) {
+                        rideModeInt -= 4;
+                    } else {
+                        rideModeInt -= 1;
+                    }
+
+                    mRideModeToggleButton.setOnValueChangedListener(null);
+                    mRideModeToggleButton.setValue(rideModeInt);
+                    mRideModeToggleButton.setOnValueChangedListener(onToggleValueChangedListener);
+
+                });
+            }
         });
+
 
     }
 }

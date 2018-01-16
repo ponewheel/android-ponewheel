@@ -15,6 +15,7 @@ import java.util.UUID;
 
 import timber.log.Timber;
 
+import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicBatteryTemp;
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicFirmwareRevision;
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicHardwareRevision;
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicLifetimeOdometer;
@@ -106,6 +107,10 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
                 temp[0] = (byte) controllerTemp;  // controller temp
                 temp[1] = (byte) ((int) Util.far2cel(random.nextInt(30) + 120)); // motor temp
                 setByteCharacteristic(OnewheelCharacteristicTemperature, temp);
+
+                temp[0] = 0; // unused?
+                temp[1] = (byte) Util.far2cel(random.nextInt(30) + 60); // battery temp
+                setByteCharacteristic(OnewheelCharacteristicBatteryTemp, temp);
 
                 byte[] deviceStatus = DeviceStatus.toByteArray(
                         random.nextBoolean(),
