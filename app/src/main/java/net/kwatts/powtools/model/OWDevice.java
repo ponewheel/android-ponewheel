@@ -664,33 +664,16 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
     public void processCurrentAmps(byte[] incomingValue, DeviceCharacteristic dc) {
-
-        // Wh = mAh × V / 1000
-        // battery is 3.5Amps
-        int cellIdentifier = unsignedByte(incomingValue[0]);
-        if(cellIdentifier < ampCells.length && cellIdentifier >= 0) {
-            int var3 = unsignedByte(incomingValue[1]);
-            ampCells[cellIdentifier] = (double)var3 / 50.0D;
+        float incoming = ByteBuffer.wrap(incomingValue).getShort();
+        float multiplier;
+        // TODO reference datasheet of chips/sensors
+        if (isOneWheelPlus.get()) {
+            multiplier = 1.8f;
+        } else {
+            multiplier = 0.9f;
         }
-        StringBuilder amps_string = new StringBuilder();
-        for (int i = 0; i < ampCells.length; ++i) {
-            if (ampCells[i] == 0) {
-                amps_string.append('-');
-            } else {
-                amps_string.append(ampCells[i]);
-            }
-            if(i != ampCells.length - 1) {
-                amps_string.append('|');
-            }
-        }
-        dc.value.set(amps_string.toString());
-        //dc.value.set(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1).toString());
-        //int camps = unsignedByte(c_value[1]);
-        //double d_camps = (double)camps / 50.0D;
-        //currentAmps.set("batteryVoltageCells:" + cellIdentifier + " value:" + d_camps);
-        //int i_currentamps = unsignedShort(c_value);
-        //double d_currentapps = Double.valueOf((double) i_currentamps / 50.0D);
-        //currentAmps.set(Double.toString(d_currentapps));
+        final float amps = incoming / 1000.0f * multiplier;
+        dc.value.set(String.format(Locale.ENGLISH, "%.2f",amps));
     }
 
 
