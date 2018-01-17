@@ -71,7 +71,7 @@ public class App extends Application {
     }
 
     public void releaseWakeLock() {
-        if (wakeLock != null) {
+        if (wakeLock != null && wakeLock.isHeld()) {
             wakeLock.release();
         }
     }
