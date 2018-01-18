@@ -31,6 +31,7 @@ import android.widget.ScrollView;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.afollestad.materialdialogs.Theme;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.Legend;
@@ -105,6 +106,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private static final boolean ONEWHEEL_LOGGING = true;
 
     MultiStateToggleButton mRideModeToggleButton;
+    int mRideModePosition;
+    boolean mRideModePositionSetOnceFlag;
 
     public VibrateService mVibrateService;
     private android.os.Handler mLoggingHandler = new Handler();
@@ -385,6 +388,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     private void showEula() {
         new MaterialDialog.Builder(this)
+                .theme(Theme.LIGHT)
                 .title("WARNING")
                 .content(R.string.eula)
                 .positiveText("AGREE")
@@ -395,6 +399,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     private void showDonation() {
         new MaterialDialog.Builder(this)
+                .theme(Theme.LIGHT)
                 .title("Donate")
                 .content("This app is openly developed and maintained by contributors in their spare time. Show support and help fuel their OneWheel addictions :)")
                 .items(R.array.donation_options)
@@ -872,12 +877,19 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         final ToggleButton.OnValueChangedListener onToggleValueChangedListener = position -> {
             if (mOWDevice.isConnected.get()) {
                 Log.d(TAG, "mOWDevice.setRideMode button pressed:" + position);
-                if (mOWDevice.isOneWheelPlus.get()) {
-                    updateLog("Ridemode changed to:" + position + 4);
-                    mOWDevice.setRideMode(getBluetoothUtil(), position + 4); // ow+ ble value for ridemode 4,5,6,7,8 (delirium)
+                double mph = net.kwatts.powtools.util.Util.rpmToMilesPerHour(mOWDevice.mSpeedRpm.get());
+                if (mph > 12) {
+                    Toast.makeText(mContext, "Unable to change riding mode, your going to fast! (" + mph + " mph)", Toast.LENGTH_SHORT).show();
+                    //mRideModeToggleButton.setValue(mRideModePosition);
                 } else {
-                    updateLog("Ridemode changed to:" + position + 1);
-                    mOWDevice.setRideMode(getBluetoothUtil(), position + 1); // ow uses 1,2,3 (expert)
+                    mRideModePosition = position;
+                    if (mOWDevice.isOneWheelPlus.get()) {
+                        updateLog("Ridemode changed to:" + position + 4);
+                        mOWDevice.setRideMode(getBluetoothUtil(), position + 4); // ow+ ble value for ridemode 4,5,6,7,8 (delirium)
+                    } else {
+                        updateLog("Ridemode changed to:" + position + 1);
+                        mOWDevice.setRideMode(getBluetoothUtil(), position + 1); // ow uses 1,2,3 (expert)
+                    }
                 }
             } else {
                 Toast.makeText(mContext, "Not connected to Device!", Toast.LENGTH_SHORT).show();

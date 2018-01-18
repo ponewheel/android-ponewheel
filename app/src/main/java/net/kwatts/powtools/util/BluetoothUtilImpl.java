@@ -56,6 +56,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
     private ScanSettings settings;
     private boolean mScanning;
+    private long mDisconnected_time;
 
     @Override
     public void init(MainActivity mainActivity, OWDevice mOWDevice) {
@@ -318,9 +319,15 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         mScanResults.clear();
 
         if (App.INSTANCE.getSharedPreferences().shouldAutoReconnect()) {
-            updateLog("Attempting to Reconnect to " + mOWDevice.deviceMacAddress.get());
-            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mOWDevice.deviceMacAddress.get());
-            connectToDevice(device);
+
+            mDisconnected_time = System.currentTimeMillis();
+            long wait_time = 15000; // 15 seconds? should be configurable.
+            long end_time = mDisconnected_time + wait_time;
+            if (System.currentTimeMillis() < end_time) {
+                updateLog("Attempting to Reconnect to " + mOWDevice.deviceMacAddress.get());
+                BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mOWDevice.deviceMacAddress.get());
+                connectToDevice(device);
+            }
             //scanLeDevice(true);
         } else {
             gatt.close();
