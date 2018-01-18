@@ -32,6 +32,7 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.Theme;
+import com.github.anastr.speedviewlib.SpeedView;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.Legend;
@@ -124,6 +125,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     Ride ride;
     private DisposableObserver<Address> rxLocationObserver;
     private AlertsMvpController alertsController;
+    private SpeedView mSpeedBar;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event){
@@ -161,6 +163,18 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         put(5, false); // 4
     }};
 
+    public void updateCurrentSpeed(final double speed) {
+        runOnUiThread(() -> {
+            try {
+                float mph = (float) net.kwatts.powtools.util.Util.rpmToMilesPerHour((double) speed);
+                mSpeedBar.speedTo(mph);
+            } catch (Exception e) {
+                updateLog("Got an exception updating speed:" + e.getMessage());
+
+            }
+        });
+
+    }
     public void updateBatteryRemaining(final int percent) {
         runOnUiThread(() -> {
             try {
@@ -273,6 +287,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
 
         mChronometer = findViewById(R.id.chronometer);
+        mSpeedBar =  findViewById(R.id.speedbar);
+
         initBatteryChart();
         initLightSettings();
         initRideModeButtons();

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:ignore="RtlHardcoded">
     <data xmlns:android="http://schemas.android.com/apk/res/android">
 
@@ -18,6 +19,24 @@
         tools:showIn="@layout/activity_main"
         >
 
+        <!-- https://github.com/anastr/SpeedView/wiki/Style -->
+        <com.github.anastr.speedviewlib.SpeedView
+            android:id="@+id/speedbar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:sv_withTremble="false"
+            app:sv_lowSpeedColor="#00ff00"
+            app:sv_mediumSpeedColor="#ffff00"
+            app:sv_highSpeedColor="#ff0000"
+            app:sv_minSpeed="0"
+            app:sv_maxSpeed="25"
+            app:sv_speedTextSize="30.0dp"
+            app:sv_unitTextSize="15.0dp"
+            app:sv_speedTextColor="?attr/colorPrimary"
+            app:sv_unitTextColor="?attr/colorPrimary"
+            app:sv_unitUnderSpeedText="true"/>
+
+<!--
         <TextView
             android:id="@+id/header_speed"
             android:layout_width="wrap_content"
@@ -84,6 +103,7 @@
             android:textSize="15.0sp"
             android:textStyle="bold"
             />
+-->
         <!--        android:text="23.00"   android:text='@{owdevice.deviceNotifyCharacteristics.get(5).value}'  android:textStyle="bold" android:layout_below="@id/header_speed_line" />
 
                                   -->
