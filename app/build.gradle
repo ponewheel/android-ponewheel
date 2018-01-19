@@ -80,6 +80,7 @@ dependencies {
     // https://github.com/rey5137/material
     implementation "org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.1"
     implementation 'com.github.anastr:speedviewlib:1.1.7'
+    implementation 'com.github.pedrovgs:lynx:1.1.0'
 
     // RxJava
     implementation "com.patloew.rxlocation:rxlocation:1.0.3"

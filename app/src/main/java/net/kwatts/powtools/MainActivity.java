@@ -40,6 +40,8 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.github.pedrovgs.lynx.LynxActivity;
+import com.github.pedrovgs.lynx.LynxConfig;
 import com.google.android.gms.location.LocationRequest;
 import com.patloew.rxlocation.RxLocation;
 import com.tbruyelle.rxpermissions2.RxPermissions;
@@ -102,7 +104,7 @@ import static net.kwatts.powtools.model.OWDevice.MockOnewheelCharacteristicSpeed
 // 12.8V 6.9Ah 88.32Wh
 
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
-    private static final String TAG = "POWTOOLS";
+    private static final String TAG = "PONEWHEEL";
 
     private static final boolean ONEWHEEL_LOGGING = true;
 
@@ -167,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         runOnUiThread(() -> {
             try {
                 float mph = (float) net.kwatts.powtools.util.Util.rpmToMilesPerHour((double) speed);
-                mSpeedBar.speedTo(mph);
+                mSpeedBar.speedTo(mph,50);
             } catch (Exception e) {
                 updateLog("Got an exception updating speed:" + e.getMessage());
 
@@ -536,6 +538,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 break;
             case R.id.menu_about:
                 showEula();
+                break;
+            case R.id.menu_debug_logs:
+                openLynxActivity();
                 break;
             case R.id.menu_donate:
                 showDonation();
@@ -934,5 +939,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         });
 
 
+    }
+    private void openLynxActivity() {
+        LynxConfig lynxConfig = new LynxConfig();
+        lynxConfig.setMaxNumberOfTracesToShow(4000).setFilter(TAG);
+        Intent lynxActivityIntent = LynxActivity.getIntent(this, lynxConfig);
+        startActivity(lynxActivityIntent);
     }
 }

@@ -47,8 +47,13 @@
         android:title="@string/menu_about"
         app:showAsAction="never" />
     <item
-        android:id="@id/menu_donate"
+        android:id="@id/menu_debug_logs"
         android:orderInCategory="105"
+        android:title="Debug Logs"
+        app:showAsAction="never" />
+    <item
+        android:id="@id/menu_donate"
+        android:orderInCategory="106"
         android:title="Donate!"
         app:showAsAction="never" />
     <item

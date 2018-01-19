@@ -13,30 +13,43 @@
             type="net.kwatts.powtools.model.OWDevice"
             android:layout_height="wrap_content" />
     </data>
+
+
+    <!-- To be configurable... -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:showIn="@layout/activity_main"
         >
-
         <!-- https://github.com/anastr/SpeedView/wiki/Style -->
         <com.github.anastr.speedviewlib.SpeedView
             android:id="@+id/speedbar"
-            android:layout_width="wrap_content"
+            android:gravity="center"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:sv_withTremble="false"
-            app:sv_lowSpeedColor="#00ff00"
+            app:sv_lowSpeedColor="#2E7D32"
             app:sv_mediumSpeedColor="#ffff00"
-            app:sv_highSpeedColor="#ff0000"
+            app:sv_highSpeedColor="#C62828"
             app:sv_minSpeed="0"
             app:sv_maxSpeed="25"
             app:sv_speedTextSize="30.0dp"
             app:sv_unitTextSize="15.0dp"
             app:sv_speedTextColor="?attr/colorPrimary"
             app:sv_unitTextColor="?attr/colorPrimary"
-            app:sv_unitUnderSpeedText="true"/>
+            app:sv_unitUnderSpeedText="true"
+            android:visibility="gone"/>
+        <TextView
+            android:id="@+id/speed_top"
+            android:gravity="center"
+            android:layout_below="@id/speedbar"
+            android:text='@{"Top Speed: " + owdevice.deviceNotifyCharacteristics.get(0).value}'
+            android:textSize="13.0sp"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"/>
 
-<!--
         <TextView
             android:id="@+id/header_speed"
             android:layout_width="wrap_content"
@@ -103,9 +116,7 @@
             android:textSize="15.0sp"
             android:textStyle="bold"
             />
--->
         <!--        android:text="23.00"   android:text='@{owdevice.deviceNotifyCharacteristics.get(5).value}'  android:textStyle="bold" android:layout_below="@id/header_speed_line" />
-
                                   -->
     </RelativeLayout>
 </layout>
