@@ -13,6 +13,7 @@ import net.kwatts.powtools.util.SharedPreferencesUtil;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import io.palaima.debugdrawer.timber.data.LumberYard;
 import timber.log.Timber;
 
 /**
@@ -43,6 +44,9 @@ public class App extends Application {
         super.onCreate();
         if (BuildConfig.DEBUG) {
             Stetho.initializeWithDefaults(this);
+            LumberYard lumberYard = LumberYard.getInstance(this);
+            lumberYard.cleanUp();
+            Timber.plant(lumberYard.tree());
             Timber.plant(new Timber.DebugTree());
         }
         initWakeLock();

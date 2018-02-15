@@ -3,7 +3,6 @@ package net.kwatts.powtools.loggers;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 
-import net.kwatts.powtools.RideDetailActivity;
 import net.kwatts.powtools.database.Database;
 import net.kwatts.powtools.database.entities.Attribute;
 import net.kwatts.powtools.database.entities.Moment;
@@ -19,7 +18,6 @@ import java.util.List;
 import timber.log.Timber;
 
 public class PlainTextFileLogger  {
-    public static final String TAG = RideDetailActivity.class.getSimpleName();
 
     private static final String ONEWHEEL_LOGGING_PATH = "powlogs";
 

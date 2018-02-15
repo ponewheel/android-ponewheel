@@ -8,7 +8,6 @@ import android.databinding.ObservableDouble;
 import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
 import android.location.Address;
-import android.util.Log;
 import android.util.SparseArray;
 
 import net.kwatts.powtools.App;
@@ -44,7 +43,6 @@ import static net.kwatts.powtools.util.Util.unsignedShort;
  * Created by kwatts on 3/23/16.
  */
 public class OWDevice extends BaseObservable implements DeviceInterface {
-    private static final String TAG = "OWTOOLS";
     private static final String NAME = "ONEWHEEL";
 
 
@@ -579,7 +577,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         //this.unknownValue.set("hex:" + sb.toString() + " (" + Integer.toString(unsignedShort(c_value)) + ")");
         EventBus.getDefault().post(new DeviceStatusEvent("UNKNOWN " + incomingUuid + ":" +
                 "hex:" + sb.toString() + " (" + Integer.toString(unsignedShort(incomingValue)) + ")"));
-        Log.i(TAG, "UNKNOWN Device characteristic:" + incomingUuid + " value=" + sb.toString() + "|" + Integer.toString(unsignedShort(incomingValue)));
+        Timber.i( "UNKNOWN Device characteristic:" + incomingUuid + " value=" + sb.toString() + "|" + Integer.toString(unsignedShort(incomingValue)));
     }
 
     public void processTripRegenHours(byte[] incomingValue, DeviceCharacteristic dc) {
@@ -768,7 +766,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
     public void setRideMode(BluetoothUtil bluetoothUtil, int ridemode) {
-        Log.d(TAG,"setRideMode() called for gatt:" + ridemode);
+        Timber.d("setRideMode() called for gatt:" + ridemode);
         BluetoothGattCharacteristic lc = bluetoothUtil.getCharacteristic(OWDevice.OnewheelCharacteristicRidingMode);
         if (lc != null) {
             ByteBuffer var2 = ByteBuffer.allocate(2);
