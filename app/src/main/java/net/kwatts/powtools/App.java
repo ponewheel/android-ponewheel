@@ -42,7 +42,7 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        if (BuildConfig.DEBUG) {
+        if (BuildConfig.DEBUG || getSharedPreferences().isDebugging()) {
             Stetho.initializeWithDefaults(this);
             LumberYard lumberYard = LumberYard.getInstance(this);
             lumberYard.cleanUp();

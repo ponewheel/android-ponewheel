@@ -103,7 +103,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
 
     public final ObservableField<Boolean> isOneWheelPlus = new ObservableField<>();
 
-    public final ObservableInt mSpeedRpm = new ObservableInt();
+    public final ObservableInt speedRpm = new ObservableInt();
     public final ObservableDouble maxSpeedRpm = new ObservableDouble();
     public final ObservableInt maxTiltAnglePitch = new ObservableInt();
     public final ObservableInt maxTiltAngleRoll = new ObservableInt();
@@ -529,15 +529,15 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
     public void processSpeedRpm(byte[] incomingValue, DeviceCharacteristic dc) {
-        int speedRpm = unsignedShort(incomingValue);
-        mSpeedRpm.set(speedRpm);
-        dc.value.set(Integer.toString(speedRpm));
+        int i_speedRpm = unsignedShort(incomingValue);
+        speedRpm.set(i_speedRpm);
+        dc.value.set(Integer.toString(i_speedRpm));
         DeviceCharacteristic speedCharacteristic = characteristics.get(MockOnewheelCharacteristicSpeed);
         DeviceCharacteristic maxSpeedCharacteristic = characteristics.get(MockOnewheelCharacteristicMaxSpeed);
-        setFormattedSpeedWithMetricPreference(speedCharacteristic, speedRpm);
-        if (speedRpm > maxSpeedRpm.get()) {
-            setFormattedSpeedWithMetricPreference(maxSpeedCharacteristic, speedRpm);
-            maxSpeedRpm.set(speedRpm);
+        setFormattedSpeedWithMetricPreference(speedCharacteristic, i_speedRpm);
+        if (i_speedRpm > maxSpeedRpm.get()) {
+            setFormattedSpeedWithMetricPreference(maxSpeedCharacteristic, i_speedRpm);
+            maxSpeedRpm.set(i_speedRpm);
         }
     }
 

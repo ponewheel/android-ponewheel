@@ -31,7 +31,7 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.Theme;
-import com.github.anastr.speedviewlib.SpeedView;
+import com.github.anastr.speedviewlib.ProgressiveGauge;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.Legend;
@@ -53,6 +53,7 @@ import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
 import net.kwatts.powtools.util.BluetoothUtilImpl;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
+import net.kwatts.powtools.util.Util;
 import net.kwatts.powtools.util.debugdrawer.DebugDrawerMockBle;
 import net.kwatts.powtools.view.AlertsMvpController;
 
@@ -80,6 +81,8 @@ import timber.log.Timber;
 
 import static net.kwatts.powtools.model.OWDevice.KEY_RIDE_MODE;
 import static net.kwatts.powtools.model.OWDevice.MockOnewheelCharacteristicSpeed;
+import static net.kwatts.powtools.util.Util.rpmToKilometersPerHour;
+import static net.kwatts.powtools.util.Util.rpmToMilesPerHour;
 
 
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
@@ -102,9 +105,9 @@ import static net.kwatts.powtools.model.OWDevice.MockOnewheelCharacteristicSpeed
 // 12.8V 6.9Ah 88.32Wh
 
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
-    private static final String TAG = MainActivity.class.getSimpleName();
 
     private static final boolean ONEWHEEL_LOGGING = true;
+
 
     MultiStateToggleButton mRideModeToggleButton;
     int mRideModePosition;
@@ -125,8 +128,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     Ride ride;
     private DisposableObserver<Address> rxLocationObserver;
     private AlertsMvpController alertsController;
-    private SpeedView mSpeedBar;
-
+    //private SpeedView mSpeedBar;
+    private ProgressiveGauge mProgressiveGauge;
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event){
         Timber.d( event.message + ":" + event.title);
@@ -155,6 +158,17 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     }
 
+    private void initBatteryChart() {
+        mBatteryChart = findViewById(R.id.batteryPieChart);
+        // configure pie chart
+        mBatteryChart.setUsePercentValues(true);
+        mBatteryChart.setDescription(new Description());
+        // enable hole and configure
+        mBatteryChart.setDrawHoleEnabled(true);
+        Legend legend = mBatteryChart.getLegend();
+        legend.setEnabled(false);
+    }
+
     //battery level alerts
     public static SparseBooleanArray batteryAlertLevels = new SparseBooleanArray(){{
         put(75,false); //1
@@ -163,18 +177,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         put(5, false); // 4
     }};
 
-    public void updateCurrentSpeed(final double speed) {
-        runOnUiThread(() -> {
-            try {
-                float mph = (float) net.kwatts.powtools.util.Util.rpmToMilesPerHour((double) speed);
-                mSpeedBar.speedTo(mph,50);
-            } catch (Exception e) {
-                Timber.e("Got an exception updating speed:" + e.getMessage());
 
-            }
-        });
-
-    }
     public void updateBatteryRemaining(final int percent) {
         runOnUiThread(() -> {
             try {
@@ -284,8 +287,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
 
         mChronometer = findViewById(R.id.chronometer);
-        mSpeedBar =  findViewById(R.id.speedbar);
-
+        mProgressiveGauge = findViewById(R.id.speedbar);
+        initSpeedBar();
         initBatteryChart();
         initLightSettings();
         initRideModeButtons();
@@ -313,18 +316,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     private void initWakelock() {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-    }
-
-    private void initBatteryChart() {
-        mBatteryChart = findViewById(R.id.batteryPieChart);
-        // configure pie chart
-        mBatteryChart.setUsePercentValues(true);
-        mBatteryChart.setDescription(new Description());
-        // enable hole and configure
-        mBatteryChart.setDrawHoleEnabled(true);
-        Legend legend = mBatteryChart.getLegend();
-        legend.setEnabled(false);
     }
 
     private void setupToolbar() {
@@ -373,7 +364,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 alertsController.handleSpeed(mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get());
             }
         });
-        getBluetoothUtil().init(this, mOWDevice);
+        getBluetoothUtil().init(MainActivity.this, mOWDevice);
     }
 
     private void logOnChange(OWDevice.DeviceCharacteristic deviceCharacteristic) {
@@ -728,6 +719,33 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         });
     }
 
+    private static final int SPEED_ANIMATION_DURATION = 0;
+    private void initSpeedBar() {
+        mOWDevice.speedRpm.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+            @Override
+            public void onPropertyChanged(Observable observable, int i) {
+                runOnUiThread(() -> {
+                    try {
+                        //TODO: add notes for things like top speed https://github.com/anastr/SpeedView/wiki/Notes
+                        double speed = (double) mOWDevice.speedRpm.get();
+                        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
+                        if (isMetric) {
+                            mProgressiveGauge.setMaxSpeed(25);
+                            mProgressiveGauge.setUnit("km/h");
+                            mProgressiveGauge.speedTo((float) Util.round(rpmToKilometersPerHour(speed),1),SPEED_ANIMATION_DURATION);
+                        } else {
+                            mProgressiveGauge.setMaxSpeed(20);
+                            mProgressiveGauge.setUnit("mph");
+                            mProgressiveGauge.speedTo((float) Util.round(rpmToMilesPerHour(speed),1),SPEED_ANIMATION_DURATION);
+                        }
+                    } catch (Exception e) {
+                        Timber.e("Got an exception updating speed:" + e.getMessage());
+                    }
+                });
+            }
+        });
+    }
+
 
     SwitchCompat mMasterLight;
     SwitchCompat mCustomLight;
@@ -768,9 +786,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
     mBackBlinkTaskTimerTask mBackBlinkTimerTask;
     Timer mBackBlinkTimer;
-
-
-
 
     public void initLightSettings() {
         mMasterLight = this.findViewById(R.id.master_light_switch);
@@ -891,9 +906,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         final ToggleButton.OnValueChangedListener onToggleValueChangedListener = position -> {
             if (mOWDevice.isConnected.get()) {
                 Timber.d( "mOWDevice.setRideMode button pressed:" + position);
-                double mph = net.kwatts.powtools.util.Util.rpmToMilesPerHour(mOWDevice.mSpeedRpm.get());
+                double mph = net.kwatts.powtools.util.Util.rpmToMilesPerHour(mOWDevice.speedRpm.get());
                 if (mph > 12) {
                     Toast.makeText(mContext, "Unable to change riding mode, your going too fast! (" + mph + " mph)", Toast.LENGTH_SHORT).show();
+                    //TODO: fix, kicks back to change listener & creates an infinite amount of evil whirling dervishes
                     //mRideModeToggleButton.setValue(mRideModePosition);
                 } else {
                     mRideModePosition = position;
@@ -930,6 +946,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 });
             }
         });
+
 
 
     }

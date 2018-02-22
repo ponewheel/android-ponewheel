@@ -1,6 +1,5 @@
 package net.kwatts.powtools.util;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -73,21 +72,22 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            Timber.i( "Bluetooth connection state change: status=" + status + " newState=" + newState);
+            Timber.d( "Bluetooth connection state change: address=" + gatt.getDevice().getAddress()+ " status=" + status + " newState=" + newState);
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 gatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                Timber.d("There was a BluetoothProfile.STATE_DISCONNECTED: name=" + gatt.getDevice().getName() + " address=" + gatt.getDevice().getAddress());
                 if (gatt.getDevice().getAddress().equals(mOWDevice.deviceMacAddress.get())) {
                     onOWStateChangedToDisconnected(gatt);
                 }
                 //updateLog("--> Closed " + gatt.getDevice().getAddress());
-                Timber.d( "Disconnect:" + gatt.getDevice().getAddress());
+                //Timber.d( "Disconnect:" + gatt.getDevice().getAddress());
             }
         }
 
 
 
-        @SuppressLint("WakelockTimeout")
+        //@SuppressLint("WakelockTimeout")
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status){
             Timber.d( "Only should be here if connecting to OW:" + gatt.getDevice().getAddress());
@@ -174,8 +174,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             //XXX until we figure out what's going on
             if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
                 mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-            } else if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicSpeedRpm)) {
-                mainActivity.updateCurrentSpeed(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+            //}
+            //else if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicSpeedRpm)) {
+            //    mainActivity.updateCurrentSpeed(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
             } else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicRidingMode)) {
                  Timber.d( "Got ride mode from the main UI thread:" + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
              }
@@ -211,8 +212,6 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             //XXX until we figure out what's going on
             if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
                 mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-            } else if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicSpeedRpm)) {
-                mainActivity.updateCurrentSpeed(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
             }
 
             mOWDevice.processUUID(c);
@@ -290,7 +289,10 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                 }
 
             } else {
-                Timber.d("onScanResult: mScanResults already had our key.");
+                Timber.d("onScanResult: mScanResults already had our key, still connecting to OW services or something is up with the BT stack.");
+              //  Timber.d("onScanResult: mScanResults already had our key," + "deviceName=" + deviceName + ",deviceAddress=" + deviceAddress);
+                // still connect
+                //connectToDevice(result.getDevice());
             }
 
 
@@ -311,7 +313,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
 
     public void connectToDevice(BluetoothDevice device) {
-        Timber.e( "connectToDevice:" + device.getName());
+        Timber.d( "connectToDevice:" + device.getName());
         device.connectGatt(mainActivity, false, mGattCallback);
     }
 
@@ -399,8 +401,10 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         mOWDevice.isConnected.set(false);
         this.mScanResults.clear();
         descriptorWriteQueue.clear();
+        this.mRetryCount = 0;
         // Added stuff 10/23 to clean fix
         owGatService = null;
+
     }
 
     @Override
