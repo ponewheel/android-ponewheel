@@ -28,7 +28,7 @@ import timber.log.Timber;
 
 public class RidesListActivity extends AppCompatActivity {
 
-    public static final String TAG = "RidesListActivity";
+    public static final String TAG = RidesListActivity.class.getSimpleName();
     public static final int MENU_ITEM_DELETE = 0;
     public static final int MENU_ITEM_SELECT_ALL = 1;
 

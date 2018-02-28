@@ -64,9 +64,9 @@
     <CheckBoxPreference
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:defaultValue="true"
+        android:defaultValue="false"
         android:key="debugWindow"
-        android:summary="This option turns on the debugging and log window."
+        android:summary="This option enables a debug window accessed via swiping from the right side of the screen. May require restart to enable."
         android:title="Debugging" />
 
     <CheckBoxPreference

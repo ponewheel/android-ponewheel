@@ -54,6 +54,8 @@
     <item type="id" name="menu_stop">false</item>
     <item type="id" name="menu_about">false</item>
     <item type="id" name="menu_settings">false</item>
+    <item type="id" name="menu_donate">false</item>
+    <item type="id" name="menu_debug_logs">false</item>
     <item type="id" name="owFirmwareRevision">false</item>
     <item type="id" name="owBatteryRemaining">false</item>
     <item type="id" name="owOdometer">false</item>
