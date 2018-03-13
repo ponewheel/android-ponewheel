@@ -1,6 +1,7 @@
 package net.kwatts.powtools;
 
 import android.Manifest;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -129,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private DisposableObserver<Address> rxLocationObserver;
     private AlertsMvpController alertsController;
     //private SpeedView mSpeedBar;
-    private ProgressiveGauge mProgressiveGauge;
+    public ProgressiveGauge mProgressiveGauge;
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event){
         Timber.d( event.message + ":" + event.title);
@@ -142,6 +143,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                             .setContentTitle(title)
                             .setColor(0x008000)
                             .setContentText(message);
+
+            PendingIntent contentIntent = PendingIntent.getActivity(mContext, 0,
+                    new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
+            mBuilder.setContentIntent(contentIntent);
+
             android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             assert mNotifyMgr != null;
             mNotifyMgr.notify(message,0, mBuilder.build());
@@ -361,7 +367,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-                alertsController.handleSpeed(mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get());
+                alertsController.handleSpeed(mProgressiveGauge,mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get());
             }
         });
         getBluetoothUtil().init(MainActivity.this, mOWDevice);

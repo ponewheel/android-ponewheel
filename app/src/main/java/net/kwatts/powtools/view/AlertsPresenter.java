@@ -2,6 +2,9 @@ package net.kwatts.powtools.view;
 
 import android.support.annotation.NonNull;
 
+import com.github.anastr.speedviewlib.ProgressiveGauge;
+import com.github.mikephil.charting.utils.ColorTemplate;
+
 import net.kwatts.powtools.util.SharedPreferences;
 
 import timber.log.Timber;
@@ -73,7 +76,7 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
     }
 
     @Override
-    public void handleSpeed(@NonNull String speedString) {
+    public void handleSpeed(ProgressiveGauge gauge,@NonNull String speedString) {
         float speed;
         try {
             speed = Float.parseFloat(speedString);
@@ -87,9 +90,12 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
         if (isEnabled && !isSpeedAlarmPlaying && speed >= speedAlert) {
             isSpeedAlarmPlaying = true;
             view.playSound(true);
+            gauge.setSpeedometerColor(ColorTemplate.rgb("#800000"));
+
         } else if (speed < speedAlert && isSpeedAlarmPlaying) {
             isSpeedAlarmPlaying = false;
             view.playSound(false);
+            gauge.setSpeedometerColor(ColorTemplate.rgb("#2E7D32"));
         }
     }
 
