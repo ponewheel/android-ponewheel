@@ -8,7 +8,6 @@ import android.databinding.ObservableDouble;
 import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
 import android.location.Address;
-import android.util.Log;
 import android.util.SparseArray;
 
 import net.kwatts.powtools.App;
@@ -19,6 +18,7 @@ import net.kwatts.powtools.util.BluetoothUtil;
 import org.greenrobot.eventbus.EventBus;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -43,7 +43,6 @@ import static net.kwatts.powtools.util.Util.unsignedShort;
  * Created by kwatts on 3/23/16.
  */
 public class OWDevice extends BaseObservable implements DeviceInterface {
-    private static final String TAG = "OWTOOLS";
     private static final String NAME = "ONEWHEEL";
 
 
@@ -78,6 +77,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public static final String KEY_TILT_ANGLE_PITCH = "tilt_angle_pitch";
     public static final String KEY_TILT_ANGLE_ROLL = "tilt_angle_roll";
     public static final String KEY_RIDE_MODE = "ride_mode";
+    public static final String KEY_BATTERY_TEMP = "battery_temp";
 
     public static SparseArray<String> ERROR_CODE_MAP = new SparseArray<>();
     {
@@ -103,6 +103,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
 
     public final ObservableField<Boolean> isOneWheelPlus = new ObservableField<>();
 
+    public final ObservableInt speedRpm = new ObservableInt();
     public final ObservableDouble maxSpeedRpm = new ObservableDouble();
     public final ObservableInt maxTiltAnglePitch = new ObservableInt();
     public final ObservableInt maxTiltAngleRoll = new ObservableInt();
@@ -110,7 +111,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public final ObservableInt lightMode = new ObservableInt();
 
     private double[] ampCells = new double[16];
-    private double[] batteryVoltageCells = new double[15];
+    private double[] batteryVoltageCells = new double[16];
 
 
 
@@ -267,40 +268,35 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceReadCharacteristics.clear();
         deviceNotifyCharacteristics.clear();
 
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicHardwareRevision, KEY_HARDWARE_REVISION, "HARDWARE REVISION"));            // 0
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicFirmwareRevision, KEY_FIRMWARE_REVISION, "FIRMWARE REVISION"));            // 1
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLifetimeOdometer, KEY_LIFETIME_ODOMETER, ""));                             // 2
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicHardwareRevision, KEY_HARDWARE_REVISION,   "HARDWARE REVISION"));            // 0
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicFirmwareRevision, KEY_FIRMWARE_REVISION,   "FIRMWARE REVISION"));            // 1
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLifetimeOdometer, KEY_LIFETIME_ODOMETER,   ""));                             // 2
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLightingMode,     KEY_LIGHTING_MODE,       "LIGHTS"));                       // 3
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY_INITIAL,     "BATTERY AT START (%)"));         // 4
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLastErrorCode,    KEY_LAST_ERROR_CODE,     "LAST ERROR CODE"));              // 5
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP"));                 // 6
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,       KEY_RIDE_MODE,           "RIDING MODE"));                  // 7
 
-//                deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLifetimeAmpHours,"lifetime_amps","LIFETIME AMPS (HOURS)")
-
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLightingMode,    KEY_LIGHTING_MODE,"LIGHTS"));                             // 3
-
-//        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,"ride_mode","RIDING MODE"{{
-//            ui_enabled.set(false);
-//        }});
-
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY_INITIAL,     "BATTERY AT START (%)"));        // 4
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLastErrorCode,    KEY_LAST_ERROR_CODE,     "LAST ERROR CODE"));             // 5
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicSpeed,        KEY_SPEED,               "",false));               // 0
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY,             "Battery"));                   // 1
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicStatusError,      KEY_RIDER_DETECTED,      "RIDER"));                     // 2
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicPad1,         KEY_RIDER_DETECTED_PAD_1,"PAD1", false));                      // 3
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicPad2,         KEY_RIDER_DETECTED_PAD_2,"PAD2", false));                      // 4
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMaxSpeed,     KEY_SPEED_MAX,           "Trip Top Speed: ", false));          // 5
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicOdometer,     KEY_ODOMETER,            "", false));                          // 6
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicPad1,         KEY_RIDER_DETECTED_PAD_1,"PAD1", false));             // 3
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicPad2,         KEY_RIDER_DETECTED_PAD_2,"PAD2", false));             // 4
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMaxSpeed,     KEY_SPEED_MAX,           "Trip Top Speed: ", false)); // 5
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicOdometer,     KEY_ODOMETER,            "", false));                 // 6
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicOdometer,         KEY_ODOMETER_TIRE_REVS,  "TRIP ODOMETER (TIRE REVS)")); // 7
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTripTotalAmpHours,KEY_TRIP_AMPS,           "TRIP USED Ah (Amp hours)"));  // 8
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTripRegenAmpHours,KEY_TRIP_AMPS_REGEN,     "TRIP GAINED Ah (Amp hours)"));// 9
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicSpeedRpm,         KEY_SPEED_RPM,               "SPEED (RPM)", true));// 10
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicSpeedRpm,         KEY_SPEED_RPM,           "SPEED (RPM)", true));// 10
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryVoltage,   KEY_BATTERY_VOLTAGE,     "BATTERY (Voltage)"));         // 11
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryCells,     KEY_BATTERY_CELLS,       "BATTERY CELLS (Voltage)"));   // 12
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicCurrentAmps,      KEY_CURRENT_AMPS,        "BATTERY CURRENT (Amps)"));    // 13
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTiltAnglePitch,   KEY_TILT_ANGLE_PITCH,    "TILT ANGLE PITCH"));          // 14
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTiltAngleRoll,    KEY_TILT_ANGLE_ROLL,     "TILT ANGLE ROLL"));           // 15
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTemperature,      KEY_CONTROLLER_TEMP,     ""));                          // 16
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMotorTemp,    KEY_MOTOR_TEMP,          "", false)); // 17
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,       KEY_RIDE_MODE,           "RIDING MODE"));               // 18
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMotorTemp,    KEY_MOTOR_TEMP,          "", false));// 17
+
 
 /*
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -345,10 +341,9 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         for (DeviceCharacteristic deviceNotifyCharacteristic : deviceNotifyCharacteristics) {
             characteristics.put(deviceNotifyCharacteristic.uuid.get(), deviceNotifyCharacteristic);
         }
-        for (DeviceCharacteristic deviceNotifyCharacteristic : deviceReadCharacteristics) {
-            characteristics.put(deviceNotifyCharacteristic.uuid.get(), deviceNotifyCharacteristic);
+        for (DeviceCharacteristic deviceReadCharacteristic : deviceReadCharacteristics) {
+            characteristics.put(deviceReadCharacteristic.uuid.get(), deviceReadCharacteristic);
         }
-
 
         refreshCharacteristics();
     }
@@ -371,13 +366,23 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     public final ObservableField<String> deviceMacAddress = new ObservableField<>();
     public final ObservableField<String> log = new ObservableField<>();
 
+    public static float m14598a(BluetoothGattCharacteristic bluetoothGattCharacteristic) {
+        byte[] value = bluetoothGattCharacteristic.getValue();
+        if (value == null || value.length != 2) {
+            return 0.0f;
+        }
+        return (float) ByteBuffer.wrap(value).order(ByteOrder.BIG_ENDIAN).getChar();
+    }
+
     @Override
     public void processUUID(BluetoothGattCharacteristic incomingCharacteristic) {
         String incomingUuid = incomingCharacteristic.getUuid().toString();
         byte[] incomingValue = incomingCharacteristic.getValue();
 
         DeviceCharacteristic dc = characteristics.get(incomingUuid);
+
         String dev_uuid = dc.uuid.get();
+
         if(dev_uuid != null && dev_uuid.equals(incomingUuid)) {
             switch(dev_uuid) {
                 case OnewheelCharacteristicHardwareRevision:
@@ -430,7 +435,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                     processBatteryCellsVoltage(incomingValue, dc);
                     break;
                 case OnewheelCharacteristicTemperature:
-                    processTemp(incomingCharacteristic);
+                    processControllerAndMotorTemp(incomingCharacteristic);
                     break;
                 case OnewheelCharacteristicBatteryTemp:
                     processBatteryTemp(incomingCharacteristic, dc);
@@ -524,23 +529,24 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
     public void processSpeedRpm(byte[] incomingValue, DeviceCharacteristic dc) {
-        int speedRpm = unsignedShort(incomingValue);
-        dc.value.set(Integer.toString(speedRpm));
+        int i_speedRpm = unsignedShort(incomingValue);
+        speedRpm.set(i_speedRpm);
+        dc.value.set(Integer.toString(i_speedRpm));
         DeviceCharacteristic speedCharacteristic = characteristics.get(MockOnewheelCharacteristicSpeed);
         DeviceCharacteristic maxSpeedCharacteristic = characteristics.get(MockOnewheelCharacteristicMaxSpeed);
-        setFormattedSpeedWithMetricPreference(speedCharacteristic, speedRpm);
-        if (speedRpm > maxSpeedRpm.get()) {
-            setFormattedSpeedWithMetricPreference(maxSpeedCharacteristic, speedRpm);
-            maxSpeedRpm.set(speedRpm);
+        setFormattedSpeedWithMetricPreference(speedCharacteristic, i_speedRpm);
+        if (i_speedRpm > maxSpeedRpm.get()) {
+            setFormattedSpeedWithMetricPreference(maxSpeedCharacteristic, i_speedRpm);
+            maxSpeedRpm.set(i_speedRpm);
         }
     }
 
-    public void processTemp(BluetoothGattCharacteristic incomingCharacteristic) {
+    public void processControllerAndMotorTemp(BluetoothGattCharacteristic incomingCharacteristic) {
         int controllerTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
         int motorTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
 
         setFormattedTempWithMetricPreference(characteristics.get(OnewheelCharacteristicTemperature), controllerTemp);
-        Timber.d("controllerTemp = " + controllerTemp);
+//        Timber.d("controllerTemp = " + controllerTemp);
         setFormattedTempWithMetricPreference(characteristics.get(MockOnewheelCharacteristicMotorTemp), motorTemp);
     }
 
@@ -557,7 +563,9 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     public void processBatteryTemp(BluetoothGattCharacteristic incomingCharacteristic, DeviceCharacteristic dc) {
         int batteryTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
 
-        setFormattedTempWithMetricPreference(characteristics.get(OnewheelCharacteristicTemperature), batteryTemp);
+        Timber.d("batteryTemp = " + batteryTemp);
+
+        setFormattedTempWithMetricPreference(dc, batteryTemp);
     }
 
     public void processUnknownUuid(String incomingUuid, byte[] incomingValue) {
@@ -569,7 +577,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         //this.unknownValue.set("hex:" + sb.toString() + " (" + Integer.toString(unsignedShort(c_value)) + ")");
         EventBus.getDefault().post(new DeviceStatusEvent("UNKNOWN " + incomingUuid + ":" +
                 "hex:" + sb.toString() + " (" + Integer.toString(unsignedShort(incomingValue)) + ")"));
-        Log.i(TAG, "UNKNOWN Device characteristic:" + incomingUuid + " value=" + sb.toString() + "|" + Integer.toString(unsignedShort(incomingValue)));
+        Timber.i( "UNKNOWN Device characteristic:" + incomingUuid + " value=" + sb.toString() + "|" + Integer.toString(unsignedShort(incomingValue)));
     }
 
     public void processTripRegenHours(byte[] incomingValue, DeviceCharacteristic dc) {
@@ -591,19 +599,12 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
     private void processRidingMode(byte[] incomingValue, DeviceCharacteristic dc, BluetoothGattCharacteristic incomingCharacteristic) {
+
         int ridemode = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-        dc.value.set(Integer.toString(ridemode));
-        // Let the UI know initial ridemode
-        EventBus.getDefault().post(new DeviceStatusEvent("Ridemode changed to: " + ridemode));
+        String rideMode1 = Integer.toString(ridemode);
+        Timber.d("rideMode1 = " + rideMode1);
 
-
-        //EventBus.getDefault().post(new RideModeEvent(ridemode));
-//        int ridemode = c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-//        Log.d(TAG, "Got the ridemode from BLE:" + ridemode);
-//        dc.value.set("initial ridemode " + ridemode);
-//        // Let the UI know initial ridemode
-//        EventBus.getDefault().post(new DeviceStatusEvent("Initial ridemode set to: " + ridemode));
-//        EventBus.getDefault().post(new RideModeEvent(ridemode));
+        dc.value.set(rideMode1);
     }
 
     private void processLifetimeOdometer(byte[] incomingValue, DeviceCharacteristic dc) {
@@ -649,48 +650,36 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
             int var3 = unsignedByte(incomingValue[1]);
             batteryVoltageCells[cellIdentifier] = (double)var3 / 50.0D;
         }
-        StringBuilder var1 = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
         for(int i = 0; i < batteryVoltageCells.length; ++i) {
             if (batteryVoltageCells[i] == 0) {
-                var1.append('-');
+                stringBuilder.append("--");
             } else {
-                var1.append(batteryVoltageCells[i]);
+                stringBuilder.append(batteryVoltageCells[i]);
             }
-            if(i != batteryVoltageCells.length - 1) {
-                var1.append('|');
+
+            if ((i+1) % 4 == 0) {
+                stringBuilder.append("\n");
+            } else if(i != batteryVoltageCells.length - 1) {
+                stringBuilder.append(',');
             }
+
         }
-        dc.value.set(var1.toString());
+        String batteryCellsVoltage = stringBuilder.toString();
+        dc.value.set(batteryCellsVoltage);
     }
 
     public void processCurrentAmps(byte[] incomingValue, DeviceCharacteristic dc) {
-
-        // Wh = mAh × V / 1000
-        // battery is 3.5Amps
-        int cellIdentifier = unsignedByte(incomingValue[0]);
-        if(cellIdentifier < ampCells.length && cellIdentifier >= 0) {
-            int var3 = unsignedByte(incomingValue[1]);
-            ampCells[cellIdentifier] = (double)var3 / 50.0D;
+        float incoming = ByteBuffer.wrap(incomingValue).getShort();
+        float multiplier;
+        // TODO reference datasheet of chips/sensors
+        if (isOneWheelPlus.get()) {
+            multiplier = 1.8f;
+        } else {
+            multiplier = 0.9f;
         }
-        StringBuilder amps_string = new StringBuilder();
-        for (int i = 0; i < ampCells.length; ++i) {
-            if (ampCells[i] == 0) {
-                amps_string.append('-');
-            } else {
-                amps_string.append(ampCells[i]);
-            }
-            if(i != ampCells.length - 1) {
-                amps_string.append('|');
-            }
-        }
-        dc.value.set(amps_string.toString());
-        //dc.value.set(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1).toString());
-        //int camps = unsignedByte(c_value[1]);
-        //double d_camps = (double)camps / 50.0D;
-        //currentAmps.set("batteryVoltageCells:" + cellIdentifier + " value:" + d_camps);
-        //int i_currentamps = unsignedShort(c_value);
-        //double d_currentapps = Double.valueOf((double) i_currentamps / 50.0D);
-        //currentAmps.set(Double.toString(d_currentapps));
+        final float amps = incoming / 1000.0f * multiplier;
+        dc.value.set(String.format(Locale.ENGLISH, "%.2f",amps));
     }
 
 
@@ -777,7 +766,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
     public void setRideMode(BluetoothUtil bluetoothUtil, int ridemode) {
-        Log.d(TAG,"setRideMode() called for gatt:" + ridemode);
+        Timber.d("setRideMode() called for gatt:" + ridemode);
         BluetoothGattCharacteristic lc = bluetoothUtil.getCharacteristic(OWDevice.OnewheelCharacteristicRidingMode);
         if (lc != null) {
             ByteBuffer var2 = ByteBuffer.allocate(2);

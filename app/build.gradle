@@ -14,8 +14,8 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         minSdkVersion 21
         targetSdkVersion 21
-        versionCode 20
-        versionName "3.0"
+        versionCode 30
+        versionName "3.2"
     }
     buildTypes {
         release {
@@ -72,6 +72,7 @@ dependencies {
     debugImplementation 'io.palaima.debugdrawer:debugdrawer:0.7.0'
     implementation 'io.palaima.debugdrawer:debugdrawer-commons:0.7.0'
     releaseImplementation 'io.palaima.debugdrawer:debugdrawer-no-op:0.7.0'
+    implementation  'io.palaima.debugdrawer:debugdrawer-timber:0.7.0'
 
     implementation 'com.jakewharton.timber:timber:4.5.1'
     implementation 'com.facebook.stetho:stetho:1.5.0'
@@ -79,6 +80,7 @@ dependencies {
     implementation "com.github.rey5137:material:1.2.2"
     // https://github.com/rey5137/material
     implementation "org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.1"
+    implementation 'com.github.anastr:speedviewlib:1.1.7'
 
     // RxJava
     implementation "com.patloew.rxlocation:rxlocation:1.0.3"

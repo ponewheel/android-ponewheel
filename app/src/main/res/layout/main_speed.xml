@@ -1,91 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:ignore="RtlHardcoded">
     <data xmlns:android="http://schemas.android.com/apk/res/android">
-
         <import type="android.databinding.ObservableArrayList" />
         <import type="android.view.View" />
         <import type="net.kwatts.powtools.model.OWDevice" />
-        <variable
-            name="owdevice"
-            type="net.kwatts.powtools.model.OWDevice"
-            android:layout_height="wrap_content" />
+        <variable name="owdevice" type="net.kwatts.powtools.model.OWDevice" />
     </data>
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:showIn="@layout/activity_main"
-        >
+        android:animateLayoutChanges="true"
+        android:orientation="vertical"
+        android:padding="0dp">
 
-        <TextView
-            android:id="@+id/header_speed"
+        <!-- https://github.com/anastr/SpeedView/wiki/Style -->
+        <com.github.anastr.speedviewlib.ProgressiveGauge
+            android:id="@+id/speedbar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:text='@{owdevice.deviceNotifyCharacteristics.get(0).value}'
-            android:textSize="40.0dp"
+            app:sv_withTremble="false"
+            app:sv_speedometerColor="#2E7D32"
+            app:sv_speedometerBackColor="#b3b3b3"
+            app:sv_unit=""
+            app:sv_speedTextSize="75.0dp"
+            app:sv_unitTextSize="10.0dp"
+            app:sv_unitUnderSpeedText="false"
             />
 
-        <TextView
-            android:id="@+id/header_speed_label1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/header_speed"
-            android:layout_centerHorizontal="true"
-            android:text="@string/current_speed"
-            android:textSize="20.0dp"
-            android:textStyle="bold"
-            />
-
-        <TextView
-            android:id="@+id/header_speed_label2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/header_speed_label1"
-            android:layout_centerHorizontal="true"
-            android:text='@{owdevice.deviceNotifyCharacteristics.get(0).ui_name}'
-            android:textSize="20.0dp"
-            android:textStyle="bold"
-            />
-
-
-        <View
-            android:id="@+id/header_speed_line"
+        <RelativeLayout
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/speedRelativeLayout"
             android:layout_width="match_parent"
-            android:layout_height="1.0dip"
-            android:layout_below="@id/header_speed_label2"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/disconnected_color"
-            />
+            android:layout_height="wrap_content">
 
+            <TextView
+                android:id="@+id/header_speed_top_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="5dp"
+                android:layout_marginTop="5dp"
+                android:gravity="left"
+                android:text="@string/trip_top_speed"
+                android:textSize="15.0sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/speed_top"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/header_speed_top_label"
+                android:gravity="right"
+                android:text='@{owdevice.deviceNotifyCharacteristics.get(5).value}'
+                android:textSize="15.0sp"
+                android:textStyle="bold" />
+        </RelativeLayout>
+    </LinearLayout>
 
-        <TextView
-            android:id="@+id/header_speed_top_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_below="@id/header_speed_line"
-            android:layout_marginTop="25dp"
-            android:text="@string/trip_top_speed"
-            android:textSize="15.0sp"
-            android:textStyle="bold"
-            />
-
-        <TextView
-            android:id="@+id/header_speed_top"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_below="@id/header_speed_line"
-            android:layout_marginTop="25dp"
-            android:layout_toEndOf="@id/header_speed_top_label"
-            android:text='@{owdevice.deviceNotifyCharacteristics.get(5).value}'
-            android:textSize="15.0sp"
-            android:textStyle="bold"
-            />
-        <!--        android:text="23.00"   android:text='@{owdevice.deviceNotifyCharacteristics.get(5).value}'  android:textStyle="bold" android:layout_below="@id/header_speed_line" />
-
-                                  -->
-    </RelativeLayout>
 </layout>
