@@ -317,6 +317,10 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         device.connectGatt(mainActivity, false, mGattCallback);
     }
 
+    public void connectToGatt(BluetoothGatt gatt) {
+        Timber.d( "connectToGatt:" + gatt.getDevice().getName());
+        gatt.connect();
+    }
 
     private void onOWStateChangedToDisconnected(BluetoothGatt gatt) {
         Timber.i("We got disconnected from our Device: " + gatt.getDevice().getAddress());
@@ -327,26 +331,31 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
         if (App.INSTANCE.getSharedPreferences().shouldAutoReconnect()) {
             mRetryCount++;
+            Timber.i("mRetryCount=" + mRetryCount);
+
             try {
-                Timber.i("Sleeping for 5 seconds, mRetryCount=" + mRetryCount);
-                TimeUnit.SECONDS.sleep(5);
-                //mDisconnected_time = System.currentTimeMillis();
-                //long wait_time = 15000; // 15 seconds? should be configurable.
-                //long end_time = mDisconnected_time + wait_time;
-                //if (System.currentTimeMillis() < end_time) {
-                    Timber.i("Attempting to Reconnect to " + mOWDevice.deviceMacAddress.get());
-                    BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mOWDevice.deviceMacAddress.get());
-                    connectToDevice(device);
-                //}
-            } catch (InterruptedException e) {
-                    Timber.d("Thread interrupted");
+                if (mRetryCount == 20) {
+                    Timber.i("Reached too many retries, stopping search");
+                    gatt.close();
+                    stopScanning();
+                    disconnect();
+                    //mainActivity.invalidateOptionsMenu();
+                } else {
+                    Timber.i("Waiting for 5 seconds until trying to connect to OW again.");
+                    TimeUnit.SECONDS.sleep(5);
+                    Timber.i("Trying to connect to OW at " + mOWDevice.deviceMacAddress.get());
+                    //BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mOWDevice.deviceMacAddress.get());
+                    //connectToDevice(device);
+                    gatt.connect();
                 }
-            //scanLeDevice(true);
+            } catch (InterruptedException e) {
+                Timber.d("Connection to OW got interrupted:" + e.getMessage());
+            }
         } else {
             gatt.close();
-
+            mainActivity.invalidateOptionsMenu();
         }
-        mainActivity.invalidateOptionsMenu();
+
     }
 
     public static boolean isCharacteristicWriteable(BluetoothGattCharacteristic c) {
@@ -404,6 +413,8 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         this.mRetryCount = 0;
         // Added stuff 10/23 to clean fix
         owGatService = null;
+        // Added more 3/12/2018
+        this.characteristicReadQueue.clear();
 
     }
 
