@@ -19,12 +19,14 @@ public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPre
     private static final String TRIP_LOGGING = "tripLogging";
     public static final String LOG_LOCATIONS = "logLocations";
     public static final String DEVICE_RECONNECT = "deviceReconnect";
+    public static final String NOTIFICATION_DASHBOARD = "notificationDashboard";
     public static final String OW_MAC_ADDRESS = "ow_mac_address";
     public static final String OW_MAC_NAME = "ow_mac_name";
     private static final String CHARGE_ALERT = "CHARGE_ALERT";
     public static final String SPEED_ALERT = "SPEED_ALERT";
     private static final String CHARGE_ALERT_ENABLED = "CHARGE_ALERT_ENABLED";
     private static final String SPEED_ALERT_ENABLED = "SPEED_ALERT_ENABLED";
+    private static final String ALWAYS_CONNECT = "alwaysConnect";
 
     private SharedPreferences androidSharedPreferences;
 
@@ -100,6 +102,10 @@ public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPre
         return androidSharedPreferences.getBoolean(ONE_WHEEL_PLUS, false);
     }
 
+    public Boolean showNotificationDashboard() {
+        return androidSharedPreferences.getBoolean(NOTIFICATION_DASHBOARD, false);
+    }
+
     public void removeListener(SharedPreferences.OnSharedPreferenceChangeListener listener) {
         androidSharedPreferences.unregisterOnSharedPreferenceChangeListener(listener);
     }
@@ -108,6 +114,9 @@ public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPre
         return androidSharedPreferences.getBoolean(DEVICE_RECONNECT, false);
     }
 
+    public boolean shouldAlwaysConnect() {
+        return androidSharedPreferences.getBoolean(ALWAYS_CONNECT, false);
+    }
     public void saveMacAddress(String macAdress, String macAddressName) {
         SharedPreferences.Editor editor = androidSharedPreferences.edit();
         editor.putString(OW_MAC_ADDRESS, macAdress);

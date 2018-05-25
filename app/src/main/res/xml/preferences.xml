@@ -91,7 +91,20 @@
         android:key="chargeAlert"
         android:summary="Set the battery percentage (0 = off)."
         android:title="Charge Alert" />
-
+    <CheckBoxPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="false"
+        android:key="notificationDashboard"
+        android:summary="Experimental: This option shows an ongoing notification dashboard with current speed and battery level"
+        android:title="Notification Dashboard" />
+    <CheckBoxPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:defaultValue="false"
+        android:key="alwaysConnect"
+        android:summary="Experimental: Always try to connect to OW"
+        android:title="Always connect" />
     <!-- <ListPreference     android:title="Download Details"
                         android:summary="Select the kind of data that you would like to download"
                         android:key="downloadType"
