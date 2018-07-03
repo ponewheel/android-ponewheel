@@ -247,8 +247,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         batteryAlertLevels.put(percent,true);
                     }
                 }
+                updateNotificationDashboard(percent);
                 mCurrentBattery = percent;
-                updateNotificationDashboard();
+                //updateNotificationDashboard();
             } catch (Exception e) {
                 Timber.e( "Got an exception updating battery:" + e.getMessage());
             }
@@ -327,19 +328,27 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 ).build();
 
         // Notifications
+        /*
         createNotificationChannel();
         Intent intent = new Intent(this, MainActivity.class);
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-
+*/
+        createNotificationChannel();
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
         mNotificationBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_action_owflashlight_on)
-                .setContentTitle("Status")
-                .setContentText("Hello World!")
+                .setSmallIcon(R.drawable.ic_directions_run_white_24px)
+                //.setStyle(NotificationCompat.DecoratedMediaCustomViewStyle)
+                .setContentTitle("Dashboard")
+                .setContentText("Connecting...")
                 .setPriority(NotificationCompat.PRIORITY_MIN)
                 .setContentIntent(pendingIntent)
                 .setOnlyAlertOnce(true)
-                .setOngoing(true)
-                .setAutoCancel(false);
+//                .setOngoing(true)
+                .setAutoCancel(false); //remove notification when user taps it
         mNotificationManager = NotificationManagerCompat.from(this);
         mRemoteViewDashboard = new RemoteViews(getApplicationContext().getPackageName(), R.layout.notification_dashboard);
     }
@@ -551,7 +560,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 break;
             case R.id.menu_stop:
                 getBluetoothUtil().stopScanning();
-                this.invalidateOptionsMenu();
+                if (!App.INSTANCE.getSharedPreferences().shouldAlwaysConnect()) {
+                    this.invalidateOptionsMenu();
+                }
 
                 break;
             case R.id.menu_disconnect:
@@ -778,18 +789,19 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                             mProgressiveGauge.setUnit("km/h");
                             mProgressiveGauge.speedTo((float) Util.round(rpmToKilometersPerHour(speed),1),SPEED_ANIMATION_DURATION);
                             mCurrentSpeed = (int) Util.round(rpmToKilometersPerHour(speed),1);
+                            //updateNotificationDashboard((int) Util.round(rpmToKilometersPerHour(speed),1),"km/h");
                         } else {
                             mProgressiveGauge.setMaxSpeed(20);
                             mProgressiveGauge.setUnit("mph");
                             mProgressiveGauge.speedTo((float) Util.round(rpmToMilesPerHour(speed),1),SPEED_ANIMATION_DURATION);
                             mCurrentSpeed = (int) Util.round(rpmToMilesPerHour(speed),1);
+                            //updateNotificationDashboard((int) Util.round(rpmToMilesPerHour(speed),1), "mph");
                         }
 
                     } catch (Exception e) {
                         Timber.e("Got an exception updating speed:" + e.getMessage());
                     }
                 });
-                updateNotificationDashboard();
             }
 
         });
@@ -1001,11 +1013,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
 
-    private void updateNotificationDashboard() {
+   // private void updateNotificationDashboard(int speed, String speedType) {
+   private void updateNotificationDashboard(int batteryPercentage) {
         if (mShowNotificationDashboard) {
-            mRemoteViewDashboard.setTextViewText(R.id.tvSpeedNotification,Integer.toString(mOWDevice.speedRpm.get()));
-            mRemoteViewDashboard.setTextViewText(R.id.tvBatteryNotification,Integer.toString(mCurrentBattery));
-            mNotificationBuilder.setCustomBigContentView(mRemoteViewDashboard);
+            //mRemoteViewDashboard.setTextViewText(R.id.tvSpeedNotification,Integer.toString(speed));
+            //mRemoteViewDashboard.setTextViewText(R.id.tvSpeedNotificationType,speedType);
+            //mRemoteViewDashboard.setTextViewText(R.id.tvBatteryNotification,Integer.toString(mCurrentBattery));
+            //mNotificationBuilder.setCustomBigContentView(mRemoteViewDashboard);
+            mNotificationBuilder.setStyle(new NotificationCompat.BigTextStyle()
+                      .bigText("BATTERY: " + Integer.toString(batteryPercentage) + "%" ));
+                    //  .bigText("SPEED: " + Integer.toString(speed) + speedType + " | BATTERY: " + Integer.toString(batteryPercentage) + "%" ));
             mNotificationManager.notify(1, mNotificationBuilder.build());
         }
     }

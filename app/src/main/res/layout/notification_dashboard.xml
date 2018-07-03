@@ -9,7 +9,7 @@
         android:id="@+id/tvSpeedNotification"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="5"
+        android:layout_weight="3"
         android:gravity="start"
         android:paddingStart="10dp"
         android:text="20"
@@ -21,9 +21,9 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:paddingStart="5dp"
-        android:layout_weight="4"
+        android:layout_weight="2"
         android:text="mph"
-        android:textSize="40dp"
+        android:textSize="20dp"
         android:textStyle="bold"
         android:textColor="@android:color/black"/>
     <TextView
@@ -31,7 +31,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="end"
-        android:layout_weight="4"
+        android:layout_weight="3"
         android:text="0"
         android:textSize="80dp"
         android:textStyle="bold"
@@ -43,7 +43,7 @@
         android:paddingStart="5dp"
         android:layout_weight="2"
         android:text="%"
-        android:textSize="40dp"
+        android:textSize="20dp"
         android:textStyle="bold"
         android:textColor="@android:color/black"/>
 </LinearLayout>
