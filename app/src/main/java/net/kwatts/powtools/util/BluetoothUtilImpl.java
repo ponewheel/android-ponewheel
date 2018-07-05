@@ -397,7 +397,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
     @Override
     public void reconnect(MainActivity activity) {
-        if (isBtAvailable(activity)) {
+        if (isBtAdapterAvailable(activity)) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         } else {
@@ -405,7 +405,8 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         }
     }
 
-    private boolean isBtAvailable(Context context) {
+    @Override
+    public boolean isBtAdapterAvailable(Context context) {
         return context.getPackageManager()
                 .hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
     }

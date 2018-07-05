@@ -3,6 +3,7 @@ package net.kwatts.powtools.util;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.content.Context;
 import android.os.Handler;
 
 import net.kwatts.powtools.App;
@@ -72,6 +73,11 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     public boolean isScanning() {
         Timber.d("isScanning " + isScanning);
         return isScanning;
+    }
+
+    @Override
+    public boolean isBtAdapterAvailable(Context context) {
+        return true;
     }
 
     @Override
