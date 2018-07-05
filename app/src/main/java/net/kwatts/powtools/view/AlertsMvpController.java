@@ -30,7 +30,7 @@ public class AlertsMvpController {
         void onChargeValueChanged(String charge);
         void onSpeedAlertCheckChanged(boolean isChecked);
         void onSpeedAlertValueChanged(String speed);
-        void handleSpeed(ProgressiveGauge gauge, String speedString);
+        void handleSpeed(String speedString);
         void handleChargePercentage(int percent);
     }
 
@@ -40,8 +40,8 @@ public class AlertsMvpController {
         presenter = new AlertsPresenter(view, App.INSTANCE.getSharedPreferences());
     }
 
-    public void handleSpeed(ProgressiveGauge gauge,String speedString) {
-        presenter.handleSpeed(gauge,speedString);
+    public void handleSpeed(String speedString) {
+        presenter.handleSpeed(speedString);
     }
 
     public void releaseMedia() {

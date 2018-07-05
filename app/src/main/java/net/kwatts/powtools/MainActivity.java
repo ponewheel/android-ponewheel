@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
@@ -367,10 +368,31 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-                alertsController.handleSpeed(mProgressiveGauge,mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get());
+                String speedString = mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get();
+                alertsController.handleSpeed(speedString);
+                updateGaugeOnSpeedChange(mProgressiveGauge, speedString);
             }
         });
         getBluetoothUtil().init(MainActivity.this, mOWDevice);
+    }
+
+    private void updateGaugeOnSpeedChange(ProgressiveGauge gauge, @NonNull String speedString) {
+        net.kwatts.powtools.util.SharedPreferences sharedPreferences = App.INSTANCE.getSharedPreferences();
+        float speed;
+        try {
+            speed = Float.parseFloat(speedString);
+        } catch (NumberFormatException e) {
+            Timber.e(e);
+            return;
+        }
+        float speedAlert = sharedPreferences.getSpeedAlert();
+        boolean isEnabled = sharedPreferences.getSpeedAlertEnabled();
+
+        if (isEnabled && speed >= speedAlert) {
+            gauge.setSpeedometerColor(ColorTemplate.rgb("#800000"));
+        } else if (speed < speedAlert) {
+            gauge.setSpeedometerColor(ColorTemplate.rgb("#2E7D32"));
+        }
     }
 
     private void logOnChange(OWDevice.DeviceCharacteristic deviceCharacteristic) {
