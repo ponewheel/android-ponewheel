@@ -1,6 +1,8 @@
 package net.kwatts.powtools;
 
 import android.Manifest;
+import android.app.NotificationManager;
+import android.app.NotificationChannel;
 import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
@@ -12,11 +14,13 @@ import android.databinding.Observable;
 import android.graphics.Typeface;
 import android.location.Address;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.SwitchCompat;
@@ -28,6 +32,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Chronometer;
 import android.widget.ScrollView;
+import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -107,11 +112,14 @@ import static net.kwatts.powtools.util.Util.rpmToMilesPerHour;
 
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private static final boolean ONEWHEEL_LOGGING = true;
-
+    //private static final boolean ONEWHEEL_LOGGING = true;
+    private static final String CHANNEL_ID = "1";
 
     MultiStateToggleButton mRideModeToggleButton;
     int mRideModePosition;
+    int mCurrentBattery;
+    int mCurrentSpeed;
+
     boolean mRideModePositionSetOnceFlag;
 
     public VibrateService mVibrateService;
@@ -120,17 +128,24 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private Context mContext;
     ScrollView mScrollView;
     Chronometer mChronometer;
+    RemoteViews mRemoteViewDashboard;
     OWDevice mOWDevice;
     net.kwatts.powtools.databinding.ActivityMainBinding mBinding;
     BluetoothUtil bluetoothUtil;
 
-
+    boolean mShowNotificationDashboard;
     PieChart mBatteryChart;
     Ride ride;
     private DisposableObserver<Address> rxLocationObserver;
     private AlertsMvpController alertsController;
     //private SpeedView mSpeedBar;
     public ProgressiveGauge mProgressiveGauge;
+
+
+    public NotificationCompat.Builder mNotificationBuilder;
+    public NotificationManagerCompat mNotificationManager;
+
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event){
         Timber.d( event.message + ":" + event.title);
@@ -232,7 +247,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         batteryAlertLevels.put(percent,true);
                     }
                 }
-
+                updateNotificationDashboard(percent);
+                mCurrentBattery = percent;
+                //updateNotificationDashboard();
             } catch (Exception e) {
                 Timber.e( "Got an exception updating battery:" + e.getMessage());
             }
@@ -280,6 +297,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             showEula();
         }
 
+
         startService(new Intent(getApplicationContext(), VibrateService.class));
 
         setupOWDevice();
@@ -290,6 +308,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
             initLogging();
+        }
+        if (App.INSTANCE.getSharedPreferences().showNotificationDashboard()) {
+            mShowNotificationDashboard = true;
         }
 
         mChronometer = findViewById(R.id.chronometer);
@@ -305,6 +326,31 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         new SettingsModule(this),
                         new TimberModule()
                 ).build();
+
+        // Notifications
+        /*
+        createNotificationChannel();
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+*/
+        createNotificationChannel();
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        mNotificationBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_directions_run_white_24px)
+                //.setStyle(NotificationCompat.DecoratedMediaCustomViewStyle)
+                .setContentTitle("Dashboard")
+                .setContentText("Connecting...")
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setContentIntent(pendingIntent)
+                .setOnlyAlertOnce(true)
+//                .setOngoing(true)
+                .setAutoCancel(false); //remove notification when user taps it
+        mNotificationManager = NotificationManagerCompat.from(this);
+        mRemoteViewDashboard = new RemoteViews(getApplicationContext().getPackageName(), R.layout.notification_dashboard);
     }
 
     public BluetoothUtil getBluetoothUtil() {
@@ -338,25 +384,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mOWDevice.showDebugWindow.set(App.INSTANCE.getSharedPreferences().isDebugging());
         mOWDevice.isOneWheelPlus.set(App.INSTANCE.getSharedPreferences().isOneWheelPlus());
 
-//        mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
-//            @Override
-//            public void onPropertyChanged(Observable observable, int i) {
-//                Timber.d( "onPropertyChanged: " + mOWDevice.isConnected.get());
-//                Timber.d( "onPropertyChanged: " + observable.toString() + "i" + i);
-//            }
-//        });
-
         mOWDevice.setupCharacteristics();
         mOWDevice.isConnected.set(false);
-
-        //mOWDevice.bluetoothLe.set("Off");
-        //mOWDevice.bluetoothStatus.set("Disconnected");
 
         mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-
-
                 if (mOWDevice.isConnected.get() && isNewOrNotContinuousRide()) {
                     ride = new Ride();
                     App.dbExecute(database -> ride.id = database.rideDao().insert(ride));
@@ -477,6 +510,15 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             menu.findItem(R.id.menu_scan).setVisible(true);
             menu.findItem(R.id.menu_disconnect).setVisible(false);
             menu.findItem(R.id.menu_refresh).setActionView(null);
+            // Always try and connect...
+            if (App.INSTANCE.getSharedPreferences().shouldAlwaysConnect()) {
+                getBluetoothUtil().startScanning();
+            }
+
+            // TODO move this to where we're actually connected to device? (or maybe its better here so we can achieve a location lock before logging)
+            if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
+                startLocationScan();
+            }
             //menu.findItem(R.id.menu_ow_light_on).setVisible(false);
             //menu.findItem(R.id.menu_ow_ridemode).setVisible(false);
         } else {
@@ -504,9 +546,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                            public void onSuccess(Boolean aBoolean) {
                                getBluetoothUtil().startScanning();
                                // TODO move this to where we're actually connected to device? (or maybe its better here so we can achieve a location lock before logging)
-                               if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
-                                   startLocationScan();
-                               }
+                               //if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
+                               //    startLocationScan();
+                               //}
                            }
 
                            @Override
@@ -518,7 +560,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 break;
             case R.id.menu_stop:
                 getBluetoothUtil().stopScanning();
-                this.invalidateOptionsMenu();
+                if (!App.INSTANCE.getSharedPreferences().shouldAlwaysConnect()) {
+                    this.invalidateOptionsMenu();
+                }
 
                 break;
             case R.id.menu_disconnect:
@@ -645,9 +689,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             case SharedPreferencesUtil.LOG_LOCATIONS:
                 boolean checkLogLocations = sharedPreferences.getBoolean(key, false);
-                if (!checkLogLocations && mOWDevice != null) {
-                    mOWDevice.setGpsLocation(null);
-                }
+                //if (!checkLogLocations && mOWDevice != null) {
+                //    mOWDevice.setGpsLocation(null);
+                //}
+                break;
+
+            case SharedPreferencesUtil.NOTIFICATION_DASHBOARD:
+                mShowNotificationDashboard = sharedPreferences.getBoolean(key, false);
                 break;
 
             default:
@@ -674,7 +722,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     public void initLogging() {
-        if (ONEWHEEL_LOGGING) {
+
             Runnable deviceFileLogger = new Runnable() {
                 @Override
                 public void run() {
@@ -693,7 +741,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             mLoggingHandler.postDelayed(deviceFileLogger, App.INSTANCE.getSharedPreferences().getLoggingFrequency());
 
         }
-    }
+
 
     private void persistMoment() throws Exception {
         App.dbExecute(database -> {
@@ -707,6 +755,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             Moment moment = new Moment(ride.id, latestMoment);
             moment.rideId = ride.id;
+            if (mOWDevice.getGpsLocation() != null) {
+                moment.setGpsLat(mOWDevice.getGpsLocation().getLatitude());
+                moment.setGpsLong(mOWDevice.getGpsLocation().getLongitude());
+            }
             long momentId = database.momentDao().insert(moment);
             List<Attribute> attributes = new ArrayList<>();
             for (OWDevice.DeviceCharacteristic deviceReadCharacteristic : mOWDevice.getNotifyCharacteristics()) {
@@ -718,10 +770,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 attributes.add(attribute);
             }
             database.attributeDao().insertAll(attributes);
-            if (mOWDevice.getGpsLocation() != null) {
-                moment.setGpsLat(mOWDevice.getGpsLocation().getLatitude());
-                moment.setGpsLong(mOWDevice.getGpsLocation().getLongitude());
-            }
+
         });
     }
 
@@ -739,16 +788,22 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                             mProgressiveGauge.setMaxSpeed(25);
                             mProgressiveGauge.setUnit("km/h");
                             mProgressiveGauge.speedTo((float) Util.round(rpmToKilometersPerHour(speed),1),SPEED_ANIMATION_DURATION);
+                            mCurrentSpeed = (int) Util.round(rpmToKilometersPerHour(speed),1);
+                            //updateNotificationDashboard((int) Util.round(rpmToKilometersPerHour(speed),1),"km/h");
                         } else {
                             mProgressiveGauge.setMaxSpeed(20);
                             mProgressiveGauge.setUnit("mph");
                             mProgressiveGauge.speedTo((float) Util.round(rpmToMilesPerHour(speed),1),SPEED_ANIMATION_DURATION);
+                            mCurrentSpeed = (int) Util.round(rpmToMilesPerHour(speed),1);
+                            //updateNotificationDashboard((int) Util.round(rpmToMilesPerHour(speed),1), "mph");
                         }
+
                     } catch (Exception e) {
                         Timber.e("Got an exception updating speed:" + e.getMessage());
                     }
                 });
             }
+
         });
     }
 
@@ -953,7 +1008,35 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             }
         });
 
-
-
     }
+    ;
+
+
+
+   // private void updateNotificationDashboard(int speed, String speedType) {
+   private void updateNotificationDashboard(int batteryPercentage) {
+        if (mShowNotificationDashboard) {
+            //mRemoteViewDashboard.setTextViewText(R.id.tvSpeedNotification,Integer.toString(speed));
+            //mRemoteViewDashboard.setTextViewText(R.id.tvSpeedNotificationType,speedType);
+            //mRemoteViewDashboard.setTextViewText(R.id.tvBatteryNotification,Integer.toString(mCurrentBattery));
+            //mNotificationBuilder.setCustomBigContentView(mRemoteViewDashboard);
+            mNotificationBuilder.setStyle(new NotificationCompat.BigTextStyle()
+                      .bigText("BATTERY: " + Integer.toString(batteryPercentage) + "%" ));
+                    //  .bigText("SPEED: " + Integer.toString(speed) + speedType + " | BATTERY: " + Integer.toString(batteryPercentage) + "%" ));
+            mNotificationManager.notify(1, mNotificationBuilder.build());
+        }
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "ponewheel notifications";
+            String description = "notifications for onewheel";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
 }

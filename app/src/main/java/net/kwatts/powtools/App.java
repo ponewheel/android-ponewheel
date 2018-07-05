@@ -1,8 +1,10 @@
 package net.kwatts.powtools;
 
 import android.app.Application;
+import android.app.NotificationManager;
 import android.arch.persistence.room.Room;
 import android.os.PowerManager;
+import android.os.Build;
 
 import com.facebook.stetho.Stetho;
 
@@ -79,4 +81,5 @@ public class App extends Application {
             wakeLock.release();
         }
     }
+
 }
