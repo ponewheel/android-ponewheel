@@ -48,7 +48,7 @@ dependencies {
     implementation "com.android.support.constraint:constraint-layout:1.0.2"
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     testCompile "junit:junit:4.12"
-    testCompile "org.mockito:mockito-core:2.10.0"
+    testCompile "org.mockito:mockito-inline:2.19.0"
 
     androidTestImplementation "com.android.support:support-annotations:$googleSupportVersion"
     androidTestImplementation "com.android.support.test:runner:0.4.1"

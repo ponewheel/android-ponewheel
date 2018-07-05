@@ -55,6 +55,7 @@ import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
 import net.kwatts.powtools.util.BluetoothUtilImpl;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
+import net.kwatts.powtools.util.SpeedAlertResolver;
 import net.kwatts.powtools.util.Util;
 import net.kwatts.powtools.util.debugdrawer.DebugDrawerMockBle;
 import net.kwatts.powtools.view.AlertsMvpController;
@@ -117,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     public VibrateService mVibrateService;
     private android.os.Handler mLoggingHandler = new Handler();
+    private SpeedAlertResolver speedAlertResolver = new SpeedAlertResolver(App.INSTANCE.getSharedPreferences());
 
     private Context mContext;
     ScrollView mScrollView;
@@ -377,20 +379,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     private void updateGaugeOnSpeedChange(ProgressiveGauge gauge, @NonNull String speedString) {
-        net.kwatts.powtools.util.SharedPreferences sharedPreferences = App.INSTANCE.getSharedPreferences();
-        float speed;
-        try {
-            speed = Float.parseFloat(speedString);
-        } catch (NumberFormatException e) {
-            Timber.e(e);
-            return;
-        }
-        float speedAlert = sharedPreferences.getSpeedAlert();
-        boolean isEnabled = sharedPreferences.getSpeedAlertEnabled();
-
-        if (isEnabled && speed >= speedAlert) {
+        if (speedAlertResolver.isAlertThresholdExceeded(speedString)) {
             gauge.setSpeedometerColor(ColorTemplate.rgb("#800000"));
-        } else if (speed < speedAlert) {
+        } else {
             gauge.setSpeedometerColor(ColorTemplate.rgb("#2E7D32"));
         }
     }
