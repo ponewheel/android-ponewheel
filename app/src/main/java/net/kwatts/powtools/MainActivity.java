@@ -124,6 +124,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     net.kwatts.powtools.databinding.ActivityMainBinding mBinding;
     BluetoothUtil bluetoothUtil;
 
+    private NotificationCompat.Builder mStatusNotificationBuilder;
+    private static final String POW_NOTIF_CHANNEL_STATUS = "pow_status";
+    private static final String POW_NOTIF_TAG_STATUS = "statusNotificationTag";
 
     PieChart mBatteryChart;
     Ride ride;
@@ -185,6 +188,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     public void updateBatteryRemaining(final int percent) {
+        // Update ongoing notification
+        mStatusNotificationBuilder.setContentText("battery: " + percent + "%");
+        android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        mNotifyMgr.notify(POW_NOTIF_TAG_STATUS, 0, mStatusNotificationBuilder.build());
+
         runOnUiThread(() -> {
             try {
                 ArrayList<PieEntry> entries = new ArrayList<>();
@@ -260,6 +268,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mContext = this;
 
+        startStatusNotification();
 
         EventBus.getDefault().register(this);
         // TODO unbind in onPause or whatever is recommended by goog
@@ -305,6 +314,26 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         new SettingsModule(this),
                         new TimberModule()
                 ).build();
+    }
+
+    private void startStatusNotification() {
+        mStatusNotificationBuilder =
+                new NotificationCompat.Builder(mContext, POW_NOTIF_CHANNEL_STATUS)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle("Onewheel Status")
+                        .setColor(0x008000)
+                        .setContentText("Waiting for connection...")
+                        .setOngoing(true)
+                        .setAutoCancel(true);
+        android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        assert mNotifyMgr != null;
+        mNotifyMgr.notify(POW_NOTIF_TAG_STATUS,0, mStatusNotificationBuilder.build());
+    }
+
+    private void stopStatusNotification() {
+        android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        assert mNotifyMgr != null;
+        mNotifyMgr.cancel(POW_NOTIF_TAG_STATUS, 0);
     }
 
     public BluetoothUtil getBluetoothUtil() {
@@ -459,6 +488,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             unbindService(mVibrateConnection);
         }
         App.INSTANCE.getSharedPreferences().removeListener(this);
+        stopStatusNotification();
         super.onDestroy();
     }
 
