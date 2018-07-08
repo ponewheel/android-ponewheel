@@ -43,6 +43,7 @@
         <service
             android:name=".services.VibrateService"
             android:enabled="true" />
+        <service android:name=".BluetoothConnectionService"/>
 
         <activity
             android:name=".RidesListActivity"

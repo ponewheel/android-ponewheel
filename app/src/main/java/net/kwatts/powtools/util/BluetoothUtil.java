@@ -5,8 +5,8 @@ import net.kwatts.powtools.MainActivity;
 import net.kwatts.powtools.model.OWDevice;
 
 public interface BluetoothUtil {
-    void init(MainActivity mainActivity, OWDevice mOWDevice);
-    void reconnect(MainActivity activity);
+    void init(MainActivityC mainActivity, OWDevice mOWDevice);
+    void reconnect(MainActivityC activity);
     void stopScanning();
     void disconnect();
     boolean isConnected();

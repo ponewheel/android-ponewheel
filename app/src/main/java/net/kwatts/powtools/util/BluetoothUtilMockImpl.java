@@ -24,21 +24,21 @@ import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicStatusErr
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicTemperature;
 
 public class BluetoothUtilMockImpl implements BluetoothUtil{
-    MainActivity mainActivity;
+    MainActivityC mainActivity;
     private OWDevice owDevice;
     Handler mockLoopHandler = new Handler();
     private boolean isScanning = false;
 
 
     @Override
-    public void init(MainActivity mainActivity, OWDevice mOWDevice) {
+    public void init(MainActivityC mainActivity, OWDevice mOWDevice) {
         Timber.d("init");
         this.mainActivity = mainActivity;
         this.owDevice = mOWDevice;
     }
 
     @Override
-    public void reconnect(MainActivity activity) {
+    public void reconnect(MainActivityC activity) {
         mainActivity = activity;
         Timber.d("reconnect");
 

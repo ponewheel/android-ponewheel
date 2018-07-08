@@ -50,7 +50,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
     private Map<String, String> mScanResults = new HashMap<>();
 
-    private MainActivity mainActivity;
+    private MainActivityC mainActivity;
     OWDevice mOWDevice;
 
     private ScanSettings settings;
@@ -59,11 +59,11 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     private int mRetryCount = 0;
 
     @Override
-    public void init(MainActivity mainActivity, OWDevice mOWDevice) {
+    public void init(MainActivityC mainActivity, OWDevice mOWDevice) {
         this.mainActivity = mainActivity;
         this.mOWDevice = mOWDevice;
 
-        final BluetoothManager manager = (BluetoothManager) mainActivity.getSystemService(Context.BLUETOOTH_SERVICE);
+        final BluetoothManager manager = mainActivity.getSystemService(Context.BLUETOOTH_SERVICE);
         assert manager != null;
         mBluetoothAdapter = manager.getAdapter();
         mOWDevice.bluetoothLe.set("On");
@@ -314,7 +314,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
     public void connectToDevice(BluetoothDevice device) {
         Timber.d( "connectToDevice:" + device.getName());
-        device.connectGatt(mainActivity, false, mGattCallback);
+        device.connectGatt(mainActivity.getContext(), false, mGattCallback);
     }
 
     public void connectToGatt(BluetoothGatt gatt) {
@@ -394,9 +394,19 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
 
     @Override
-    public void reconnect(MainActivity activity) {
-        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+    public void reconnect(MainActivityC activity) {
+        if (isBtAdapterAvailable(activity.getContext())) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        } else {
+            Log.e(TAG, "Bluetooth is not available");
+        }
+    }
+
+    @Override
+    public boolean isBtAdapterAvailable(Context context) {
+        return context.getPackageManager()
+                .hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
     }
 
     @Override
