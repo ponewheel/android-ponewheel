@@ -1,6 +1,5 @@
 package net.kwatts.powtools.util;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -15,12 +14,13 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.Intent;
 import android.os.ParcelUuid;
 
+import android.support.annotation.NonNull;
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.BuildConfig;
-import net.kwatts.powtools.MainActivity;
 import net.kwatts.powtools.model.OWDevice;
 
 import java.util.ArrayList;
@@ -39,7 +39,8 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
     private static final String TAG = BluetoothUtilImpl.class.getSimpleName();
 
-    private static final int REQUEST_ENABLE_BT = 1;
+    @NonNull
+    private final Context context;
 
     Queue<BluetoothGattCharacteristic> characteristicReadQueue = new LinkedList<>();
     Queue<BluetoothGattDescriptor> descriptorWriteQueue = new LinkedList<>();
@@ -50,7 +51,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
     private Map<String, String> mScanResults = new HashMap<>();
 
-    private MainActivityC mainActivity;
+    private MainActivityDelegate mainActivity;
     OWDevice mOWDevice;
 
     private ScanSettings settings;
@@ -58,14 +59,16 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     private long mDisconnected_time;
     private int mRetryCount = 0;
 
+    public BluetoothUtilImpl(@NonNull Context context) {
+        this.context = context.getApplicationContext();
+    }
+
     @Override
-    public void init(MainActivityC mainActivity, OWDevice mOWDevice) {
+    public void init(MainActivityDelegate mainActivity, OWDevice mOWDevice, BluetoothManager btManager) {
         this.mainActivity = mainActivity;
         this.mOWDevice = mOWDevice;
 
-        final BluetoothManager manager = mainActivity.getSystemService(Context.BLUETOOTH_SERVICE);
-        assert manager != null;
-        mBluetoothAdapter = manager.getAdapter();
+        mBluetoothAdapter = btManager.getAdapter();
         mOWDevice.bluetoothLe.set("On");
     }
 
@@ -238,11 +241,6 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
     };
 
-    private void updateLog(String s) {
-        mainActivity.updateLog(s);
-    }
-
-
     void scanLeDevice(final boolean enable) {
         Timber.d("scanLeDevice enable = " + enable);
         if (enable) {
@@ -314,7 +312,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
     public void connectToDevice(BluetoothDevice device) {
         Timber.d( "connectToDevice:" + device.getName());
-        device.connectGatt(mainActivity.getContext(), false, mGattCallback);
+        device.connectGatt(context, false, mGattCallback);
     }
 
     public void connectToGatt(BluetoothGatt gatt) {
@@ -392,21 +390,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         return mBluetoothAdapter != null && mBluetoothAdapter.isEnabled();
     }
 
-
-    @Override
-    public void reconnect(MainActivityC activity) {
-        if (isBtAdapterAvailable(activity.getContext())) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-        } else {
-            Log.e(TAG, "Bluetooth is not available");
-        }
-    }
-
     @Override
     public boolean isBtAdapterAvailable(Context context) {
-        return context.getPackageManager()
-                .hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
     }
 
     @Override

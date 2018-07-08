@@ -1,12 +1,13 @@
 package net.kwatts.powtools.util;
 
 import android.bluetooth.BluetoothGattCharacteristic;
-import net.kwatts.powtools.MainActivity;
+import android.bluetooth.BluetoothManager;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import net.kwatts.powtools.model.OWDevice;
 
 public interface BluetoothUtil {
-    void init(MainActivityC mainActivity, OWDevice mOWDevice);
-    void reconnect(MainActivityC activity);
+    void init(MainActivityDelegate mainActivity, OWDevice mOWDevice, BluetoothManager btManager);
     void stopScanning();
     void disconnect();
     boolean isConnected();
@@ -14,4 +15,5 @@ public interface BluetoothUtil {
     void startScanning();
     BluetoothGattCharacteristic getCharacteristic(String onewheelCharacteristicLightingMode);
     void writeCharacteristic(BluetoothGattCharacteristic lc);
+    boolean isBtAdapterAvailable(Context context);
 }

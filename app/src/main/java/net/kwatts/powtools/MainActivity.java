@@ -2,6 +2,7 @@ package net.kwatts.powtools;
 
 import android.Manifest;
 import android.app.PendingIntent;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -59,7 +60,7 @@ import net.kwatts.powtools.events.VibrateEvent;
 import net.kwatts.powtools.model.OWDevice;
 import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
-import net.kwatts.powtools.util.MainActivityC;
+import net.kwatts.powtools.util.MainActivityDelegate;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 import net.kwatts.powtools.util.SpeedAlertResolver;
 import net.kwatts.powtools.util.Util;
@@ -70,7 +71,6 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.honorato.multistatetogglebutton.MultiStateToggleButton;
 import org.honorato.multistatetogglebutton.ToggleButton;
-import org.jetbrains.annotations.NotNull;
 import timber.log.Timber;
 
 import java.util.ArrayList;
@@ -108,6 +108,7 @@ import static net.kwatts.powtools.util.Util.rpmToMilesPerHour;
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final boolean ONEWHEEL_LOGGING = true;
+    private static final int REQUEST_ENABLE_BT = 1;
 
 
     MultiStateToggleButton mRideModeToggleButton;
@@ -373,8 +374,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-
-
                 if (mOWDevice.isConnected.get() && isNewOrNotContinuousRide()) {
                     ride = new Ride();
                     App.dbExecute(database -> ride.id = database.rideDao().insert(ride));
@@ -390,7 +389,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 updateGaugeOnSpeedChange(mProgressiveGauge, speedString);
             }
         });
-        bluetoothConnectionService.getBluetoothUtil().init(mainActivityC, mOWDevice);
+        BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        bluetoothConnectionService.getBluetoothUtil().init(mainActivityC, mOWDevice, bluetoothManager);
     }
 
     private void updateGaugeOnSpeedChange(ProgressiveGauge gauge, @NonNull String speedString) {
@@ -411,7 +411,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     boolean isNewOrNotContinuousRide() {
-
         if (ride == null) {
             return true;
         }
@@ -473,11 +472,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-    }
-
-    @Override
     public void onStop() {
         EventBus.getDefault().unregister(this);
         super.onStop();
@@ -532,24 +526,29 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 getPermissions().subscribe(new DisposableSingleObserver<Boolean>() {
                     @Override
                     public void onSuccess(Boolean aBoolean) {
-                        BluetoothConnectionService.Companion.startBtConnection(MainActivity.this);
-                        // TODO move this to where we're actually connected to device? (or maybe its better here so we can achieve a location lock before logging)
-                        if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
-                            startLocationScan();
+//                        if (getBluetoothUtil().isConnected()) { //TODO
+                        if (true) {
+                            BluetoothConnectionService.Companion.startBtConnection(MainActivity.this);
+                            if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
+                                startLocationScan();
+                            }
+                        } else if (getBluetoothUtil().isBtAdapterAvailable(MainActivity.this)) {
+                            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+                        } else {
+                            Toast.makeText(MainActivity.this, getString(R.string.bt_is_not_supported), Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        e.printStackTrace();
+                        Timber.e(e);
                     }
                 });
-
                 break;
             case R.id.menu_stop:
                 BluetoothConnectionService.Companion.stopBtConnection(this);
                 this.invalidateOptionsMenu();
-
                 break;
             case R.id.menu_disconnect:
                 mOWDevice.isConnected.set(false);
@@ -582,7 +581,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     private void startLocationScan() {
-
         RxLocation rxLocation = new RxLocation(this);
 
         LocationRequest locationRequest = LocationRequest.create()
@@ -626,22 +624,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .firstOrError();
     }
 
-
     @Override
     protected void onResume() {
         super.onResume();
 
-//        if (getBluetoothUtil().isConnected()) {
-//            mOWDevice.bluetoothStatus.set("Connected");
-//        } else if (getBluetoothUtil().isBtAdapterAvailable(this)) {
-//            getBluetoothUtil().reconnect(mainActivityC);
-//        } else {
-//            Toast.makeText(this, getString(R.string.bt_is_not_supported), Toast.LENGTH_SHORT).show();
-//        }
-//
-//        alertsController.recaptureMedia(this);
-//
-//        this.invalidateOptionsMenu();
+        alertsController.recaptureMedia(this);
     }
 
     @Override
@@ -1028,9 +1015,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
     }
 
-    private MainActivityCImpl mainActivityC = new MainActivityCImpl();
+    private MainActivityDelegateImpl mainActivityC = new MainActivityDelegateImpl();
 
-    private class MainActivityCImpl implements MainActivityC {
+    private class MainActivityDelegateImpl implements MainActivityDelegate {
 
         @Override
         public void invalidateOptionsMenu() {
@@ -1043,31 +1030,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
 
         @Override
-        public void updateLog(@NotNull String msg) {
-            MainActivity.this.updateLog(msg);
-        }
-
-        @NotNull
-        @Override
-        public BluetoothManager getSystemService(@NotNull String serviceName) {
-            return (BluetoothManager) MainActivity.this.getSystemService(serviceName);
-        }
-
-        @Override
         public void deviceConnectedTimer(boolean timer) {
             MainActivity.this.deviceConnectedTimer(timer);
         }
 
-        @NotNull
-        @Override
-        public Context getContext() {
-            return MainActivity.this;
-        }
-
-        @Override
-        public void startActivityForResult(@NotNull Intent enableBtIntent, int request) {
-            MainActivity.this.startActivityForResult(enableBtIntent, request);
-        }
     }
 
 }

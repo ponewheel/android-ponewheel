@@ -30,7 +30,7 @@ public class DebugDrawerMockBle implements DebugModule {
             if (isChecked) {
                 mainActivity.provideBluetoothUtil(new BluetoothUtilMockImpl());
             } else {
-                mainActivity.provideBluetoothUtil(new BluetoothUtilImpl());
+                mainActivity.provideBluetoothUtil(new BluetoothUtilImpl(buttonView.getContext()));
             }
 
         });

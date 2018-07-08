@@ -3,10 +3,11 @@ package net.kwatts.powtools.util;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothManager;
+import android.content.Context;
 import android.os.Handler;
 
 import net.kwatts.powtools.App;
-import net.kwatts.powtools.MainActivity;
 import net.kwatts.powtools.model.DeviceStatus;
 import net.kwatts.powtools.model.OWDevice;
 
@@ -24,24 +25,17 @@ import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicStatusErr
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicTemperature;
 
 public class BluetoothUtilMockImpl implements BluetoothUtil{
-    MainActivityC mainActivity;
+    MainActivityDelegate mainActivity;
     private OWDevice owDevice;
     Handler mockLoopHandler = new Handler();
     private boolean isScanning = false;
 
 
     @Override
-    public void init(MainActivityC mainActivity, OWDevice mOWDevice) {
+    public void init(MainActivityDelegate mainActivity, OWDevice mOWDevice, BluetoothManager btManager) {
         Timber.d("init");
         this.mainActivity = mainActivity;
         this.owDevice = mOWDevice;
-    }
-
-    @Override
-    public void reconnect(MainActivityC activity) {
-        mainActivity = activity;
-        Timber.d("reconnect");
-
     }
 
     @Override
@@ -78,7 +72,6 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     public void startScanning() {
         Timber.d("setIsScanning");
         setIsScanning(true);
-        updateLog("connected");
         onConnected();
     }
 
@@ -163,11 +156,12 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
         Timber.d("writeChar" + lc);
     }
 
-    private void updateLog(String s) {
-        mainActivity.updateLog("mock: " + s);
-    }
-
     public void onServicesDiscovered(BluetoothGatt gatt, int status){
         setIsScanning(false);
+    }
+
+    @Override
+    public boolean isBtAdapterAvailable(Context context) {
+        return true;
     }
 }
