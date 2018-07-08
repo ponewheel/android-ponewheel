@@ -11,7 +11,7 @@ import timber.log.Timber
 
 class BluetoothConnectionService : IntentService(SERVICE_NAME) {
 
-    var bluetoothUtil: BluetoothUtil? = BluetoothUtilMockImpl()
+    var bluetoothUtil: BluetoothUtil = BluetoothUtilMockImpl()
 
     override fun onBind(intent: Intent?): IBinder {
         return LocalBinder()
@@ -21,10 +21,10 @@ class BluetoothConnectionService : IntentService(SERVICE_NAME) {
         val action = intent?.action
         when (action) {
             ACTION_CONNECT_BT -> {
-                bluetoothUtil!!.startScanning()
+                bluetoothUtil.startScanning()
             }
             ACTION_DISCONNECT_BT -> {
-                bluetoothUtil!!.stopScanning()
+                bluetoothUtil.stopScanning()
             }
             else -> Timber.e("Unknown service action: [$action]")
         }

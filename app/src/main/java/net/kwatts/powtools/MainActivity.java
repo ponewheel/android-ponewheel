@@ -19,6 +19,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
@@ -49,6 +50,7 @@ import io.palaima.debugdrawer.DebugDrawer;
 import io.palaima.debugdrawer.commons.SettingsModule;
 import io.palaima.debugdrawer.timber.TimberModule;
 import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
@@ -137,6 +139,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     //private SpeedView mSpeedBar;
     public ProgressiveGauge mProgressiveGauge;
     private boolean connectionServiceIsBound;
+    @Nullable
+    private Disposable connectionStatusDisposable;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event) {
@@ -472,9 +476,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        doSubscribeToBtStatus();
+    }
+
+    @Override
     public void onStop() {
         EventBus.getDefault().unregister(this);
         super.onStop();
+        doUnsubscribeFromBtStatus();
     }
 
     @Override
@@ -989,6 +1000,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             initLightSettings();
             initRideModeButtons();
 
+            doSubscribeToBtStatus();
+
             new DebugDrawer.Builder(MainActivity.this)
                     .modules(
                             new DebugDrawerMockBle(MainActivity.this),
@@ -999,9 +1012,28 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
+            doUnsubscribeFromBtStatus();
             bluetoothConnectionService = null;
         }
     };
+
+    private void doSubscribeToBtStatus() {
+        if (bluetoothConnectionService != null
+                && (connectionStatusDisposable == null || connectionStatusDisposable.isDisposed())) {
+            connectionStatusDisposable = bluetoothConnectionService.getBluetoothUtil().getConnectionStatus()
+                    .subscribe(
+                            connectionStatus -> invalidateOptionsMenu(),
+                            Timber::e
+                    );
+        }
+    }
+
+    private void doUnsubscribeFromBtStatus() {
+        if (connectionStatusDisposable != null) {
+            connectionStatusDisposable.dispose();
+            connectionStatusDisposable = null;
+        }
+    }
 
     void doBindService() {
         bindService(new Intent(this, BluetoothConnectionService.class), serviceConnection, Context.BIND_AUTO_CREATE);
@@ -1018,11 +1050,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private MainActivityDelegateImpl mainActivityC = new MainActivityDelegateImpl();
 
     private class MainActivityDelegateImpl implements MainActivityDelegate {
-
-        @Override
-        public void invalidateOptionsMenu() {
-            MainActivity.this.invalidateOptionsMenu();
-        }
 
         @Override
         public void updateBatteryRemaining(int percent) {

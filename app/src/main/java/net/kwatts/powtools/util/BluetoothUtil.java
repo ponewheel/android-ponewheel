@@ -4,6 +4,9 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
+import io.reactivex.Observable;
+import net.kwatts.powtools.model.ConnectionStatus;
 import net.kwatts.powtools.model.OWDevice;
 
 public interface BluetoothUtil {
@@ -16,4 +19,5 @@ public interface BluetoothUtil {
     BluetoothGattCharacteristic getCharacteristic(String onewheelCharacteristicLightingMode);
     void writeCharacteristic(BluetoothGattCharacteristic lc);
     boolean isBtAdapterAvailable(Context context);
+    Observable<ConnectionStatus> getConnectionStatus();
 }
