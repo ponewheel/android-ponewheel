@@ -2,11 +2,9 @@ package net.kwatts.powtools.view;
 
 import android.support.annotation.NonNull;
 
-import com.github.anastr.speedviewlib.ProgressiveGauge;
-import com.github.mikephil.charting.utils.ColorTemplate;
-
 import net.kwatts.powtools.util.SharedPreferences;
 
+import net.kwatts.powtools.util.SpeedAlertResolver;
 import timber.log.Timber;
 
 public class AlertsPresenter implements AlertsMvpController.Presenter {
@@ -15,10 +13,16 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
     private boolean isChargeAlarmPlaying;
     private boolean isSpeedAlarmPlaying;
     private SharedPreferences sharedPreferences;
+    private final SpeedAlertResolver speedAlertResolver;
 
-    public AlertsPresenter(@NonNull AlertsMvpController.View view, @NonNull SharedPreferences sharedPreferences) {
+    public AlertsPresenter(
+            @NonNull AlertsMvpController.View view,
+            @NonNull SharedPreferences sharedPreferences,
+            SpeedAlertResolver speedAlertResolver
+    ) {
         this.view = view;
         this.sharedPreferences = sharedPreferences;
+        this.speedAlertResolver = speedAlertResolver;
 
         view.setPresenter(this);
 
@@ -27,7 +31,6 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
 
         view.setSpeedAlert(this.sharedPreferences.getSpeedAlert());
         view.setChargeAlert(this.sharedPreferences.getChargeAlert());
-
     }
 
     @Override
@@ -76,26 +79,17 @@ public class AlertsPresenter implements AlertsMvpController.Presenter {
     }
 
     @Override
-    public void handleSpeed(ProgressiveGauge gauge,@NonNull String speedString) {
-        float speed;
-        try {
-            speed = Float.parseFloat(speedString);
-        } catch (NumberFormatException e) {
-            Timber.e(e);
-            return;
-        }
-        float speedAlert = sharedPreferences.getSpeedAlert();
-        boolean isEnabled = sharedPreferences.getSpeedAlertEnabled();
-
-        if (isEnabled && !isSpeedAlarmPlaying && speed >= speedAlert) {
-            isSpeedAlarmPlaying = true;
-            view.playSound(true);
-            gauge.setSpeedometerColor(ColorTemplate.rgb("#800000"));
-
-        } else if (speed < speedAlert && isSpeedAlarmPlaying) {
-            isSpeedAlarmPlaying = false;
-            view.playSound(false);
-            gauge.setSpeedometerColor(ColorTemplate.rgb("#2E7D32"));
+    public void handleSpeed(@NonNull String speedString) {
+        if(speedAlertResolver.isAlertThresholdExceeded(speedString)) {
+            if(!isSpeedAlarmPlaying) {
+                isSpeedAlarmPlaying = true;
+                view.playSound(true);
+            }
+        } else  {
+            if(isSpeedAlarmPlaying) {
+                isSpeedAlarmPlaying = false;
+                view.playSound(false);
+            }
         }
     }
 

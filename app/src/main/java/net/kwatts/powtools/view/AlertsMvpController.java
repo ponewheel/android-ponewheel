@@ -5,6 +5,7 @@ import android.app.Activity;
 import com.github.anastr.speedviewlib.ProgressiveGauge;
 
 import net.kwatts.powtools.App;
+import net.kwatts.powtools.util.SpeedAlertResolver;
 
 public class AlertsMvpController {
     public static final float METRIC_DEFAULT_SPEED_ALARM = 27f;
@@ -30,18 +31,22 @@ public class AlertsMvpController {
         void onChargeValueChanged(String charge);
         void onSpeedAlertCheckChanged(boolean isChecked);
         void onSpeedAlertValueChanged(String speed);
-        void handleSpeed(ProgressiveGauge gauge, String speedString);
+        void handleSpeed(String speedString);
         void handleChargePercentage(int percent);
     }
 
     public AlertsMvpController(Activity activity) {
 
         view = new AlertsView(activity);
-        presenter = new AlertsPresenter(view, App.INSTANCE.getSharedPreferences());
+        presenter = new AlertsPresenter(
+                view,
+                App.INSTANCE.getSharedPreferences(),
+                new SpeedAlertResolver(App.INSTANCE.getSharedPreferences())
+        );
     }
 
-    public void handleSpeed(ProgressiveGauge gauge,String speedString) {
-        presenter.handleSpeed(gauge,speedString);
+    public void handleSpeed(String speedString) {
+        presenter.handleSpeed(speedString);
     }
 
     public void releaseMedia() {
