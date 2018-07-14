@@ -2,6 +2,7 @@ package net.kwatts.powtools
 
 
 import net.kwatts.powtools.util.SharedPreferences
+import net.kwatts.powtools.util.SpeedAlertResolver
 import net.kwatts.powtools.view.AlertsMvpController
 import net.kwatts.powtools.view.AlertsPresenter
 import org.junit.Assert
@@ -9,20 +10,25 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.anyBoolean
-import org.mockito.Mockito.*
+import org.mockito.Mockito
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
+import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner::class)
 class AlertsPresenterTest {
 
     val sharedPreferences: SharedPreferences = mock(SharedPreferences::class.java)
+    val speedAlertResolver: SpeedAlertResolver = mock(SpeedAlertResolver::class.java)
     val view: AlertsMvpController.View = mock(AlertsMvpController.View::class.java)
 
     private val boolCapture = ArgumentCaptor.forClass(Boolean::class.java)
 
     @Test
     fun testValidation() {
-        val alertsPresenter = AlertsPresenter(view, sharedPreferences)
+        val alertsPresenter = AlertsPresenter(view, sharedPreferences, speedAlertResolver)
 
         var errorShowTimes = 0
 
@@ -79,7 +85,7 @@ class AlertsPresenterTest {
         `when`(sharedPreferences.chargeAlertEnabled).thenReturn(false)
         `when`(sharedPreferences.speedAlertEnabled).thenReturn(false)
 
-        val alertsPresenter = AlertsPresenter(view, sharedPreferences)
+        val alertsPresenter = AlertsPresenter(view, sharedPreferences, speedAlertResolver)
 
         verify(view, times(1)).setSpeedEnabled(false)
         verify(view, times(1)).setChargeEnabled(false)
@@ -90,7 +96,7 @@ class AlertsPresenterTest {
         `when`(sharedPreferences.chargeAlertEnabled).thenReturn(true)
         `when`(sharedPreferences.speedAlertEnabled).thenReturn(true)
 
-        val alertsPresenter = AlertsPresenter(view, sharedPreferences)
+        val alertsPresenter = AlertsPresenter(view, sharedPreferences, speedAlertResolver)
 
         verify(view, times(1)).setSpeedEnabled(true)
         verify(view, times(1)).setChargeEnabled(true)
@@ -99,10 +105,11 @@ class AlertsPresenterTest {
     @Test
     fun testSoundAlarm() {
 
-        `when`(sharedPreferences.speedAlertEnabled).thenReturn(true)
-        `when`(sharedPreferences.speedAlert).thenReturn(17f)
+        `when`(speedAlertResolver.isAlertThresholdExceeded("15")).thenReturn(false)
+        `when`(speedAlertResolver.isAlertThresholdExceeded("17")).thenReturn(true)
+        `when`(speedAlertResolver.isAlertThresholdExceeded("18")).thenReturn(true)
 
-        val alertsPresenter = AlertsPresenter(view, sharedPreferences)
+        val alertsPresenter = AlertsPresenter(view, sharedPreferences, speedAlertResolver)
 
 
         alertsPresenter.handleSpeed("15")
@@ -123,10 +130,9 @@ class AlertsPresenterTest {
     @Test
     fun testSoundAlarmDisabled() {
 
-        `when`(sharedPreferences.speedAlertEnabled).thenReturn(false)
-        `when`(sharedPreferences.speedAlert).thenReturn(17f)
+        `when`(speedAlertResolver.isAlertThresholdExceeded(Mockito.anyString())).thenReturn(false)
 
-        val alertsPresenter = AlertsPresenter(view, sharedPreferences)
+        val alertsPresenter = AlertsPresenter(view, sharedPreferences, speedAlertResolver)
 
 
         alertsPresenter.handleSpeed("15")
@@ -149,7 +155,7 @@ class AlertsPresenterTest {
         `when`(sharedPreferences.chargeAlertEnabled).thenReturn(true)
         `when`(sharedPreferences.chargeAlert).thenReturn(17)
 
-        val alertsPresenter = AlertsPresenter(view, sharedPreferences)
+        val alertsPresenter = AlertsPresenter(view, sharedPreferences, speedAlertResolver)
 
 
         alertsPresenter.handleChargePercentage(15)
@@ -173,7 +179,7 @@ class AlertsPresenterTest {
         `when`(sharedPreferences.chargeAlertEnabled).thenReturn(false)
         `when`(sharedPreferences.chargeAlert).thenReturn(17)
 
-        val alertsPresenter = AlertsPresenter(view, sharedPreferences)
+        val alertsPresenter = AlertsPresenter(view, sharedPreferences, speedAlertResolver)
 
 
         alertsPresenter.handleChargePercentage(15)
@@ -194,7 +200,7 @@ class AlertsPresenterTest {
         `when`(sharedPreferences.chargeAlertEnabled).thenReturn(true)
         `when`(sharedPreferences.speedAlertEnabled).thenReturn(true)
 
-        AlertsPresenter(view, sharedPreferences).apply {
+        AlertsPresenter(view, sharedPreferences, speedAlertResolver).apply {
             onChargeAlertCheckChanged(false)
             onChargeAlertCheckChanged(true)
             onChargeAlertCheckChanged(false)

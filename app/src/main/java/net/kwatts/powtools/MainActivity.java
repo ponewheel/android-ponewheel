@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
@@ -54,6 +55,7 @@ import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
 import net.kwatts.powtools.util.BluetoothUtilImpl;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
+import net.kwatts.powtools.util.SpeedAlertResolver;
 import net.kwatts.powtools.util.Util;
 import net.kwatts.powtools.util.debugdrawer.DebugDrawerMockBle;
 import net.kwatts.powtools.view.AlertsMvpController;
@@ -116,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     public VibrateService mVibrateService;
     private android.os.Handler mLoggingHandler = new Handler();
+    private SpeedAlertResolver speedAlertResolver = new SpeedAlertResolver(App.INSTANCE.getSharedPreferences());
 
     private Context mContext;
     ScrollView mScrollView;
@@ -124,6 +127,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     net.kwatts.powtools.databinding.ActivityMainBinding mBinding;
     BluetoothUtil bluetoothUtil;
 
+    private NotificationCompat.Builder mStatusNotificationBuilder;
+    private static final String POW_NOTIF_CHANNEL_STATUS = "pow_status";
+    private static final String POW_NOTIF_TAG_STATUS = "statusNotificationTag";
 
     PieChart mBatteryChart;
     Ride ride;
@@ -185,6 +191,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     public void updateBatteryRemaining(final int percent) {
+        // Update ongoing notification
+        mStatusNotificationBuilder.setContentText("battery: " + percent + "%");
+        android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        mNotifyMgr.notify(POW_NOTIF_TAG_STATUS, 0, mStatusNotificationBuilder.build());
+
         runOnUiThread(() -> {
             try {
                 ArrayList<PieEntry> entries = new ArrayList<>();
@@ -260,6 +271,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mContext = this;
 
+        startStatusNotification();
 
         EventBus.getDefault().register(this);
         // TODO unbind in onPause or whatever is recommended by goog
@@ -305,6 +317,26 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         new SettingsModule(this),
                         new TimberModule()
                 ).build();
+    }
+
+    private void startStatusNotification() {
+        mStatusNotificationBuilder =
+                new NotificationCompat.Builder(mContext, POW_NOTIF_CHANNEL_STATUS)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle("Onewheel Status")
+                        .setColor(0x008000)
+                        .setContentText("Waiting for connection...")
+                        .setOngoing(true)
+                        .setAutoCancel(true);
+        android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        assert mNotifyMgr != null;
+        mNotifyMgr.notify(POW_NOTIF_TAG_STATUS,0, mStatusNotificationBuilder.build());
+    }
+
+    private void stopStatusNotification() {
+        android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        assert mNotifyMgr != null;
+        mNotifyMgr.cancel(POW_NOTIF_TAG_STATUS, 0);
     }
 
     public BluetoothUtil getBluetoothUtil() {
@@ -367,10 +399,20 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-                alertsController.handleSpeed(mProgressiveGauge,mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get());
+                String speedString = mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get();
+                alertsController.handleSpeed(speedString);
+                updateGaugeOnSpeedChange(mProgressiveGauge, speedString);
             }
         });
         getBluetoothUtil().init(MainActivity.this, mOWDevice);
+    }
+
+    private void updateGaugeOnSpeedChange(ProgressiveGauge gauge, @NonNull String speedString) {
+        if (speedAlertResolver.isAlertThresholdExceeded(speedString)) {
+            gauge.setSpeedometerColor(ColorTemplate.rgb("#800000"));
+        } else {
+            gauge.setSpeedometerColor(ColorTemplate.rgb("#2E7D32"));
+        }
     }
 
     private void logOnChange(OWDevice.DeviceCharacteristic deviceCharacteristic) {
@@ -459,6 +501,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             unbindService(mVibrateConnection);
         }
         App.INSTANCE.getSharedPreferences().removeListener(this);
+        stopStatusNotification();
         super.onDestroy();
     }
 
