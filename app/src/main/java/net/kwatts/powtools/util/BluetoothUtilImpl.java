@@ -106,7 +106,6 @@ public class BluetoothUtilImpl implements BluetoothUtil {
 
             mGatt = gatt;
             Timber.i("Hey, I found the OneWheel Service: " + owGatService.getUuid().toString());
-            mainActivity.deviceConnectedTimer(true);
             mOWDevice.isConnected.set(true);
             App.INSTANCE.acquireWakeLock();
             String deviceMacAddress = mGatt.getDevice().toString();
@@ -164,6 +163,7 @@ public class BluetoothUtilImpl implements BluetoothUtil {
                 }
             }
 
+            _connectionStatus.onNext(ConnectionStatus.CONNECTED);
         }
 
         @Override
@@ -322,7 +322,6 @@ public class BluetoothUtilImpl implements BluetoothUtil {
 
     private void onOWStateChangedToDisconnected(BluetoothGatt gatt) {
         Timber.i("We got disconnected from our Device: " + gatt.getDevice().getAddress());
-        mainActivity.deviceConnectedTimer(false);
         mOWDevice.isConnected.set(false);
         App.INSTANCE.releaseWakeLock();
         mScanResults.clear();

@@ -59,6 +59,7 @@ import net.kwatts.powtools.database.entities.Moment;
 import net.kwatts.powtools.database.entities.Ride;
 import net.kwatts.powtools.events.NotificationEvent;
 import net.kwatts.powtools.events.VibrateEvent;
+import net.kwatts.powtools.model.ConnectionStatus;
 import net.kwatts.powtools.model.OWDevice;
 import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
@@ -1024,7 +1025,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             }
             connectionStatusDisposable = bluetoothConnectionService.getBluetoothUtil().getConnectionStatus()
                     .subscribe(
-                            connectionStatus -> invalidateOptionsMenu(),
+                            (ConnectionStatus connectionStatus) -> {
+                                invalidateOptionsMenu();
+                                deviceConnectedTimer(connectionStatus == ConnectionStatus.CONNECTED);
+                            },
                             Timber::e
                     );
         }
@@ -1056,11 +1060,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         @Override
         public void updateBatteryRemaining(int percent) {
             MainActivity.this.updateBatteryRemaining(percent);
-        }
-
-        @Override
-        public void deviceConnectedTimer(boolean timer) {
-            MainActivity.this.deviceConnectedTimer(timer);
         }
 
     }
