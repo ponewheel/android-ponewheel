@@ -8,7 +8,6 @@ import net.kwatts.powtools.model.ConnectionStatus;
 import net.kwatts.powtools.model.OWDevice;
 
 public interface BluetoothUtil {
-    void init(OWDevice mOWDevice, BluetoothManager btManager);
     void stopScanning();
     void disconnect();
     boolean isConnected();

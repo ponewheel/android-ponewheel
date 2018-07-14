@@ -60,14 +60,11 @@ public class BluetoothUtilImpl implements BluetoothUtil {
     private BehaviorSubject<ConnectionStatus> _connectionStatus = BehaviorSubject.createDefault(ConnectionStatus.DISCONNECTED);
     private PublishSubject<Integer> _batteryPercentage = PublishSubject.create();
 
-    public BluetoothUtilImpl(@NonNull Context context) {
+    public BluetoothUtilImpl(@NonNull Context context, OWDevice mOWDevice) {
         this.context = context.getApplicationContext();
-    }
-
-    @Override
-    public void init(OWDevice mOWDevice, BluetoothManager btManager) {
         this.mOWDevice = mOWDevice;
 
+        BluetoothManager btManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = btManager.getAdapter();
         mOWDevice.bluetoothLe.set("On");
     }

@@ -3,7 +3,6 @@ package net.kwatts.powtools.util;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -34,11 +33,8 @@ public class BluetoothUtilMockImpl implements BluetoothUtil {
     private BehaviorSubject<ConnectionStatus> _connectionStatus = BehaviorSubject.createDefault(ConnectionStatus.DISCONNECTED);
     private PublishSubject<Integer> _batteryPercentage = PublishSubject.create();
 
-
-    @Override
-    public void init(OWDevice mOWDevice, BluetoothManager btManager) {
-        Timber.d("init");
-        this.owDevice = mOWDevice;
+    public BluetoothUtilMockImpl(OWDevice owDevice) {
+        this.owDevice = owDevice;
     }
 
     @Override

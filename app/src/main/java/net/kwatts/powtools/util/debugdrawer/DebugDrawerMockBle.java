@@ -5,13 +5,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Switch;
-
+import io.palaima.debugdrawer.base.DebugModule;
 import net.kwatts.powtools.MainActivity;
 import net.kwatts.powtools.R;
 import net.kwatts.powtools.util.BluetoothUtilImpl;
 import net.kwatts.powtools.util.BluetoothUtilMockImpl;
-
-import io.palaima.debugdrawer.base.DebugModule;
 
 public class DebugDrawerMockBle implements DebugModule {
     private MainActivity mainActivity;
@@ -28,9 +26,11 @@ public class DebugDrawerMockBle implements DebugModule {
         Switch mockBle = view.findViewById(R.id.debug_drawer_ble_mock);
         mockBle.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
-                mainActivity.overrideBluetoothUtil(new BluetoothUtilMockImpl());
+                mainActivity.overrideBluetoothUtil(BluetoothUtilMockImpl::new);
             } else {
-                mainActivity.overrideBluetoothUtil(new BluetoothUtilImpl(buttonView.getContext()));
+                mainActivity.overrideBluetoothUtil(owDevice ->
+                        new BluetoothUtilImpl(buttonView.getContext(), owDevice)
+                );
             }
 
         });

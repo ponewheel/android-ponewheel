@@ -3,7 +3,6 @@ package net.kwatts.powtools;
 import android.Manifest;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -15,7 +14,6 @@ import android.graphics.Typeface;
 import android.location.Address;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
@@ -54,8 +52,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
-import net.kwatts.powtools.database.entities.Attribute;
-import net.kwatts.powtools.database.entities.Moment;
+import kotlin.jvm.functions.Function1;
 import net.kwatts.powtools.database.entities.Ride;
 import net.kwatts.powtools.events.NotificationEvent;
 import net.kwatts.powtools.events.VibrateEvent;
@@ -76,8 +73,6 @@ import org.honorato.multistatetogglebutton.ToggleButton;
 import timber.log.Timber;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -109,7 +104,6 @@ import static net.kwatts.powtools.util.Util.rpmToMilesPerHour;
 
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private static final boolean ONEWHEEL_LOGGING = true;
     private static final int REQUEST_ENABLE_BT = 1;
 
 
@@ -118,13 +112,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     boolean mRideModePositionSetOnceFlag;
 
     public VibrateService mVibrateService;
-    private android.os.Handler mLoggingHandler = new Handler();
     private SpeedAlertResolver speedAlertResolver = new SpeedAlertResolver(App.INSTANCE.getSharedPreferences());
 
     private Context mContext;
     ScrollView mScrollView;
     Chronometer mChronometer;
-    OWDevice mOWDevice;
     net.kwatts.powtools.databinding.ActivityMainBinding mBinding;
 
     private NotificationCompat.Builder mStatusNotificationBuilder;
@@ -132,7 +124,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private static final String POW_NOTIF_TAG_STATUS = "statusNotificationTag";
 
     PieChart mBatteryChart;
-    Ride ride;
     private DisposableObserver<Address> rxLocationObserver;
     private AlertsMvpController alertsController;
     //private SpeedView mSpeedBar;
@@ -301,18 +292,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         startService(new Intent(getApplicationContext(), VibrateService.class));
 
-        doBindService();
-
         setupToolbar();
 
         mScrollView = findViewById(R.id.logScroller);
 
-//        if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
-//            initLogging();
-//        } //TODO
-
         mChronometer = findViewById(R.id.chronometer);
         mProgressiveGauge = findViewById(R.id.speedbar);
+
+        doBindService();
     }
 
     private void startStatusNotification() {
@@ -339,10 +326,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         return bluetoothConnectionService.getBluetoothUtil();
     }
 
-    public void overrideBluetoothUtil(BluetoothUtil bluetoothUtil) {
-        bluetoothConnectionService.setBluetoothUtil(bluetoothUtil);
-        BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothUtil.init(mOWDevice, bluetoothManager);
+    public void overrideBluetoothUtil(Function1<? super OWDevice, ? extends BluetoothUtil> builder) {
+        bluetoothConnectionService.overrideBluetoothUtil(builder);
         doSubscribeToBtStatus();
     }
 
@@ -357,36 +342,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         setSupportActionBar(mToolbar);
     }
 
-    private void setupOWDevice() {
-        mOWDevice = new OWDevice();
+    private void setupOWDevice(OWDevice mOWDevice) {
         mBinding.setOwdevice(mOWDevice);
-
-        mOWDevice.showDebugWindow.set(App.INSTANCE.getSharedPreferences().isDebugging());
-        mOWDevice.isOneWheelPlus.set(App.INSTANCE.getSharedPreferences().isOneWheelPlus());
-
-//        mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
-//            @Override
-//            public void onPropertyChanged(Observable observable, int i) {
-//                Timber.d( "onPropertyChanged: " + mOWDevice.isConnected.get());
-//                Timber.d( "onPropertyChanged: " + observable.toString() + "i" + i);
-//            }
-//        });
-
-        mOWDevice.setupCharacteristics();
-        mOWDevice.isConnected.set(false);
-
-        //mOWDevice.bluetoothLe.set("Off");
-        //mOWDevice.bluetoothStatus.set("Disconnected");
-
-        mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
-            @Override
-            public void onPropertyChanged(Observable observable, int i) {
-                if (mOWDevice.isConnected.get() && isNewOrNotContinuousRide()) {
-                    ride = new Ride();
-                    App.dbExecute(database -> ride.id = database.rideDao().insert(ride));
-                }
-            }
-        });
 
         mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
@@ -395,9 +352,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 alertsController.handleSpeed(speedString);
                 updateGaugeOnSpeedChange(mProgressiveGauge, speedString);
             }
-        });
-        BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothConnectionService.getBluetoothUtil().init(mOWDevice, bluetoothManager);
+        }); //TODO remove on activity destroy to avoid memory leak
     }
 
     private void updateGaugeOnSpeedChange(ProgressiveGauge gauge, @NonNull String speedString) {
@@ -415,20 +370,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 Timber.d(deviceCharacteristic.key.get() + " = " + deviceCharacteristic.value.get());
             }
         });
-    }
-
-    boolean isNewOrNotContinuousRide() {
-        if (ride == null) {
-            return true;
-        }
-        if (ride.end == null) {
-            Timber.e("isNewOrNotContinuousRide: unexpected state, ride.end not set");
-            return true;
-        }
-
-        long millisSinceLastMoment = new Date().getTime() - ride.end.getTime();
-        // Not continuous is defined as 1 min break. Maybe configurable in the future.
-        return TimeUnit.MINUTES.toMillis(1) > millisSinceLastMoment;
     }
 
     private void showEula() {
@@ -506,7 +447,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
 
-        if (bluetoothConnectionService != null && mOWDevice.isConnected.get()) {
+        if (bluetoothConnectionService != null && bluetoothConnectionService.getMOWDevice().isConnected.get()) {
             menu.findItem(R.id.menu_disconnect).setVisible(true);
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(false);
@@ -564,11 +505,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 this.invalidateOptionsMenu();
                 break;
             case R.id.menu_disconnect:
-                mOWDevice.isConnected.set(false);
+                bluetoothConnectionService.getMOWDevice().isConnected.set(false);
                 getBluetoothUtil().disconnect();
                 Timber.i("Disconnected from device by user.");
                 deviceConnectedTimer(false);
-                mLoggingHandler.removeCallbacksAndMessages(null);
                 this.invalidateOptionsMenu();
                 break;
             case R.id.menu_about:
@@ -611,7 +551,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                         boolean isLocationsEnabled = App.INSTANCE.getSharedPreferences().isLocationsEnabled();
                         if (isLocationsEnabled) {
-                            mOWDevice.setGpsLocation(address);
+                            bluetoothConnectionService.getMOWDevice().setGpsLocation(address);
                         } else if (rxLocationObserver != null) {
                             rxLocationObserver.dispose();
                         }
@@ -662,7 +602,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         Timber.i("onSharedPreferenceChanged callback");
         switch (key) {
             case SharedPreferencesUtil.METRIC_UNITS:
-                mOWDevice.refreshCharacteristics();
+                bluetoothConnectionService.getMOWDevice().refreshCharacteristics();
                 refreshMetricViews();
                 break;
 
@@ -680,8 +620,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             case SharedPreferencesUtil.LOG_LOCATIONS:
                 boolean checkLogLocations = sharedPreferences.getBoolean(key, false);
-                if (!checkLogLocations && mOWDevice != null) {
-                    mOWDevice.setGpsLocation(null);
+                if (!checkLogLocations && bluetoothConnectionService != null) {
+                    bluetoothConnectionService.getMOWDevice().setGpsLocation(null);
                 }
                 break;
 
@@ -706,62 +646,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
     };
 
-
-    public void initLogging() {
-        if (ONEWHEEL_LOGGING) {
-            Runnable deviceFileLogger = new Runnable() {
-                @Override
-                public void run() {
-                    int mLoggingFrequency = App.INSTANCE.getSharedPreferences().getLoggingFrequency();
-                    mLoggingHandler.postDelayed(this, mLoggingFrequency);
-                    if (mOWDevice.isConnected.get()) {
-                        try {
-                            persistMoment();
-
-                        } catch (Exception e) {
-                            Timber.e("unable to write logs", e);
-                        }
-                    }
-                }
-            };
-            mLoggingHandler.postDelayed(deviceFileLogger, App.INSTANCE.getSharedPreferences().getLoggingFrequency());
-
-        }
-    }
-
-    private void persistMoment() throws Exception {
-        App.dbExecute(database -> {
-            Date latestMoment = new Date();
-
-            if (ride.start == null) {
-                ride.start = latestMoment;
-            }
-            ride.end = latestMoment;
-            database.rideDao().updateRide(ride);
-
-            Moment moment = new Moment(ride.id, latestMoment);
-            moment.rideId = ride.id;
-            long momentId = database.momentDao().insert(moment);
-            List<Attribute> attributes = new ArrayList<>();
-            for (OWDevice.DeviceCharacteristic deviceReadCharacteristic : mOWDevice.getNotifyCharacteristics()) {
-                Attribute attribute = new Attribute();
-                attribute.setMomentId(momentId);
-                attribute.setValue(deviceReadCharacteristic.value.get());
-                attribute.setKey(deviceReadCharacteristic.key.get());
-
-                attributes.add(attribute);
-            }
-            database.attributeDao().insertAll(attributes);
-            if (mOWDevice.getGpsLocation() != null) {
-                moment.setGpsLat(mOWDevice.getGpsLocation().getLatitude());
-                moment.setGpsLong(mOWDevice.getGpsLocation().getLongitude());
-            }
-        });
-    }
-
     private static final int SPEED_ANIMATION_DURATION = 0;
 
-    private void initSpeedBar() {
+    private void initSpeedBar(OWDevice mOWDevice) {
         mOWDevice.speedRpm.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
@@ -784,7 +671,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     }
                 });
             }
-        });
+        }); //TODO remove to avoid memory leak
     }
 
 
@@ -799,6 +686,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     int backBlinkCount = 0;
 
     public class mFrontBlinkTaskTimerTask extends TimerTask {
+        private final OWDevice mOWDevice;
+
+        public mFrontBlinkTaskTimerTask(OWDevice mOWDevice) {
+            this.mOWDevice = mOWDevice;
+        }
+
         @Override
         public void run() {
             if ((frontBlinkCount % 2) == 0) {
@@ -814,6 +707,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     Timer mFrontBlinkTimer;
 
     public class mBackBlinkTaskTimerTask extends TimerTask {
+        private final OWDevice mOWDevice;
+
+        public mBackBlinkTaskTimerTask(OWDevice mOWDevice) {
+            this.mOWDevice = mOWDevice;
+        }
+
         @Override
         public void run() {
             if ((backBlinkCount % 2) == 0) {
@@ -828,7 +727,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     mBackBlinkTaskTimerTask mBackBlinkTimerTask;
     Timer mBackBlinkTimer;
 
-    public void initLightSettings() {
+    public void initLightSettings(OWDevice mOWDevice) {
         mMasterLight = this.findViewById(R.id.master_light_switch);
         mCustomLight = this.findViewById(R.id.custom_light_switch);
 
@@ -836,7 +735,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mBackBright = this.findViewById(R.id.back_bright_switch);
         mFrontBlink = this.findViewById(R.id.front_blink_switch);
         mBackBlink = this.findViewById(R.id.back_blink_switch);
-
         mMasterLight.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
@@ -890,7 +788,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mFrontBlink.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
-                    mFrontBlinkTimerTask = new mFrontBlinkTaskTimerTask();
+                    mFrontBlinkTimerTask = new mFrontBlinkTaskTimerTask(mOWDevice);
                     mFrontBlinkTimer = new Timer();
                     mFrontBlinkTimer.scheduleAtFixedRate(mFrontBlinkTimerTask, 0, 500);
 
@@ -913,7 +811,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mBackBlink.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
-                    mBackBlinkTimerTask = new mBackBlinkTaskTimerTask();
+                    mBackBlinkTimerTask = new mBackBlinkTaskTimerTask(mOWDevice);
                     mBackBlinkTimer = new Timer();
                     mBackBlinkTimer.scheduleAtFixedRate(mBackBlinkTimerTask, 0, 500);
 
@@ -934,7 +832,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     }
 
-    public void initRideModeButtons() {
+    public void initRideModeButtons(OWDevice mOWDevice) {
         mRideModeToggleButton = this.findViewById(R.id.mstb_multi_ridemodes);
         if (mOWDevice.isOneWheelPlus.get()) {
             mRideModeToggleButton.setElements(getResources().getStringArray(R.array.owplus_ridemode_array));
@@ -995,11 +893,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             bluetoothConnectionService = ((BluetoothConnectionService.LocalBinder) iBinder).getService();
-            setupOWDevice();
-            initSpeedBar();
+            OWDevice mOWDevice = bluetoothConnectionService.getMOWDevice();
+            setupOWDevice(mOWDevice);
+            initSpeedBar(mOWDevice);
             initBatteryChart();
-            initLightSettings();
-            initRideModeButtons();
+            initLightSettings(mOWDevice);
+            initRideModeButtons(mOWDevice);
 
             doSubscribeToBtStatus();
 
@@ -1035,7 +934,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             if(batteryPercentageDisposable != null && !batteryPercentageDisposable.isDisposed()) {
                 batteryPercentageDisposable.dispose();
             }
-            batteryPercentageDisposable = bluetoothConnectionService.bluetoothUtil.getBatteryPercentage()
+            batteryPercentageDisposable = bluetoothConnectionService.getBluetoothUtil().getBatteryPercentage()
                     .subscribe(
                             this::updateBatteryRemaining,
                             Timber::e
@@ -1047,6 +946,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         if (connectionStatusDisposable != null) {
             connectionStatusDisposable.dispose();
             connectionStatusDisposable = null;
+        }
+        if(batteryPercentageDisposable != null) {
+            batteryPercentageDisposable.dispose();
+            batteryPercentageDisposable = null;
         }
     }
 
