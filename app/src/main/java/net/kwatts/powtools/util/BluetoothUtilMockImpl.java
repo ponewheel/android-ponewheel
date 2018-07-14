@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.PublishSubject;
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.model.ConnectionStatus;
 import net.kwatts.powtools.model.DeviceStatus;
@@ -27,17 +28,16 @@ import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicStatusErr
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicTemperature;
 
 public class BluetoothUtilMockImpl implements BluetoothUtil {
-    MainActivityDelegate mainActivity;
     private OWDevice owDevice;
     Handler mockLoopHandler = new Handler();
     private boolean isScanning = false;
     private BehaviorSubject<ConnectionStatus> _connectionStatus = BehaviorSubject.createDefault(ConnectionStatus.DISCONNECTED);
+    private PublishSubject<Integer> _batteryPercentage = PublishSubject.create();
 
 
     @Override
-    public void init(MainActivityDelegate mainActivity, OWDevice mOWDevice, BluetoothManager btManager) {
+    public void init(OWDevice mOWDevice, BluetoothManager btManager) {
         Timber.d("init");
-        this.mainActivity = mainActivity;
         this.owDevice = mOWDevice;
     }
 
@@ -125,7 +125,7 @@ public class BluetoothUtilMockImpl implements BluetoothUtil {
                 );
 
                 setByteCharacteristic(OnewheelCharacteristicStatusError, deviceStatus);
-                mainActivity.updateBatteryRemaining(random.nextInt(20) + 80);
+                _batteryPercentage.onNext(random.nextInt(20) + 80);
 
                 mockLoopHandler.postDelayed(this, App.INSTANCE.getSharedPreferences().getLoggingFrequency());
             }
@@ -177,5 +177,10 @@ public class BluetoothUtilMockImpl implements BluetoothUtil {
     @Override
     public Observable<ConnectionStatus> getConnectionStatus() {
         return _connectionStatus;
+    }
+
+    @Override
+    public Observable<Integer> getBatteryPercentage() {
+        return _batteryPercentage;
     }
 }

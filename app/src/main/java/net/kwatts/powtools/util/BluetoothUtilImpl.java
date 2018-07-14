@@ -20,6 +20,7 @@ import android.os.ParcelUuid;
 import android.support.annotation.NonNull;
 import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.PublishSubject;
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.BuildConfig;
 import net.kwatts.powtools.model.ConnectionStatus;
@@ -50,7 +51,6 @@ public class BluetoothUtilImpl implements BluetoothUtil {
 
     private Map<String, String> mScanResults = new HashMap<>();
 
-    private MainActivityDelegate mainActivity;
     OWDevice mOWDevice;
 
     private ScanSettings settings;
@@ -58,14 +58,14 @@ public class BluetoothUtilImpl implements BluetoothUtil {
     private long mDisconnected_time;
     private int mRetryCount = 0;
     private BehaviorSubject<ConnectionStatus> _connectionStatus = BehaviorSubject.createDefault(ConnectionStatus.DISCONNECTED);
+    private PublishSubject<Integer> _batteryPercentage = PublishSubject.create();
 
     public BluetoothUtilImpl(@NonNull Context context) {
         this.context = context.getApplicationContext();
     }
 
     @Override
-    public void init(MainActivityDelegate mainActivity, OWDevice mOWDevice, BluetoothManager btManager) {
-        this.mainActivity = mainActivity;
+    public void init(OWDevice mOWDevice, BluetoothManager btManager) {
         this.mOWDevice = mOWDevice;
 
         mBluetoothAdapter = btManager.getAdapter();
@@ -175,7 +175,7 @@ public class BluetoothUtilImpl implements BluetoothUtil {
 
             //XXX until we figure out what's going on
             if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
-                mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+                _batteryPercentage.onNext(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
                 //}
                 //else if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicSpeedRpm)) {
                 //    mainActivity.updateCurrentSpeed(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
@@ -213,7 +213,7 @@ public class BluetoothUtilImpl implements BluetoothUtil {
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic c) {
             //XXX until we figure out what's going on
             if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
-                mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+                _batteryPercentage.onNext(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
             }
 
             mOWDevice.processUUID(c);
@@ -458,5 +458,10 @@ public class BluetoothUtilImpl implements BluetoothUtil {
     @Override
     public Observable<ConnectionStatus> getConnectionStatus() {
         return _connectionStatus;
+    }
+
+    @Override
+    public Observable<Integer> getBatteryPercentage() {
+        return _batteryPercentage;
     }
 }

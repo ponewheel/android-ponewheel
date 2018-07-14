@@ -63,7 +63,6 @@ import net.kwatts.powtools.model.ConnectionStatus;
 import net.kwatts.powtools.model.OWDevice;
 import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
-import net.kwatts.powtools.util.MainActivityDelegate;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 import net.kwatts.powtools.util.SpeedAlertResolver;
 import net.kwatts.powtools.util.Util;
@@ -141,6 +140,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private boolean connectionServiceIsBound;
     @Nullable
     private Disposable connectionStatusDisposable;
+    @Nullable
+    private Disposable batteryPercentageDisposable;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event) {
@@ -341,7 +342,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public void overrideBluetoothUtil(BluetoothUtil bluetoothUtil) {
         bluetoothConnectionService.setBluetoothUtil(bluetoothUtil);
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothUtil.init(mainActivityC, mOWDevice, bluetoothManager);
+        bluetoothUtil.init(mOWDevice, bluetoothManager);
         doSubscribeToBtStatus();
     }
 
@@ -396,7 +397,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             }
         });
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothConnectionService.getBluetoothUtil().init(mainActivityC, mOWDevice, bluetoothManager);
+        bluetoothConnectionService.getBluetoothUtil().init(mOWDevice, bluetoothManager);
     }
 
     private void updateGaugeOnSpeedChange(ProgressiveGauge gauge, @NonNull String speedString) {
@@ -1031,6 +1032,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                             },
                             Timber::e
                     );
+            if(batteryPercentageDisposable != null && !batteryPercentageDisposable.isDisposed()) {
+                batteryPercentageDisposable.dispose();
+            }
+            batteryPercentageDisposable = bluetoothConnectionService.bluetoothUtil.getBatteryPercentage()
+                    .subscribe(
+                            this::updateBatteryRemaining,
+                            Timber::e
+                    );
         }
     }
 
@@ -1052,16 +1061,4 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             connectionServiceIsBound = false;
         }
     }
-
-    private MainActivityDelegateImpl mainActivityC = new MainActivityDelegateImpl();
-
-    private class MainActivityDelegateImpl implements MainActivityDelegate {
-
-        @Override
-        public void updateBatteryRemaining(int percent) {
-            MainActivity.this.updateBatteryRemaining(percent);
-        }
-
-    }
-
 }
