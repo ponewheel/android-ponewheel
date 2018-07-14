@@ -16,8 +16,10 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.ParcelUuid;
 
+import android.util.Log;
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.BuildConfig;
 import net.kwatts.powtools.MainActivity;
@@ -395,8 +397,18 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
     @Override
     public void reconnect(MainActivity activity) {
-        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        if (isBtAdapterAvailable(activity)) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        } else {
+            Log.e(TAG, "Bluetooth is not available");
+        }
+    }
+
+    @Override
+    public boolean isBtAdapterAvailable(Context context) {
+        return context.getPackageManager()
+                .hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
     }
 
     @Override

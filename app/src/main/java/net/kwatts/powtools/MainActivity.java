@@ -643,8 +643,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         if (getBluetoothUtil().isConnected()) {
             mOWDevice.bluetoothStatus.set("Connected");
-        } else {
+        } else if(getBluetoothUtil().isBtAdapterAvailable(this)) {
             getBluetoothUtil().reconnect(this);
+        } else  {
+            Toast.makeText(this, getString(R.string.bt_is_not_supported), Toast.LENGTH_SHORT).show();
         }
 
         alertsController.recaptureMedia(this);
