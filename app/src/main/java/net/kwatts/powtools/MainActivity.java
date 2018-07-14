@@ -501,14 +501,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 });
                 break;
             case R.id.menu_stop:
-                BluetoothConnectionService.Companion.stopBtConnection(this);
+                BluetoothConnectionService.Companion.stopScanning(this);
                 this.invalidateOptionsMenu();
                 break;
             case R.id.menu_disconnect:
-                bluetoothConnectionService.getMOWDevice().isConnected.set(false);
-                getBluetoothUtil().disconnect();
-                Timber.i("Disconnected from device by user.");
-                deviceConnectedTimer(false);
+                BluetoothConnectionService.Companion.stopBtConnection(this);
                 this.invalidateOptionsMenu();
                 break;
             case R.id.menu_about:

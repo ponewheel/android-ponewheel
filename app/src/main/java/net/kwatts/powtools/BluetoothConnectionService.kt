@@ -1,6 +1,5 @@
 package net.kwatts.powtools
 
-import android.app.IntentService
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -14,6 +13,8 @@ import net.kwatts.powtools.database.entities.Ride
 import net.kwatts.powtools.model.OWDevice
 import net.kwatts.powtools.util.BluetoothUtil
 import net.kwatts.powtools.util.BluetoothUtilImpl
+import net.kwatts.powtools.util.stopRunningAsForeground
+import net.kwatts.powtools.util.runAsForegroundService
 import timber.log.Timber
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -44,19 +45,31 @@ class BluetoothConnectionService : Service() {
         val action = intent?.action
         when (action) {
             ACTION_CONNECT_BT -> {
+                runAsForegroundService()
                 bluetoothUtil.startScanning()
                 if (App.INSTANCE.sharedPreferences.isLoggingEnabled) {
                     initLogging()
                 }
             }
             ACTION_DISCONNECT_BT -> {
-                bluetoothUtil.stopScanning()
+                mOWDevice.isConnected.set(false)
+                bluetoothUtil.disconnect()
                 mLoggingHandler.removeCallbacksAndMessages(null)
+                stopRunningAsForeground()
+            }
+            ACTION_STOP_SCANNING -> {
+                bluetoothUtil.stopScanning()
+                stopRunningAsForeground()
             }
             else -> Timber.e("Unknown service action: [$action]")
         }
 
         return Service.START_NOT_STICKY
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        Timber.tag(TAG).i("onUnbind $intent")
+        return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
@@ -162,9 +175,9 @@ class BluetoothConnectionService : Service() {
     }
 
     companion object {
-        private const val SERVICE_NAME = "bt_connection_service"
         private const val ACTION_CONNECT_BT = "connect"
         private const val ACTION_DISCONNECT_BT = "disconnect"
+        private const val ACTION_STOP_SCANNING = "stop_scanning"
         private const val ONEWHEEL_LOGGING = true
         private const val TAG = "BluetoothConnectionService"
 
@@ -177,6 +190,12 @@ class BluetoothConnectionService : Service() {
         fun stopBtConnection(context: Context) {
             context.startService(Intent(context, BluetoothConnectionService::class.java).apply {
                 action = ACTION_DISCONNECT_BT
+            })
+        }
+
+        fun stopScanning(context: Context) {
+            context.startService(Intent(context, BluetoothConnectionService::class.java).apply {
+                action = ACTION_STOP_SCANNING
             })
         }
     }
