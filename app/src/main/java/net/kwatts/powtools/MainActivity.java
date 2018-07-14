@@ -126,7 +126,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     Chronometer mChronometer;
     OWDevice mOWDevice;
     net.kwatts.powtools.databinding.ActivityMainBinding mBinding;
-    BluetoothUtil bluetoothUtil;
 
     private NotificationCompat.Builder mStatusNotificationBuilder;
     private static final String POW_NOTIF_CHANNEL_STATUS = "pow_status";
@@ -338,9 +337,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         return bluetoothConnectionService.getBluetoothUtil();
     }
 
-    public void provideBluetoothUtil(BluetoothUtil bluetoothUtil) {
-        this.bluetoothUtil = bluetoothUtil;
-//        bluetoothUtil.init(this, mOWDevice);
+    public void overrideBluetoothUtil(BluetoothUtil bluetoothUtil) {
+        bluetoothConnectionService.setBluetoothUtil(bluetoothUtil);
+        BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        bluetoothUtil.init(mainActivityC, mOWDevice, bluetoothManager);
+        doSubscribeToBtStatus();
     }
 
     private void initWakelock() {
@@ -537,8 +538,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 getPermissions().subscribe(new DisposableSingleObserver<Boolean>() {
                     @Override
                     public void onSuccess(Boolean aBoolean) {
-//                        if (getBluetoothUtil().isConnected()) { //TODO
-                        if (true) {
+                        if (getBluetoothUtil().isConnected()) {
                             BluetoothConnectionService.Companion.startBtConnection(MainActivity.this);
                             if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
                                 startLocationScan();
@@ -932,7 +932,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     }
 
-
     public void initRideModeButtons() {
         mRideModeToggleButton = this.findViewById(R.id.mstb_multi_ridemodes);
         if (mOWDevice.isOneWheelPlus.get()) {
@@ -1018,8 +1017,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     };
 
     private void doSubscribeToBtStatus() {
-        if (bluetoothConnectionService != null
-                && (connectionStatusDisposable == null || connectionStatusDisposable.isDisposed())) {
+        if (bluetoothConnectionService != null) {
+            if (connectionStatusDisposable != null && !connectionStatusDisposable.isDisposed()) {
+                Timber.w("connectionStatusDisposable was not disposed. Disposing...");
+                connectionStatusDisposable.dispose();
+            }
             connectionStatusDisposable = bluetoothConnectionService.getBluetoothUtil().getConnectionStatus()
                     .subscribe(
                             connectionStatus -> invalidateOptionsMenu(),
@@ -1035,12 +1037,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
     }
 
-    void doBindService() {
+    private void doBindService() {
         bindService(new Intent(this, BluetoothConnectionService.class), serviceConnection, Context.BIND_AUTO_CREATE);
         connectionServiceIsBound = true;
     }
 
-    void doUnbindService() {
+    private void doUnbindService() {
         if (connectionServiceIsBound) {
             unbindService(serviceConnection);
             connectionServiceIsBound = false;

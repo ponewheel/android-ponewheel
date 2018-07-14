@@ -66,7 +66,7 @@ public class BluetoothUtilMockImpl implements BluetoothUtil {
     @Override
     public boolean isConnected() {
         Timber.d("isConnected");
-        return owDevice.isConnected.get();
+        return true;
     }
 
     @Override

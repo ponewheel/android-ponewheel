@@ -28,9 +28,9 @@ public class DebugDrawerMockBle implements DebugModule {
         Switch mockBle = view.findViewById(R.id.debug_drawer_ble_mock);
         mockBle.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
-                mainActivity.provideBluetoothUtil(new BluetoothUtilMockImpl());
+                mainActivity.overrideBluetoothUtil(new BluetoothUtilMockImpl());
             } else {
-                mainActivity.provideBluetoothUtil(new BluetoothUtilImpl(buttonView.getContext()));
+                mainActivity.overrideBluetoothUtil(new BluetoothUtilImpl(buttonView.getContext()));
             }
 
         });

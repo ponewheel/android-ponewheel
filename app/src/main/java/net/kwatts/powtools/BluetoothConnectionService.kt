@@ -6,12 +6,18 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import net.kwatts.powtools.util.BluetoothUtil
+import net.kwatts.powtools.util.BluetoothUtilImpl
 import net.kwatts.powtools.util.BluetoothUtilMockImpl
 import timber.log.Timber
 
 class BluetoothConnectionService : IntentService(SERVICE_NAME) {
 
-    var bluetoothUtil: BluetoothUtil = BluetoothUtilMockImpl()
+    lateinit var bluetoothUtil: BluetoothUtil
+
+    override fun onCreate() {
+        super.onCreate()
+        bluetoothUtil = BluetoothUtilImpl(this)
+    }
 
     override fun onBind(intent: Intent?): IBinder {
         return LocalBinder()

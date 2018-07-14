@@ -240,7 +240,7 @@ public class BluetoothUtilImpl implements BluetoothUtil {
 
     };
 
-    void scanLeDevice(final boolean enable) {
+    private void scanLeDevice(final boolean enable) {
         Timber.d("scanLeDevice enable = " + enable);
         if (enable) {
             mScanning = true;
