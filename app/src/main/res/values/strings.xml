@@ -46,6 +46,9 @@
     <string name="pads">Rider Pads</string>
     <string name="temp">Temperature</string>
     <string name="power">Power</string>
+    <string name="bt_is_not_supported">Bluetooth is not available</string>
+    <string name="connection_notification_channel">Active connection</string>
+    <string name="connection_notification_text">Device connected</string>
 
     <string-array name="ow_ridemode_array">
         <item>CLASSIC</item>

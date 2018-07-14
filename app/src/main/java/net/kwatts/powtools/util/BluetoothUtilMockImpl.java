@@ -3,17 +3,20 @@ package net.kwatts.powtools.util;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.content.Context;
 import android.os.Handler;
-
+import android.support.annotation.NonNull;
+import io.reactivex.Observable;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.PublishSubject;
 import net.kwatts.powtools.App;
-import net.kwatts.powtools.MainActivity;
+import net.kwatts.powtools.model.ConnectionStatus;
 import net.kwatts.powtools.model.DeviceStatus;
 import net.kwatts.powtools.model.OWDevice;
+import timber.log.Timber;
 
 import java.util.Random;
 import java.util.UUID;
-
-import timber.log.Timber;
 
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicBatteryTemp;
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicFirmwareRevision;
@@ -23,25 +26,15 @@ import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicSpeedRpm;
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicStatusError;
 import static net.kwatts.powtools.model.OWDevice.OnewheelCharacteristicTemperature;
 
-public class BluetoothUtilMockImpl implements BluetoothUtil{
-    MainActivity mainActivity;
+public class BluetoothUtilMockImpl implements BluetoothUtil {
     private OWDevice owDevice;
     Handler mockLoopHandler = new Handler();
     private boolean isScanning = false;
+    private BehaviorSubject<ConnectionStatus> _connectionStatus = BehaviorSubject.createDefault(ConnectionStatus.DISCONNECTED);
+    private PublishSubject<Integer> _batteryPercentage = PublishSubject.create();
 
-
-    @Override
-    public void init(MainActivity mainActivity, OWDevice mOWDevice) {
-        Timber.d("init");
-        this.mainActivity = mainActivity;
-        this.owDevice = mOWDevice;
-    }
-
-    @Override
-    public void reconnect(MainActivity activity) {
-        mainActivity = activity;
-        Timber.d("reconnect");
-
+    public BluetoothUtilMockImpl(OWDevice owDevice) {
+        this.owDevice = owDevice;
     }
 
     @Override
@@ -59,13 +52,17 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
 
     private void setIsScanning(boolean shouldBeScanning) {
         isScanning = shouldBeScanning;
-        mainActivity.invalidateOptionsMenu();
+        if (shouldBeScanning) {
+            _connectionStatus.onNext(ConnectionStatus.SCANNING);
+        } else {
+            _connectionStatus.onNext(ConnectionStatus.DISCONNECTED);
+        }
     }
 
     @Override
     public boolean isConnected() {
         Timber.d("isConnected");
-        return owDevice.isConnected.get();
+        return true;
     }
 
     @Override
@@ -78,7 +75,6 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     public void startScanning() {
         Timber.d("setIsScanning");
         setIsScanning(true);
-        updateLog("connected");
         onConnected();
     }
 
@@ -125,12 +121,13 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
                 );
 
                 setByteCharacteristic(OnewheelCharacteristicStatusError, deviceStatus);
-                mainActivity.updateBatteryRemaining(random.nextInt(20) + 80);
+                _batteryPercentage.onNext(random.nextInt(20) + 80);
 
                 mockLoopHandler.postDelayed(this, App.INSTANCE.getSharedPreferences().getLoggingFrequency());
             }
         };
         mockLoopHandler.postDelayed(runnable, App.INSTANCE.getSharedPreferences().getLoggingFrequency());
+        _connectionStatus.onNext(ConnectionStatus.CONNECTED);
     }
 
     void setBoolCharacteristic(String mockOnewheelCharacteristic, boolean v) {
@@ -155,7 +152,7 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     @Override
     public BluetoothGattCharacteristic getCharacteristic(String onewheelCharacteristicLightingMode) {
         Timber.d("getCharacteristic" + onewheelCharacteristicLightingMode);
-        return new BluetoothGattCharacteristic(UUID.fromString("asdf"),1,1);
+        return new BluetoothGattCharacteristic(UUID.fromString("asdf"), 1, 1);
     }
 
     @Override
@@ -163,11 +160,23 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
         Timber.d("writeChar" + lc);
     }
 
-    private void updateLog(String s) {
-        mainActivity.updateLog("mock: " + s);
+    public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+        setIsScanning(false);
     }
 
-    public void onServicesDiscovered(BluetoothGatt gatt, int status){
-        setIsScanning(false);
+    @Override
+    public boolean isBtAdapterAvailable(Context context) {
+        return true;
+    }
+
+    @NonNull
+    @Override
+    public Observable<ConnectionStatus> getConnectionStatus() {
+        return _connectionStatus;
+    }
+
+    @Override
+    public Observable<Integer> getBatteryPercentage() {
+        return _batteryPercentage;
     }
 }
