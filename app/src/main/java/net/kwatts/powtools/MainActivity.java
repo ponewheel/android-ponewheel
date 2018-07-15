@@ -10,6 +10,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.databinding.Observable;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.location.Address;
 import android.net.Uri;
@@ -899,10 +900,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             doSubscribeToBtStatus();
 
+            //Log sharing doesn't work with version 0.8.0 https://github.com/palaima/DebugDrawer/issues/78
             new DebugDrawer.Builder(MainActivity.this)
+                    .withTheme(R.style.Theme_AppCompat_Light)
+                    .backgroundColorRes(R.color.background_material_light)
                     .modules(
                             new DebugDrawerMockBle(MainActivity.this),
-                            new SettingsModule(MainActivity.this),
+                            new SettingsModule(),
                             new TimberModule()
                     ).build();
         }

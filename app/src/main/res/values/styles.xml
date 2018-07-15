@@ -1,64 +1,11 @@
 <resources>
 
-    <!-- Base application theme.
-    <style name="AppBaseTheme" parent="@android:style/Theme.Light" />
-    <style name="AppTheme" parent="Base.Theme.AppCompat.Light.DarkActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-    </style> -->
-
     <style name="AppTheme.Base" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:windowNoTitle">true</item>
     </style>
-
-    <!-- @android:style/Widget.Holo.Light.TextView -->
-    <style name="GridLayoutDataTextView" parent="android:Theme.Material">
-        <item name="android:textSize">12.0sp</item>
-        <item name="android:ellipsize">none</item>
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">fill_parent</item>
-        <item name="android:maxLines">100</item>
-        <item name="android:scrollHorizontally">false</item>
-        <item name="android:singleLine">false</item>
-        <item name="android:layout_weight">1.0</item>
-        <item name="android:inputType">textMultiLine</item>
-    </style>
-    <style name="GridLayoutDataTextViewMonospace" parent="@style/GridLayoutDataTextView">
-        <item name="android:typeface">monospace</item>
-    </style>
-    <!-- @android:style/Widget.Holo.Light.TextView -->
-    <style name="GridLayoutTitleTextView" parent="android:Theme.Material">
-        <item name="android:textSize">12.0sp</item>
-    </style>
-
-    <style name="ToolbarPopupTheme" parent="ThemeOverlay.AppCompat.Light" />
-
-
-
-    <style name="ToolbarTheme" parent="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
-        <!-- This would set the toolbar's background color -->
-        <item name="android:background">@color/colorPrimary</item>
-        <!-- android:textColorPrimary is the color of the title text in the Toolbar  -->
-        <!-- <item name="android:textColorPrimary">@android:color/holo_blue_light</item> -->
-        <!-- android:actionMenuTextColor is the color of the text of action (menu) items  -->
-        <!-- <item name="actionMenuTextColor">@android:color/holo_green_light</item> -->
-        <!-- Enable these below if you want clicking icons to trigger a ripple effect -->
-        <!--
-        <item name="selectableItemBackground">?android:selectableItemBackground</item>
-        <item name="selectableItemBackgroundBorderless">?android:selectableItemBackground</item>
-        -->
-    </style>
-
-    <!-- This configures the styles for the title within the Toolbar  -->
-    <style name="Toolbar.TitleText" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
-        <item name="android:textSize">21sp</item>
-        <item name="android:textStyle">italic</item>
-    </style>
-
 
     <style name="MySwitchCompat" parent="Widget.AppCompat.CompoundButton.Switch">
         <item name="android:textColor">@color/gray</item>
@@ -67,6 +14,7 @@
         <item name="android:textStyle">bold</item>
         <item name="android:textSize">15.0sp</item>
     </style>
+
     <style name="GridItemRight">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
@@ -75,7 +23,8 @@
         <item name="android:gravity">right</item>
         <item name="android:textSize">@dimen/font_size_stats</item>
     </style>
- <style name="GridItemLeft">
+
+    <style name="GridItemLeft">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_column">0</item>
@@ -84,6 +33,6 @@
         <item name="android:textSize">@dimen/font_size_stats</item>
     </style>
 
-    <style name="CardView.DayNight" parent="CardView.Light" />
+    <style name="CardView.DayNight" parent="CardView.Light"/>
 
 </resources>

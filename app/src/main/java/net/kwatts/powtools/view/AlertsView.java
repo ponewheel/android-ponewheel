@@ -2,14 +2,14 @@ package net.kwatts.powtools.view;
 
 import android.app.Activity;
 import android.media.MediaPlayer;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
-
-import com.rey.material.widget.SnackBar;
 
 import net.kwatts.powtools.R;
 
@@ -26,16 +26,16 @@ public class AlertsView implements AlertsMvpController.View{
     private final TextView alertSpeedTextView;
     private MediaPlayer mediaPlayer;
     AlertsMvpController.Presenter alertsPresenter;
-    private SnackBar numberFormatErrorSnackbar;
+    private Snackbar numberFormatErrorSnackbar;
 
     public AlertsView(Activity activity) {
-        numberFormatErrorSnackbar = SnackBar.make(activity).text("Please enter a numeric value");
         alertChargeCheckView = activity.findViewById(R.id.alerts_charge_alert_check);
         alertChargeEntryView = activity.findViewById(R.id.alerts_charge_alert_entry);
         alertChargeTextView = activity.findViewById(R.id.alerts_charge_alert_text);
         alertSpeedCheckView = activity.findViewById(R.id.alerts_speed_alert_check);
         alertSpeedEntryView = activity.findViewById(R.id.alerts_speed_alert_entry);
         alertSpeedTextView = activity.findViewById(R.id.alerts_speed_alert_text);
+        numberFormatErrorSnackbar = Snackbar.make(alertSpeedTextView, "Please enter a numeric value", Snackbar.LENGTH_SHORT);
 
         alertChargeCheckView.setOnCheckedChangeListener((view, isChecked) -> {
             alertsPresenter.onChargeAlertCheckChanged(isChecked);

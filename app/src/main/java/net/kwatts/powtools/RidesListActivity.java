@@ -55,9 +55,11 @@ public class RidesListActivity extends AppCompatActivity {
 
         DebugDrawerAddDummyRide debugDrawerAddDummyRide = new DebugDrawerAddDummyRide(this);
         new DebugDrawer.Builder(this)
+                .withTheme(R.style.Theme_AppCompat_Light)
+                .backgroundColorRes(R.color.background_material_light)
                 .modules(
                         debugDrawerAddDummyRide,
-                        new SettingsModule(this)
+                        new SettingsModule()
                 ).build();
 
         getLifecycle().addObserver(debugDrawerAddDummyRide);

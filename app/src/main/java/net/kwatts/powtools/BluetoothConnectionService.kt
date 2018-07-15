@@ -89,7 +89,7 @@ class BluetoothConnectionService : Service() {
         mOWDevice.isConnected.addOnPropertyChangedCallback(
             object : Observable.OnPropertyChangedCallback() {
                 override fun onPropertyChanged(observable: Observable, i: Int) {
-                    if (mOWDevice.isConnected.get() && isNewOrNotContinuousRide()) {
+                    if (mOWDevice.isConnected.get() == true && isNewOrNotContinuousRide()) {
                         ride = Ride().also { newRide ->
                             App.dbExecute { database -> newRide.id = database.rideDao().insert(newRide) }
                         }
@@ -123,7 +123,7 @@ class BluetoothConnectionService : Service() {
                 override fun run() {
                     val mLoggingFrequency = App.INSTANCE.sharedPreferences.loggingFrequency
                     mLoggingHandler.postDelayed(this, mLoggingFrequency.toLong())
-                    if (mOWDevice.isConnected.get()) {
+                    if (mOWDevice.isConnected.get() == true) {
                         try {
                             persistMoment()
                         } catch (e: Exception) {
