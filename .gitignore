@@ -42,6 +42,9 @@ captures/
 .idea/libraries
 .idea/modules.xml
 .idea/misc.xml
+.idea/caches
+.idea/assetWizardSettings.xml
+.idea/navEditor.xml
 .idea/kotlinc.xml
 .idea/fileTemplates/internal
 .idea/markdown-*
