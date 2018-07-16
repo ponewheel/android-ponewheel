@@ -1,5 +1,6 @@
 package net.kwatts.powtools.loggers;
 
+import android.content.Context;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 
@@ -34,14 +35,14 @@ public class PlainTextFileLogger  {
     }
 
     @NonNull
-    public static String getLoggingPath() {
-        String logPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + ONEWHEEL_LOGGING_PATH;
+    public static String getLoggingPath(Context applicationContext) {
+        String logPath = applicationContext.getCacheDir().getAbsolutePath() + "/" + ONEWHEEL_LOGGING_PATH;
         createDirIfNotExists(logPath);
         return logPath;
     }
 
-    public static File createLogFile(long rideId, String rideDate, Database database) {
-        File file = new File( PlainTextFileLogger.getLoggingPath() + "/owlogs_" + rideDate + ".csv");
+    public static File createLogFile(Context context, long rideId, String rideDate, Database database) {
+        File file = new File( PlainTextFileLogger.getLoggingPath(context) + "/owlogs_" + rideDate + ".csv");
         if (file.exists()) {
             boolean deleted = file.delete();
             Timber.d("deleted?" + deleted);

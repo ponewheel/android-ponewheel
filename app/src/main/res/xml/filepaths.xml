@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <external-path name="powlogs" path="powlogs/" />
+    <cache-path name="powlogs" path="powlogs/" />
 </paths>

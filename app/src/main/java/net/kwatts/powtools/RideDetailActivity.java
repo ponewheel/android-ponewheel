@@ -231,7 +231,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         App.dbExecute(database -> {
             long rideId = getIntent().getLongExtra(RIDE_ID, -1);
             String rideDate = getIntent().getStringExtra(RIDE_DATE);
-            File file = PlainTextFileLogger.createLogFile(rideId, rideDate, database);
+            File file = PlainTextFileLogger.createLogFile(getApplicationContext(), rideId, rideDate, database);
 
             Uri uri = FileProvider.getUriForFile(this, "net.kwatts.powtools.fileprovider", file);
             shareFileIntent.putExtra(Intent.EXTRA_STREAM, uri);
