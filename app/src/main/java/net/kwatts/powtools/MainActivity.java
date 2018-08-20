@@ -48,7 +48,6 @@ import io.palaima.debugdrawer.DebugDrawer;
 import io.palaima.debugdrawer.commons.SettingsModule;
 import io.palaima.debugdrawer.timber.TimberModule;
 import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
@@ -922,7 +921,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 connectionStatusDisposable.dispose();
             }
             connectionStatusDisposable = bluetoothConnectionService.getBluetoothUtil().getConnectionStatus()
-                    .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
                             (ConnectionStatus connectionStatus) -> {
                                 invalidateOptionsMenu();
@@ -934,7 +932,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 batteryPercentageDisposable.dispose();
             }
             batteryPercentageDisposable = bluetoothConnectionService.getBluetoothUtil().getBatteryPercentage()
-                    .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
                             this::updateBatteryRemaining,
                             Timber::e
