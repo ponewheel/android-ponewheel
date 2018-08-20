@@ -2,7 +2,6 @@ package net.kwatts.powtools;
 
 import android.Manifest;
 import android.app.PendingIntent;
-import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -14,10 +13,10 @@ import android.graphics.Typeface;
 import android.location.Address;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
@@ -31,6 +30,7 @@ import android.view.WindowManager;
 import android.widget.Chronometer;
 import android.widget.ScrollView;
 import android.widget.Toast;
+
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.Theme;
 import com.github.anastr.speedviewlib.ProgressiveGauge;
@@ -44,39 +44,43 @@ import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.gms.location.LocationRequest;
 import com.patloew.rxlocation.RxLocation;
 import com.tbruyelle.rxpermissions2.RxPermissions;
-import io.palaima.debugdrawer.DebugDrawer;
-import io.palaima.debugdrawer.commons.SettingsModule;
-import io.palaima.debugdrawer.timber.TimberModule;
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.observers.DisposableObserver;
-import io.reactivex.observers.DisposableSingleObserver;
-import io.reactivex.schedulers.Schedulers;
-import kotlin.jvm.functions.Function1;
+
+import net.kwatts.powtools.database.entities.Attribute;
+import net.kwatts.powtools.database.entities.Moment;
 import net.kwatts.powtools.database.entities.Ride;
 import net.kwatts.powtools.events.NotificationEvent;
 import net.kwatts.powtools.events.VibrateEvent;
-import net.kwatts.powtools.model.ConnectionStatus;
 import net.kwatts.powtools.model.OWDevice;
 import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
+import net.kwatts.powtools.util.BluetoothUtilImpl;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 import net.kwatts.powtools.util.SpeedAlertResolver;
 import net.kwatts.powtools.util.Util;
 import net.kwatts.powtools.util.debugdrawer.DebugDrawerMockBle;
 import net.kwatts.powtools.view.AlertsMvpController;
+
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.honorato.multistatetogglebutton.MultiStateToggleButton;
 import org.honorato.multistatetogglebutton.ToggleButton;
-import timber.log.Timber;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+
+import io.palaima.debugdrawer.DebugDrawer;
+import io.palaima.debugdrawer.commons.SettingsModule;
+import io.palaima.debugdrawer.timber.TimberModule;
+import io.reactivex.Single;
+import io.reactivex.observers.DisposableObserver;
+import io.reactivex.observers.DisposableSingleObserver;
+import io.reactivex.schedulers.Schedulers;
+import timber.log.Timber;
 
 import static net.kwatts.powtools.model.OWDevice.KEY_RIDE_MODE;
 import static net.kwatts.powtools.model.OWDevice.MockOnewheelCharacteristicSpeed;
@@ -105,7 +109,7 @@ import static net.kwatts.powtools.util.Util.rpmToMilesPerHour;
 
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private static final int REQUEST_ENABLE_BT = 1;
+    private static final boolean ONEWHEEL_LOGGING = true;
 
 
     MultiStateToggleButton mRideModeToggleButton;
@@ -113,31 +117,29 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     boolean mRideModePositionSetOnceFlag;
 
     public VibrateService mVibrateService;
+    private android.os.Handler mLoggingHandler = new Handler();
     private SpeedAlertResolver speedAlertResolver = new SpeedAlertResolver(App.INSTANCE.getSharedPreferences());
 
     private Context mContext;
     ScrollView mScrollView;
     Chronometer mChronometer;
+    OWDevice mOWDevice;
     net.kwatts.powtools.databinding.ActivityMainBinding mBinding;
+    BluetoothUtil bluetoothUtil;
 
     private NotificationCompat.Builder mStatusNotificationBuilder;
     private static final String POW_NOTIF_CHANNEL_STATUS = "pow_status";
     private static final String POW_NOTIF_TAG_STATUS = "statusNotificationTag";
 
     PieChart mBatteryChart;
+    Ride ride;
     private DisposableObserver<Address> rxLocationObserver;
     private AlertsMvpController alertsController;
     //private SpeedView mSpeedBar;
     public ProgressiveGauge mProgressiveGauge;
-    private boolean connectionServiceIsBound;
-    @Nullable
-    private Disposable connectionStatusDisposable;
-    @Nullable
-    private Disposable batteryPercentageDisposable;
-
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onEvent(NotificationEvent event) {
-        Timber.d(event.message + ":" + event.title);
+    public void onEvent(NotificationEvent event){
+        Timber.d( event.message + ":" + event.title);
         final String title = event.title;
         final String message = event.message;
         runOnUiThread(() -> {
@@ -154,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             assert mNotifyMgr != null;
-            mNotifyMgr.notify(message, 0, mBuilder.build());
+            mNotifyMgr.notify(message,0, mBuilder.build());
         });
     }
 
@@ -180,8 +182,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     //battery level alerts
-    public static SparseBooleanArray batteryAlertLevels = new SparseBooleanArray() {{
-        put(75, false); //1
+    public static SparseBooleanArray batteryAlertLevels = new SparseBooleanArray(){{
+        put(75,false); //1
         put(50, false); //2
         put(25, false); //3
         put(5, false); // 4
@@ -205,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 mColors.add(ColorTemplate.rgb("#C62828")); //red
                 dataSet.setColors(mColors);
 
-                PieData newPieData = new PieData(dataSet);
+                PieData newPieData = new PieData( dataSet);
                 mBatteryChart.setCenterText(percent + "%");
                 mBatteryChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD);
                 mBatteryChart.setCenterTextColor(ColorTemplate.rgb("#616161"));
@@ -221,35 +223,34 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     if (!(batteryAlertLevels.get(percent))) {
                         switch (percent) {
                             case 75:
-                                EventBus.getDefault().post(new VibrateEvent(1000, 1));
+                                EventBus.getDefault().post(new VibrateEvent(1000,1));
                                 onEvent(new NotificationEvent("OW Battery", "75%"));
                                 break;
                             case 50:
-                                EventBus.getDefault().post(new VibrateEvent(1000, 2));
+                                EventBus.getDefault().post(new VibrateEvent(1000,2));
                                 onEvent(new NotificationEvent("OW Battery", "50%"));
                                 break;
                             case 25:
-                                EventBus.getDefault().post(new VibrateEvent(1000, 3));
+                                EventBus.getDefault().post(new VibrateEvent(1000,3));
                                 onEvent(new NotificationEvent("OW Battery", "25%"));
                                 break;
                             case 5:
-                                EventBus.getDefault().post(new VibrateEvent(1000, 4));
+                                EventBus.getDefault().post(new VibrateEvent(1000,4));
                                 onEvent(new NotificationEvent("OW Battery", "5%"));
                                 break;
                             default:
                         }
-                        batteryAlertLevels.put(percent, true);
+                        batteryAlertLevels.put(percent,true);
                     }
                 }
 
             } catch (Exception e) {
-                Timber.e("Got an exception updating battery:" + e.getMessage());
+                Timber.e( "Got an exception updating battery:" + e.getMessage());
             }
         });
 
         alertsController.handleChargePercentage(percent);
     }
-
     public void deviceConnectedTimer(final boolean start) {
         runOnUiThread(() -> {
             if (start) {
@@ -265,7 +266,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Timber.d("Starting...");
+        Timber.d( "Starting...");
         super.onCreate(savedInstanceState);
 
         mContext = this;
@@ -293,14 +294,29 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         startService(new Intent(getApplicationContext(), VibrateService.class));
 
+        setupOWDevice();
+
         setupToolbar();
 
         mScrollView = findViewById(R.id.logScroller);
 
+        if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
+            initLogging();
+        }
+
         mChronometer = findViewById(R.id.chronometer);
         mProgressiveGauge = findViewById(R.id.speedbar);
+        initSpeedBar();
+        initBatteryChart();
+        initLightSettings();
+        initRideModeButtons();
 
-        doBindService();
+        new DebugDrawer.Builder(this)
+                .modules(
+                        new DebugDrawerMockBle(this),
+                        new SettingsModule(this),
+                        new TimberModule()
+                ).build();
     }
 
     private void startStatusNotification() {
@@ -324,12 +340,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     public BluetoothUtil getBluetoothUtil() {
-        return bluetoothConnectionService.getBluetoothUtil();
+        if (bluetoothUtil == null) {
+            bluetoothUtil = new BluetoothUtilImpl();
+        }
+
+        return bluetoothUtil;
     }
 
-    public void overrideBluetoothUtil(Function1<? super OWDevice, ? extends BluetoothUtil> builder) {
-        bluetoothConnectionService.overrideBluetoothUtil(builder);
-        doSubscribeToBtStatus();
+    public void provideBluetoothUtil(BluetoothUtil bluetoothUtil){
+        this.bluetoothUtil = bluetoothUtil;
+        bluetoothUtil.init(this, mOWDevice);
     }
 
     private void initWakelock() {
@@ -343,8 +363,38 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         setSupportActionBar(mToolbar);
     }
 
-    private void setupOWDevice(OWDevice mOWDevice) {
+    private void setupOWDevice() {
+        mOWDevice = new OWDevice();
         mBinding.setOwdevice(mOWDevice);
+
+        mOWDevice.showDebugWindow.set(App.INSTANCE.getSharedPreferences().isDebugging());
+        mOWDevice.isOneWheelPlus.set(App.INSTANCE.getSharedPreferences().isOneWheelPlus());
+
+//        mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+//            @Override
+//            public void onPropertyChanged(Observable observable, int i) {
+//                Timber.d( "onPropertyChanged: " + mOWDevice.isConnected.get());
+//                Timber.d( "onPropertyChanged: " + observable.toString() + "i" + i);
+//            }
+//        });
+
+        mOWDevice.setupCharacteristics();
+        mOWDevice.isConnected.set(false);
+
+        //mOWDevice.bluetoothLe.set("Off");
+        //mOWDevice.bluetoothStatus.set("Disconnected");
+
+        mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+            @Override
+            public void onPropertyChanged(Observable observable, int i) {
+
+
+                if (mOWDevice.isConnected.get() && isNewOrNotContinuousRide()) {
+                    ride = new Ride();
+                    App.dbExecute(database -> ride.id = database.rideDao().insert(ride));
+                }
+            }
+        });
 
         mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
@@ -353,7 +403,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 alertsController.handleSpeed(speedString);
                 updateGaugeOnSpeedChange(mProgressiveGauge, speedString);
             }
-        }); //TODO remove on activity destroy to avoid memory leak
+        });
+        getBluetoothUtil().init(MainActivity.this, mOWDevice);
     }
 
     private void updateGaugeOnSpeedChange(ProgressiveGauge gauge, @NonNull String speedString) {
@@ -371,6 +422,21 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 Timber.d(deviceCharacteristic.key.get() + " = " + deviceCharacteristic.value.get());
             }
         });
+    }
+
+    boolean isNewOrNotContinuousRide() {
+
+        if (ride == null) {
+            return true;
+        }
+        if (ride.end == null) {
+            Timber.e("isNewOrNotContinuousRide: unexpected state, ride.end not set");
+            return true;
+        }
+
+        long millisSinceLastMoment = new Date().getTime() - ride.end.getTime();
+        // Not continuous is defined as 1 min break. Maybe configurable in the future.
+        return TimeUnit.MINUTES.toMillis(1) > millisSinceLastMoment;
     }
 
     private void showEula() {
@@ -404,7 +470,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 })
                 .show();
     }
-
     private void setupDarkModes(Bundle savedInstanceState) {
         if (App.INSTANCE.getSharedPreferences().isDayNightMode()) {
             if (savedInstanceState == null) {
@@ -421,18 +486,15 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     @Override
-    protected void onStart() {
+    public void onStart() {
         super.onStart();
-        doSubscribeToBtStatus();
     }
 
     @Override
     public void onStop() {
         EventBus.getDefault().unregister(this);
         super.onStop();
-        doUnsubscribeFromBtStatus();
     }
-
     @Override
     public void onDestroy() {
         if (mVibrateService != null) {
@@ -441,37 +503,35 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         App.INSTANCE.getSharedPreferences().removeListener(this);
         stopStatusNotification();
         super.onDestroy();
-        doUnbindService();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
 
-        if (bluetoothConnectionService != null && bluetoothConnectionService.getMOWDevice().isConnected.get()) {
+        if (mOWDevice.isConnected.get()) {
             menu.findItem(R.id.menu_disconnect).setVisible(true);
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(false);
             //menu.findItem(R.id.menu_ow_light_on).setVisible(true);
             //menu.findItem(R.id.menu_ow_ridemode).setVisible(true);
-        } else if (bluetoothConnectionService != null && getBluetoothUtil().isScanning()) {
-            menu.findItem(R.id.menu_stop).setVisible(true);
-            menu.findItem(R.id.menu_scan).setVisible(false);
-            menu.findItem(R.id.menu_disconnect).setVisible(false);
-            menu.findItem(R.id.menu_refresh).setActionView(R.layout.actionbar_progress_indeterminate);
-            //menu.findItem(R.id.menu_ow_light_on).setVisible(false);
-            //menu.findItem(R.id.menu_ow_ridemode).setVisible(false);
-        } else {
+        } else if (!getBluetoothUtil().isScanning()) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
             menu.findItem(R.id.menu_disconnect).setVisible(false);
             menu.findItem(R.id.menu_refresh).setActionView(null);
             //menu.findItem(R.id.menu_ow_light_on).setVisible(false);
             //menu.findItem(R.id.menu_ow_ridemode).setVisible(false);
+        } else {
+            menu.findItem(R.id.menu_stop).setVisible(true);
+            menu.findItem(R.id.menu_scan).setVisible(false);
+            menu.findItem(R.id.menu_disconnect).setVisible(false);
+            menu.findItem(R.id.menu_refresh).setActionView(R.layout.actionbar_progress_indeterminate);
+            //menu.findItem(R.id.menu_ow_light_on).setVisible(false);
+            //menu.findItem(R.id.menu_ow_ridemode).setVisible(false);
         }
         return true;
     }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -479,34 +539,37 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 startActivity(new Intent(MainActivity.this, RidesListActivity.class));
                 break;
             case R.id.menu_scan:
-                getPermissions().subscribe(new DisposableSingleObserver<Boolean>() {
-                    @Override
-                    public void onSuccess(Boolean aBoolean) {
-                        if (getBluetoothUtil().isConnected()) {
-                            BluetoothConnectionService.Companion.startBtConnection(MainActivity.this);
-                            if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
-                                startLocationScan();
-                            }
-                        } else if (getBluetoothUtil().isBtAdapterAvailable(MainActivity.this)) {
-                            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-                        } else {
-                            Toast.makeText(MainActivity.this, getString(R.string.bt_is_not_supported), Toast.LENGTH_SHORT).show();
-                        }
-                    }
+                //mLeDeviceListAdapter.clear();
+//                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("Scan").build());
 
-                    @Override
-                    public void onError(Throwable e) {
-                        Timber.e(e);
-                    }
+                getPermissions().subscribe(new DisposableSingleObserver<Boolean>() {
+                           @Override
+                           public void onSuccess(Boolean aBoolean) {
+                               getBluetoothUtil().startScanning();
+                               // TODO move this to where we're actually connected to device? (or maybe its better here so we can achieve a location lock before logging)
+                               if (App.INSTANCE.getSharedPreferences().isLoggingEnabled()) {
+                                   startLocationScan();
+                               }
+                           }
+
+                           @Override
+                           public void onError(Throwable e) {
+                                e.printStackTrace();
+                           }
                 });
+
                 break;
             case R.id.menu_stop:
-                BluetoothConnectionService.Companion.stopScanning(this);
+                getBluetoothUtil().stopScanning();
                 this.invalidateOptionsMenu();
+
                 break;
             case R.id.menu_disconnect:
-                BluetoothConnectionService.Companion.stopBtConnection(this);
+                mOWDevice.isConnected.set(false);
+                getBluetoothUtil().disconnect();
+                Timber.i("Disconnected from device by user.");
+                deviceConnectedTimer(false);
+                mLoggingHandler.removeCallbacksAndMessages(null);
                 this.invalidateOptionsMenu();
                 break;
             case R.id.menu_about:
@@ -532,6 +595,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     private void startLocationScan() {
+
         RxLocation rxLocation = new RxLocation(this);
 
         LocationRequest locationRequest = LocationRequest.create()
@@ -544,25 +608,22 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .flatMap(location -> rxLocation.geocoding().fromLocation(location).toObservable())
                 .observeOn(Schedulers.io())
                 .subscribeWith(new DisposableObserver<Address>() {
-                    @Override
-                    public void onNext(Address address) {
+                    @Override public void onNext(Address address) {
 
                         boolean isLocationsEnabled = App.INSTANCE.getSharedPreferences().isLocationsEnabled();
                         if (isLocationsEnabled) {
-                            bluetoothConnectionService.getMOWDevice().setGpsLocation(address);
+                            mOWDevice.setGpsLocation(address);
                         } else if (rxLocationObserver != null) {
                             rxLocationObserver.dispose();
                         }
                     }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        Timber.e("onError: error retrieving location", e);
+                    @Override public void onError(Throwable e) {
+                        Timber.e( "onError: error retreiving location", e);
                     }
 
-                    @Override
-                    public void onComplete() {
-                        Timber.d("onComplete: ");
+                    @Override public void onComplete() {
+                        Timber.d( "onComplete: ");
                     }
                 });
     }
@@ -575,11 +636,20 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .firstOrError();
     }
 
+
     @Override
     protected void onResume() {
         super.onResume();
 
+        if (getBluetoothUtil().isConnected()) {
+            mOWDevice.bluetoothStatus.set("Connected");
+        } else {
+            getBluetoothUtil().reconnect(this);
+        }
+
         alertsController.recaptureMedia(this);
+
+        this.invalidateOptionsMenu();
     }
 
     @Override
@@ -600,7 +670,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         Timber.i("onSharedPreferenceChanged callback");
         switch (key) {
             case SharedPreferencesUtil.METRIC_UNITS:
-                bluetoothConnectionService.getMOWDevice().refreshCharacteristics();
+                mOWDevice.refreshCharacteristics();
                 refreshMetricViews();
                 break;
 
@@ -618,13 +688,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             case SharedPreferencesUtil.LOG_LOCATIONS:
                 boolean checkLogLocations = sharedPreferences.getBoolean(key, false);
-                if (!checkLogLocations && bluetoothConnectionService != null) {
-                    bluetoothConnectionService.getMOWDevice().setGpsLocation(null);
+                if (!checkLogLocations && mOWDevice != null) {
+                    mOWDevice.setGpsLocation(null);
                 }
                 break;
 
             default:
-                Timber.d("onSharedPreferenceChanged: " + key);
+                Timber.d( "onSharedPreferenceChanged: " + key);
         }
 
     }
@@ -644,9 +714,62 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
     };
 
-    private static final int SPEED_ANIMATION_DURATION = 0;
 
-    private void initSpeedBar(OWDevice mOWDevice) {
+
+    public void initLogging() {
+        if (ONEWHEEL_LOGGING) {
+            Runnable deviceFileLogger = new Runnable() {
+                @Override
+                public void run() {
+                    int mLoggingFrequency = App.INSTANCE.getSharedPreferences().getLoggingFrequency();
+                    mLoggingHandler.postDelayed(this, mLoggingFrequency);
+                    if (mOWDevice.isConnected.get()) {
+                        try {
+                            persistMoment();
+
+                        } catch (Exception e) {
+                            Timber.e( "unable to write logs", e);
+                        }
+                    }
+                }
+            };
+            mLoggingHandler.postDelayed(deviceFileLogger, App.INSTANCE.getSharedPreferences().getLoggingFrequency());
+
+        }
+    }
+
+    private void persistMoment() throws Exception {
+        App.dbExecute(database -> {
+            Date latestMoment = new Date();
+
+            if (ride.start == null) {
+                ride.start = latestMoment;
+            }
+            ride.end = latestMoment;
+            database.rideDao().updateRide(ride);
+
+            Moment moment = new Moment(ride.id, latestMoment);
+            moment.rideId = ride.id;
+            long momentId = database.momentDao().insert(moment);
+            List<Attribute> attributes = new ArrayList<>();
+            for (OWDevice.DeviceCharacteristic deviceReadCharacteristic : mOWDevice.getNotifyCharacteristics()) {
+                Attribute attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setValue(deviceReadCharacteristic.value.get());
+                attribute.setKey(deviceReadCharacteristic.key.get());
+
+                attributes.add(attribute);
+            }
+            database.attributeDao().insertAll(attributes);
+            if (mOWDevice.getGpsLocation() != null) {
+                moment.setGpsLat(mOWDevice.getGpsLocation().getLatitude());
+                moment.setGpsLong(mOWDevice.getGpsLocation().getLongitude());
+            }
+        });
+    }
+
+    private static final int SPEED_ANIMATION_DURATION = 0;
+    private void initSpeedBar() {
         mOWDevice.speedRpm.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
@@ -658,18 +781,18 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         if (isMetric) {
                             mProgressiveGauge.setMaxSpeed(25);
                             mProgressiveGauge.setUnit("km/h");
-                            mProgressiveGauge.speedTo((float) Util.round(rpmToKilometersPerHour(speed), 1), SPEED_ANIMATION_DURATION);
+                            mProgressiveGauge.speedTo((float) Util.round(rpmToKilometersPerHour(speed),1),SPEED_ANIMATION_DURATION);
                         } else {
                             mProgressiveGauge.setMaxSpeed(20);
                             mProgressiveGauge.setUnit("mph");
-                            mProgressiveGauge.speedTo((float) Util.round(rpmToMilesPerHour(speed), 1), SPEED_ANIMATION_DURATION);
+                            mProgressiveGauge.speedTo((float) Util.round(rpmToMilesPerHour(speed),1),SPEED_ANIMATION_DURATION);
                         }
                     } catch (Exception e) {
                         Timber.e("Got an exception updating speed:" + e.getMessage());
                     }
                 });
             }
-        }); //TODO remove to avoid memory leak
+        });
     }
 
 
@@ -683,13 +806,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     int frontBlinkCount = 0;
     int backBlinkCount = 0;
 
-    public class mFrontBlinkTaskTimerTask extends TimerTask {
-        private final OWDevice mOWDevice;
-
-        public mFrontBlinkTaskTimerTask(OWDevice mOWDevice) {
-            this.mOWDevice = mOWDevice;
-        }
-
+    public class mFrontBlinkTaskTimerTask extends TimerTask
+    {
         @Override
         public void run() {
             if ((frontBlinkCount % 2) == 0) {
@@ -700,17 +818,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             frontBlinkCount++;
         }
     }
-
     mFrontBlinkTaskTimerTask mFrontBlinkTimerTask;
     Timer mFrontBlinkTimer;
 
-    public class mBackBlinkTaskTimerTask extends TimerTask {
-        private final OWDevice mOWDevice;
-
-        public mBackBlinkTaskTimerTask(OWDevice mOWDevice) {
-            this.mOWDevice = mOWDevice;
-        }
-
+    public class mBackBlinkTaskTimerTask extends TimerTask
+    {
         @Override
         public void run() {
             if ((backBlinkCount % 2) == 0) {
@@ -721,11 +833,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             backBlinkCount++;
         }
     }
-
     mBackBlinkTaskTimerTask mBackBlinkTimerTask;
     Timer mBackBlinkTimer;
 
-    public void initLightSettings(OWDevice mOWDevice) {
+    public void initLightSettings() {
         mMasterLight = this.findViewById(R.id.master_light_switch);
         mCustomLight = this.findViewById(R.id.custom_light_switch);
 
@@ -733,6 +844,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mBackBright = this.findViewById(R.id.back_bright_switch);
         mFrontBlink = this.findViewById(R.id.front_blink_switch);
         mBackBlink = this.findViewById(R.id.back_blink_switch);
+
         mMasterLight.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
@@ -762,10 +874,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mFrontBright.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
-                    mOWDevice.setCustomLights(getBluetoothUtil(), 0, 0, 60);
-                } else {
-                    mOWDevice.setCustomLights(getBluetoothUtil(), 0, 0, 30);
-                }
+                    mOWDevice.setCustomLights(getBluetoothUtil(), 0,0,60);
+                 } else {
+                    mOWDevice.setCustomLights(getBluetoothUtil(), 0,0,30);
+                 }
             }
 
         });
@@ -773,9 +885,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mBackBright.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
-                    mOWDevice.setCustomLights(getBluetoothUtil(), 1, 1, 60);
+                    mOWDevice.setCustomLights(getBluetoothUtil(), 1,1,60);
                 } else {
-                    mOWDevice.setCustomLights(getBluetoothUtil(), 1, 1, 30);
+                    mOWDevice.setCustomLights(getBluetoothUtil(), 1,1,30);
 
                 }
             }
@@ -786,7 +898,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mFrontBlink.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
-                    mFrontBlinkTimerTask = new mFrontBlinkTaskTimerTask(mOWDevice);
+                    mFrontBlinkTimerTask = new mFrontBlinkTaskTimerTask();
                     mFrontBlinkTimer = new Timer();
                     mFrontBlinkTimer.scheduleAtFixedRate(mFrontBlinkTimerTask, 0, 500);
 
@@ -809,7 +921,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mBackBlink.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (mOWDevice.isConnected.get()) {
                 if (isChecked) {
-                    mBackBlinkTimerTask = new mBackBlinkTaskTimerTask(mOWDevice);
+                    mBackBlinkTimerTask = new mBackBlinkTaskTimerTask();
                     mBackBlinkTimer = new Timer();
                     mBackBlinkTimer.scheduleAtFixedRate(mBackBlinkTimerTask, 0, 500);
 
@@ -830,7 +942,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     }
 
-    public void initRideModeButtons(OWDevice mOWDevice) {
+
+
+    public void initRideModeButtons() {
         mRideModeToggleButton = this.findViewById(R.id.mstb_multi_ridemodes);
         if (mOWDevice.isOneWheelPlus.get()) {
             mRideModeToggleButton.setElements(getResources().getStringArray(R.array.owplus_ridemode_array));
@@ -840,7 +954,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         final ToggleButton.OnValueChangedListener onToggleValueChangedListener = position -> {
             if (mOWDevice.isConnected.get()) {
-                Timber.d("mOWDevice.setRideMode button pressed:" + position);
+                Timber.d( "mOWDevice.setRideMode button pressed:" + position);
                 double mph = net.kwatts.powtools.util.Util.rpmToMilesPerHour(mOWDevice.speedRpm.get());
                 if (mph > 12) {
                     Toast.makeText(mContext, "Unable to change riding mode, your going too fast! (" + mph + " mph)", Toast.LENGTH_SHORT).show();
@@ -883,85 +997,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         });
 
 
-    }
 
-    private BluetoothConnectionService bluetoothConnectionService;
-
-    private ServiceConnection serviceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            bluetoothConnectionService = ((BluetoothConnectionService.LocalBinder) iBinder).getService();
-            OWDevice mOWDevice = bluetoothConnectionService.getMOWDevice();
-            setupOWDevice(mOWDevice);
-            initSpeedBar(mOWDevice);
-            initBatteryChart();
-            initLightSettings(mOWDevice);
-            initRideModeButtons(mOWDevice);
-
-            doSubscribeToBtStatus();
-
-            new DebugDrawer.Builder(MainActivity.this)
-                    .modules(
-                            new DebugDrawerMockBle(MainActivity.this),
-                            new SettingsModule(MainActivity.this),
-                            new TimberModule()
-                    ).build();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            doUnsubscribeFromBtStatus();
-            bluetoothConnectionService = null;
-        }
-    };
-
-    private void doSubscribeToBtStatus() {
-        if (bluetoothConnectionService != null) {
-            if (connectionStatusDisposable != null && !connectionStatusDisposable.isDisposed()) {
-                Timber.w("connectionStatusDisposable was not disposed. Disposing...");
-                connectionStatusDisposable.dispose();
-            }
-            connectionStatusDisposable = bluetoothConnectionService.getBluetoothUtil().getConnectionStatus()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(
-                            (ConnectionStatus connectionStatus) -> {
-                                invalidateOptionsMenu();
-                                deviceConnectedTimer(connectionStatus == ConnectionStatus.CONNECTED);
-                            },
-                            Timber::e
-                    );
-            if(batteryPercentageDisposable != null && !batteryPercentageDisposable.isDisposed()) {
-                batteryPercentageDisposable.dispose();
-            }
-            batteryPercentageDisposable = bluetoothConnectionService.getBluetoothUtil().getBatteryPercentage()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(
-                            this::updateBatteryRemaining,
-                            Timber::e
-                    );
-        }
-    }
-
-    private void doUnsubscribeFromBtStatus() {
-        if (connectionStatusDisposable != null) {
-            connectionStatusDisposable.dispose();
-            connectionStatusDisposable = null;
-        }
-        if(batteryPercentageDisposable != null) {
-            batteryPercentageDisposable.dispose();
-            batteryPercentageDisposable = null;
-        }
-    }
-
-    private void doBindService() {
-        bindService(new Intent(this, BluetoothConnectionService.class), serviceConnection, Context.BIND_AUTO_CREATE);
-        connectionServiceIsBound = true;
-    }
-
-    private void doUnbindService() {
-        if (connectionServiceIsBound) {
-            unbindService(serviceConnection);
-            connectionServiceIsBound = false;
-        }
     }
 }
