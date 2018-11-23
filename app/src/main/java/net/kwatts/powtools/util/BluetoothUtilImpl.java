@@ -243,7 +243,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                     inkey.write(c.getValue());
 
                     if (inkey.toByteArray().length == 20) {
-                        Timber.d("GEMINI step #2: convert inkey=" + Arrays.toString(inkey.toByteArray()));
+                        Timber.d("GEMINI Step #2: convert inkey=" + Arrays.toString(inkey.toByteArray()));
                         /* Do the magic, write the characteristic... */
                         ByteArrayOutputStream outkey = new ByteArrayOutputStream();
                         outkey.write(Util.StringToByteArrayFastest("43:52:58"));
@@ -283,14 +283,16 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                         outkey.write(checkByte);
 
                         // Finally, write out to the OW serial UART characteristic
-                        Timber.d("GEMINI step #3: write outkey=" + Arrays.toString(outkey.toByteArray()));
-                        BluetoothGattCharacteristic lc = owGatService.getCharacteristic(UUID.fromString("e659f3ff-ea98-11e3-ac10-0800200c9a66"));
+                        Timber.d("GEMINI Step #1: write outkey=" + Arrays.toString(outkey.toByteArray()));
+                        BluetoothGattCharacteristic lc = owGatService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicUartSerialWrite));
                         lc.setValue(outkey.toByteArray());
                         gatt.writeCharacteristic(lc);
 
-                        // cleanup
+                        // cleanup and stop notifications to serial read
                         outkey.reset();
                         inkey.reset();
+                        gatt.setCharacteristicNotification(c,false);
+
                     }
                 } catch (Exception e) {
                     Timber.e("Exception with GEMINI obfuckstation:" + e.getMessage());

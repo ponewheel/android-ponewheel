@@ -708,9 +708,9 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
     //Needed for Gemini, kick off the key/challenge workflow
     public void sendKeyChallengeForGemini(BluetoothUtil bluetoothUtil) {
+        Timber.d("GEMINI: Sending firmware revision to OW board triggering key notifications");
         BluetoothGattCharacteristic lc = null;
         lc = bluetoothUtil.getCharacteristic(OWDevice.OnewheelCharacteristicFirmwareRevision);
-        Timber.d("GEMINI #1: (exposed) trigger the key by sending board firmware version back to board");
         lc.setValue(new byte[] { 16, 38 });
         bluetoothUtil.writeCharacteristic(lc);
     }
