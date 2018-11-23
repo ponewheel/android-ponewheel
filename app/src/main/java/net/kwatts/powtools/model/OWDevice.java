@@ -78,6 +78,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public static final String KEY_TILT_ANGLE_ROLL = "tilt_angle_roll";
     public static final String KEY_RIDE_MODE = "ride_mode";
     public static final String KEY_BATTERY_TEMP = "battery_temp";
+    public static final String KEY_SERIAL_READ = "serial_read";
 
     public static SparseArray<String> ERROR_CODE_MAP = new SparseArray<>();
     {
@@ -117,6 +118,9 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
 
     public static final String OnewheelServiceUUID = "e659f300-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelConfigUUID= "00002902-0000-1000-8000-00805f9b34fb";
+
+
+    // 00002a04-0000-1000-8000-00805f9b34fb
     public static final String OnewheelCharacteristicSerialNumber = "e659F301-ea98-11e3-ac10-0800200c9a66"; //2085
     public static final String OnewheelCharacteristicRidingMode = "e659f302-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelCharacteristicBatteryRemaining = "e659f303-ea98-11e3-ac10-0800200c9a66";
@@ -211,6 +215,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
 In manual mode (0x0045=02) 0x0049 is front lights and 0x004d is back lights
 For both, the first byte is the level of light for white and second byte for red. Levels are 00 (off) to 75 (super bright)
 SETS FRONT TO BRIGHT RED AND BACK TO BRIGHT WHITE:
+hcitool lescan | grep 'ow' to get device address, e.g D0:39:72:BE:0A:32 ow059062
 gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=0002 --handle=0x0045
 gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=0075 --handle=0x0049
 gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004d
@@ -268,6 +273,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceReadCharacteristics.clear();
         deviceNotifyCharacteristics.clear();
 
+
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicHardwareRevision, KEY_HARDWARE_REVISION,   "HARDWARE REVISION"));            // 0
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicFirmwareRevision, KEY_FIRMWARE_REVISION,   "FIRMWARE REVISION"));            // 1
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLifetimeOdometer, KEY_LIFETIME_ODOMETER,   ""));                             // 2
@@ -277,7 +283,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP"));                 // 6
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,       KEY_RIDE_MODE,           "RIDING MODE"));                  // 7
 
-
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicUartSerialRead,   KEY_SERIAL_READ,         ""));// 18
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicSpeed,        KEY_SPEED,               "",false));               // 0
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY,             "Battery"));                   // 1
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicStatusError,      KEY_RIDER_DETECTED,      "RIDER"));                     // 2
@@ -296,7 +302,6 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTiltAngleRoll,    KEY_TILT_ANGLE_ROLL,     "TILT ANGLE ROLL"));           // 15
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTemperature,      KEY_CONTROLLER_TEMP,     ""));                          // 16
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMotorTemp,    KEY_MOTOR_TEMP,          "", false));// 17
-
 
 /*
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -698,6 +703,16 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                 EventBus.getDefault().post(new DeviceStatusEvent("SET " + k + " TO " + v));
             }
         }
+    }
+
+
+    //Needed for Gemini, kick off the key/challenge workflow
+    public void sendKeyChallengeForGemini(BluetoothUtil bluetoothUtil) {
+        BluetoothGattCharacteristic lc = null;
+        lc = bluetoothUtil.getCharacteristic(OWDevice.OnewheelCharacteristicFirmwareRevision);
+        Timber.d("GEMINI #1: (exposed) trigger the key by sending board firmware version back to board");
+        lc.setValue(new byte[] { 16, 38 });
+        bluetoothUtil.writeCharacteristic(lc);
     }
 
     public void setLights(BluetoothUtil bluetoothUtil,int state) {

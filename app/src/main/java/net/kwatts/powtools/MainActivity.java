@@ -387,8 +387,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-
-
                 if (mOWDevice.isConnected.get() && isNewOrNotContinuousRide()) {
                     ride = new Ride();
                     App.dbExecute(database -> ride.id = database.rideDao().insert(ride));
@@ -513,6 +511,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             menu.findItem(R.id.menu_disconnect).setVisible(true);
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(false);
+            Timber.d("Connected, sending the key/challenge kickoff...");
+            mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
             //menu.findItem(R.id.menu_ow_light_on).setVisible(true);
             //menu.findItem(R.id.menu_ow_ridemode).setVisible(true);
         } else if (!getBluetoothUtil().isScanning()) {
@@ -648,6 +648,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
 
         alertsController.recaptureMedia(this);
+
+
 
         this.invalidateOptionsMenu();
     }
