@@ -234,7 +234,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic c) {
-            Timber.d( "BluetoothGattCallback.onCharacteristicChanged: CharacteristicUuid=" + c.getUuid().toString());
+            //Timber.d( "BluetoothGattCallback.onCharacteristicChanged: CharacteristicUuid=" + c.getUuid().toString());
 
             // https://github.com/ponewheel/android-ponewheel/issues/86
             if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicUartSerialRead)) {

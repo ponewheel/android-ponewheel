@@ -31,6 +31,7 @@ import android.widget.Chronometer;
 import android.widget.ScrollView;
 import android.widget.Toast;
 
+
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.Theme;
 import com.github.anastr.speedviewlib.ProgressiveGauge;
@@ -254,6 +255,20 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public void deviceConnectedTimer(final boolean start) {
         runOnUiThread(() -> {
             if (start) {
+                mChronometer.setOnChronometerTickListener(new Chronometer.OnChronometerTickListener() {
+                    @Override
+                    public void onChronometerTick(Chronometer chronometer) {
+                        long systemCurrTime = SystemClock.elapsedRealtime();
+                        long chronometerBaseTime = mChronometer.getBase();
+                        long deltaTimeSeconds = TimeUnit.MILLISECONDS.toSeconds(systemCurrTime - chronometerBaseTime);
+
+                        //Gemini unlocker, write firmware periodically (< 24 seconds) or disconnects
+                        if (deltaTimeSeconds % 15L == 0) {
+                            mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
+                        }
+                    }
+                });
+
                 mChronometer.setBase(SystemClock.elapsedRealtime());
                 mChronometer.start();
             } else {
@@ -305,6 +320,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
 
         mChronometer = findViewById(R.id.chronometer);
+
         mProgressiveGauge = findViewById(R.id.speedbar);
         initSpeedBar();
         initBatteryChart();

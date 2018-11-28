@@ -711,7 +711,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         Timber.d("GEMINI: Sending firmware revision to OW board triggering key notifications");
         BluetoothGattCharacteristic lc = null;
         lc = bluetoothUtil.getCharacteristic(OWDevice.OnewheelCharacteristicFirmwareRevision);
-        lc.setValue(new byte[] { 16, 38 });
+        //lc.setValue(new byte[] { 16, 38 });
         bluetoothUtil.writeCharacteristic(lc);
     }
 
