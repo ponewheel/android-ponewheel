@@ -111,6 +111,9 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     public final ObservableInt lifetimeOdometer = new ObservableInt();
     public final ObservableInt lightMode = new ObservableInt();
 
+
+    public int firmwareVersion;
+
     private double[] ampCells = new double[16];
     private double[] batteryVoltageCells = new double[16];
 
@@ -394,7 +397,9 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                     dc.value.set(Integer.toString(unsignedShort(incomingValue)));
                     break;
                 case OnewheelCharacteristicFirmwareRevision:
-                    dc.value.set(Integer.toString(unsignedShort(incomingValue)));
+                    int fver = unsignedShort(incomingValue);
+                    this.firmwareVersion = fver;
+                    dc.value.set(Integer.toString(fver));
                     break;
                 case OnewheelCharacteristicLifetimeOdometer:
                     processLifetimeOdometer(incomingValue, dc);

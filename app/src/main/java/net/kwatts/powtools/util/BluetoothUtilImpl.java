@@ -64,7 +64,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     private int mRetryCount = 0;
 
 
-    public static  ByteArrayOutputStream inkey = new ByteArrayOutputStream();
+
 
     @Override
     public void init(MainActivity mainActivity, OWDevice mOWDevice) {
@@ -195,12 +195,11 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                 gatt.writeCharacteristic(c);
             } else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
                 mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-            //}
-            //else if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicSpeedRpm)) {
-            //    mainActivity.updateCurrentSpeed(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
             } else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicRidingMode)) {
                  Timber.d( "Got ride mode from the main UI thread:" + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-             }
+            } else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicUartSerialRead)) {
+                unlockKeyGemini(gatt, c.getValue());
+            }
 
 
 
@@ -238,68 +237,8 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
             // https://github.com/ponewheel/android-ponewheel/issues/86
             if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicUartSerialRead)) {
-
-                try {
-                    inkey.write(c.getValue());
-
-                    if (inkey.toByteArray().length == 20) {
-                        Timber.d("GEMINI Step #2: convert inkey=" + Arrays.toString(inkey.toByteArray()));
-                        /* Do the magic, write the characteristic... */
-                        ByteArrayOutputStream outkey = new ByteArrayOutputStream();
-                        outkey.write(Util.StringToByteArrayFastest("43:52:58"));
-
-                        // Take almost all of the bytes from the input array. This is almost the same as the last part as
-                        // we are ignoring the first 3 and the last bytes.
-                        byte[] arrayToMD5_part1 = Arrays.copyOfRange(inkey.toByteArray(), 3, 19);
-                        byte[] arrayToMD5_part2 = Util.StringToByteArrayFastest("D9255F0F23354E19BA739CCDC4A91765");
-
-                        // New byte array we are going to MD5 hash. Part of the input string, part of this static string.
-                        ByteBuffer arrayToMD5 = ByteBuffer.allocate(arrayToMD5_part1.length + arrayToMD5_part2.length);
-                        arrayToMD5.put(arrayToMD5_part1);
-                        arrayToMD5.put(arrayToMD5_part2);
-
-                        // Start prepping the MD5 hash
-                        MessageDigest localMessageDigest = MessageDigest.getInstance("MD5");
-                        DigestInputStream digestInputStream = new DigestInputStream(new ByteArrayInputStream(arrayToMD5.array()), localMessageDigest);
-
-                        // This is actually the byte that represents a space character. ¯\_(ツ)_/¯
-                        byte[] arrayOfByte = new byte[] { 101 };
-                        while (digestInputStream.read(arrayOfByte) != -1) { }
-                        digestInputStream.close();
-                        byte[] md5Hash = localMessageDigest.digest();
-
-                        // Add it to the 3 bytes we already have.
-                        outkey.write(md5Hash);
-
-                        // Validate the check byte.
-                        byte checkByte = 0;
-                        int j = outkey.toByteArray().length;
-                        int i = 0;
-                        while (i < j)
-                        {
-                            checkByte = ((byte)(outkey.toByteArray()[i] ^ checkByte));
-                            i += 1;
-                        }
-                        outkey.write(checkByte);
-
-                        // Finally, write out to the OW serial UART characteristic
-                        Timber.d("GEMINI Step #1: write outkey=" + Arrays.toString(outkey.toByteArray()));
-                        BluetoothGattCharacteristic lc = owGatService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicUartSerialWrite));
-                        lc.setValue(outkey.toByteArray());
-                        gatt.writeCharacteristic(lc);
-
-                        // cleanup and stop notifications to serial read
-                        outkey.reset();
-                        inkey.reset();
-                        gatt.setCharacteristicNotification(c,false);
-
-                    }
-                } catch (Exception e) {
-                    Timber.e("Exception with GEMINI obfuckstation:" + e.getMessage());
-                }
-
-            }
-            if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
+                unlockKeyGemini(gatt,c.getValue());
+            } else if(c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
                 mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
             }
 
@@ -455,6 +394,72 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     }
     public static boolean isCharacteristicNotifiable(BluetoothGattCharacteristic c) {
         return (c.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0;
+    }
+
+    public static ByteArrayOutputStream inkey = new ByteArrayOutputStream();
+
+    public void unlockKeyGemini(BluetoothGatt gatt, byte[] c) {
+        try {
+            inkey.write(c);
+
+            if (inkey.toByteArray().length == 20) {
+                ByteArrayOutputStream outkey = new ByteArrayOutputStream();
+
+
+                outkey.write(Util.StringToByteArrayFastest("43:52:58"));
+
+                // Take almost all of the bytes from the input array. This is almost the same as the last part as
+                // we are ignoring the first 3 and the last bytes.
+                byte[] arrayToMD5_part1 = Arrays.copyOfRange(inkey.toByteArray(), 3, 19);
+                byte[] arrayToMD5_part2 = Util.StringToByteArrayFastest("D9255F0F23354E19BA739CCDC4A91765");
+
+                // New byte array we are going to MD5 hash. Part of the input string, part of this static string.
+                ByteBuffer arrayToMD5 = ByteBuffer.allocate(arrayToMD5_part1.length + arrayToMD5_part2.length);
+                arrayToMD5.put(arrayToMD5_part1);
+                arrayToMD5.put(arrayToMD5_part2);
+
+                // Start prepping the MD5 hash
+                MessageDigest localMessageDigest = MessageDigest.getInstance("MD5");
+                DigestInputStream digestInputStream = new DigestInputStream(new ByteArrayInputStream(arrayToMD5.array()), localMessageDigest);
+
+                // This is actually the byte that represents a space character. ¯\_(ツ)_/¯
+                byte[] arrayOfByte = new byte[]{101};
+                while (digestInputStream.read(arrayOfByte) != -1) {
+                }
+                digestInputStream.close();
+                byte[] md5Hash = localMessageDigest.digest();
+
+                // Add it to the 3 bytes we already have.
+                outkey.write(md5Hash);
+
+                // Validate the check byte.
+                byte checkByte = 0;
+                int j = outkey.toByteArray().length;
+                int i = 0;
+                while (i < j) {
+                    checkByte = ((byte) (outkey.toByteArray()[i] ^ checkByte));
+                    i += 1;
+                }
+                outkey.write(checkByte);
+
+
+                // Finally, write out to the OW serial UART characteristic
+                Timber.d("GEMINI Step #1: write outkey=" + Arrays.toString(outkey.toByteArray()));
+                BluetoothGattCharacteristic lc = owGatService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicUartSerialWrite));
+                lc.setValue(outkey.toByteArray());
+                gatt.writeCharacteristic(lc);
+
+                // cleanup and stop notifications to serial read
+                outkey.reset();
+                inkey.reset();
+                BluetoothGattCharacteristic lcn = owGatService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicUartSerialRead));
+                gatt.setCharacteristicNotification(lcn, false);
+            }
+
+        } catch(Exception e){
+                Timber.e("Exception with GEMINI obfuckstation:" + e.getMessage());
+        }
+
     }
 
 

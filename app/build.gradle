@@ -14,8 +14,8 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         minSdkVersion 21
         targetSdkVersion 21
-        versionCode 31
-        versionName "3.3"
+        versionCode 32
+        versionName "3.2"
     }
     buildTypes {
         release {
