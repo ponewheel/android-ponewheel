@@ -66,18 +66,24 @@ public class BatteryMods {
     }
 
     public static void setVoltage(double volts) {
+        int voltChange = (int)Math.floor(avgVolts);
+
         if (avgVolts>0) {
             avgVolts = avgVolts*0.9 + volts*0.1;
         } else {
             avgVolts = volts;
         }
 
-	   if (App.INSTANCE.getSharedPreferences().isRemainVolts()) {
+        voltChange -= (int)Math.floor(avgVolts);
+
+	   if (voltChange!=0 && App.INSTANCE.getSharedPreferences().isRemainVolts()) {
             changes=true;
         }
     }
 
     public static void setCells(double volts, int count) {
+        int voltChange = (int)Math.floor(avgCells);
+
         cellCount = count;
 
         if (avgCells>0) {
@@ -86,7 +92,9 @@ public class BatteryMods {
             avgCells = volts;
         }
 
-	   if (App.INSTANCE.getSharedPreferences().isRemainCells()) {
+        voltChange -= (int)Math.floor(avgCells);
+
+	   if (voltChange!=0 && (App.INSTANCE.getSharedPreferences().isRemainCells() || App.INSTANCE.getSharedPreferences().isRemainTwoX())) {
             changes=true;
         }
     }
