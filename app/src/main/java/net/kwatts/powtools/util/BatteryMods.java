@@ -19,7 +19,7 @@ public class BatteryMods {
         double nominalVolts=nominalVoltage * cellCount;
         double remaining;
 
-        remaining=100.0/(1.0+Math.pow(4, nominalVolts-avgVolts))+1;
+        remaining=100.0/(1.0+Math.pow(5, nominalVolts-avgVolts))+1;
 
         Timber.d( "remainingByVoltage:" + remaining);
 
@@ -30,7 +30,7 @@ public class BatteryMods {
         double nominalVolts=nominalVoltage * cellCount;
         double remaining;
 
-        remaining=100.0/(1.0+Math.pow(5, nominalVolts-avgCells))+1;
+        remaining=100.0/(1.0+Math.pow(6, nominalVolts-avgCells))+1;
 
         Timber.d( "remainingFromCells:" + remaining);
 
@@ -40,7 +40,7 @@ public class BatteryMods {
     private static int remainingForTwoX() {
         double remaining;
 
-        if (owPercent>5) {
+        if (owPercent>3) {
             remaining = owPercent/2+50;
         } else {
             remaining = remainingFromCells();
@@ -76,7 +76,7 @@ public class BatteryMods {
 
         voltChange -= (int)Math.floor(avgVolts);
 
-	   if (voltChange!=0 && App.INSTANCE.getSharedPreferences().isRemainVolts()) {
+	   if (voltChange!=0 && !App.INSTANCE.getSharedPreferences().isRemainDefault()) {
             changes=true;
         }
     }
@@ -94,7 +94,7 @@ public class BatteryMods {
 
         voltChange -= (int)Math.floor(avgCells);
 
-	   if (voltChange!=0 && (App.INSTANCE.getSharedPreferences().isRemainCells() || App.INSTANCE.getSharedPreferences().isRemainTwoX())) {
+	   if (voltChange!=0 && !App.INSTANCE.getSharedPreferences().isRemainDefault()) {
             changes=true;
         }
     }

@@ -4,7 +4,7 @@
         <item>Default</item>
 	   <item>Output Voltage</item>
 	   <item>Cell Voltages</item>
-	   <item>Two-X Optimized</item>
+	   <item>Fully Charged Two-X</item>
     </string-array>
     <string-array name="remain_method_data">
         <item>default</item>
