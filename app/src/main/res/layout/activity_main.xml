@@ -141,7 +141,7 @@
                     android:id="@+id/card_detailed_stats"
                     style="@style/CardView.DayNight"
                     android:layout_width="fill_parent"
-                    android:layout_height="350dp"
+                    android:layout_height="425dp"
                     android:layout_gravity="center"
                     android:layout_margin="5dp"
                     card_view:cardCornerRadius="2dp"

@@ -194,7 +194,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                 Timber.d("GEMINI step #1: trigger sending the 20 byte input key over multiple serial ble notifications");
                 gatt.writeCharacteristic(c);
             } else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
-                mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+                if(App.INSTANCE.getSharedPreferences().isRemainDefault()) {
+                    mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+                }
             } else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicRidingMode)) {
                  Timber.d( "Got ride mode from the main UI thread:" + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
             } else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicUartSerialRead)) {
@@ -226,6 +228,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                 gatt.readCharacteristic(characteristicReadQueue.element());
             }
 
+            if (!App.INSTANCE.getSharedPreferences().isRemainDefault()) {
+                BatteryMods.updateBatteryModsRemaining(mainActivity);
+            }
 
         }
 
@@ -239,10 +244,16 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             if (c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicUartSerialRead)) {
                 unlockKeyGemini(gatt,c.getValue());
             } else if(c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
-                mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+                if (App.INSTANCE.getSharedPreferences().isRemainDefault()) {
+                    mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
+                }
             }
 
             mOWDevice.processUUID(c);
+
+            if (!App.INSTANCE.getSharedPreferences().isRemainDefault()) {
+                BatteryMods.updateBatteryModsRemaining(mainActivity);
+            }
         }
 
 

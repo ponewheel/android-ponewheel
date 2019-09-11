@@ -14,6 +14,7 @@ import net.kwatts.powtools.App;
 import net.kwatts.powtools.DeviceInterface;
 import net.kwatts.powtools.events.DeviceStatusEvent;
 import net.kwatts.powtools.util.BluetoothUtil;
+import net.kwatts.powtools.util.BatteryMods;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -394,7 +395,9 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         if(dev_uuid != null && dev_uuid.equals(incomingUuid)) {
             switch(dev_uuid) {
                 case OnewheelCharacteristicHardwareRevision:
-                    dc.value.set(Integer.toString(unsignedShort(incomingValue)));
+                    int hver = unsignedShort(incomingValue);
+                    dc.value.set(Integer.toString(hver));
+                    BatteryMods.setHardware(hver);
                     break;
                 case OnewheelCharacteristicFirmwareRevision:
                     int fver = unsignedShort(incomingValue);
@@ -477,6 +480,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         int d_volts = unsignedShort(incomingValue);
         double d_value = Double.valueOf((double) d_volts / 10.0D);
         dc.value.set(Double.toString(d_value));
+        net.kwatts.powtools.util.BatteryMods.setVoltage(d_value);
     }
 
     public void processBatteryRemaining(BluetoothGattCharacteristic incomingCharacteristic, DeviceCharacteristic dc) {
@@ -484,6 +488,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
         //EventBus.getDefault().post(new DeviceBatteryRemainingEvent(batteryLevel));
         dc.value.set(Integer.toString(batteryLevel));
+        net.kwatts.powtools.util.BatteryMods.setRemaining(batteryLevel);
     }
 
     public void processPitch(byte[] incomingValue, DeviceCharacteristic dc) {
@@ -656,16 +661,22 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
     public void processBatteryCellsVoltage(byte[] incomingValue, DeviceCharacteristic dc) {
         int cellIdentifier = unsignedByte(incomingValue[0]);
+        int count = 0;
+        double volts = 0.0;
+
         if(cellIdentifier < batteryVoltageCells.length && cellIdentifier >= 0) {
             int var3 = unsignedByte(incomingValue[1]);
             batteryVoltageCells[cellIdentifier] = (double)var3 / 50.0D;
         }
         StringBuilder stringBuilder = new StringBuilder();
         for(int i = 0; i < batteryVoltageCells.length; ++i) {
-            if (batteryVoltageCells[i] == 0) {
+            if (batteryVoltageCells[i] < 0.1) {
                 stringBuilder.append("--");
             } else {
-                stringBuilder.append(batteryVoltageCells[i]);
+                count++;
+                volts+=batteryVoltageCells[i];
+                stringBuilder.append(String.format(Locale.ENGLISH, "%.02f",
+                    batteryVoltageCells[i]));
             }
 
             if ((i+1) % 4 == 0) {
@@ -677,6 +688,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         }
         String batteryCellsVoltage = stringBuilder.toString();
         dc.value.set(batteryCellsVoltage);
+        net.kwatts.powtools.util.BatteryMods.setCells(volts, count);
     }
 
     public void processCurrentAmps(byte[] incomingValue, DeviceCharacteristic dc) {
