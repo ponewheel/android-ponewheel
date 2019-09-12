@@ -12,6 +12,11 @@ public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPre
     public static final String METRIC_UNITS = "metricUnits";
     private static final String DAY_NIGHT_MODE = "dayNightMode";
     public static final String DARK_NIGHT_MODE = "darkNightMode";
+    private static final String REMAIN_METHOD = "remainMethod";
+    private static final String REMAIN_DEFAULT = "default";
+    private static final String REMAIN_VOLTS = "voltage";
+    private static final String REMAIN_CELLS = "cells";
+    private static final String REMAIN_TWO_X = "twox";
     private static final String EULA_AGREE = "eula_agree";
     private static final String DEBUG_WINDOW = "debugWindow";
     private static final String ONE_WHEEL_PLUS = "oneWheelPlus";
@@ -78,6 +83,22 @@ public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPre
 
     public boolean isDarkNightMode() {
         return androidSharedPreferences.getBoolean(DARK_NIGHT_MODE, false);
+    }
+
+    public boolean isRemainDefault() {
+        return androidSharedPreferences.getString(REMAIN_METHOD, "default").equals(REMAIN_DEFAULT);
+    }
+
+    public boolean isRemainVolts() {
+        return androidSharedPreferences.getString(REMAIN_METHOD, "default").equals(REMAIN_VOLTS);
+    }
+
+    public boolean isRemainCells() {
+        return androidSharedPreferences.getString(REMAIN_METHOD, "default").equals(REMAIN_CELLS);
+    }
+
+    public boolean isRemainTwoX() {
+        return androidSharedPreferences.getString(REMAIN_METHOD, "default").equals(REMAIN_TWO_X);
     }
 
     public boolean isLoggingEnabled() {

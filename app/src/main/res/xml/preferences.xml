@@ -91,6 +91,15 @@
         android:key="chargeAlert"
         android:summary="Set the battery percentage (0 = off)."
         android:title="Charge Alert" />
+    <ListPreference
+        android:key="remainMethod"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:summary="Ways to estimate battery remaining for battery modifications"
+        android:title="Remaining Battery% Method"
+        android:entries="@array/remain_method"
+        android:entryValues="@array/remain_method_data"
+        android:defaultValue="default" />
 
     <!-- <ListPreference     android:title="Download Details"
                         android:summary="Select the kind of data that you would like to download"
