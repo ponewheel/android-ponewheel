@@ -17,7 +17,10 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.os.ParcelUuid;
-
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.Toast;
+import android.databinding.ObservableField;
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.BuildConfig;
 import net.kwatts.powtools.MainActivity;
@@ -45,7 +48,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     private static final String TAG = BluetoothUtilImpl.class.getSimpleName();
 
     private static final int REQUEST_ENABLE_BT = 1;
-
+    public static ByteArrayOutputStream inkey = new ByteArrayOutputStream();
+    public static ObservableField<String> isOWFound = new ObservableField<>();
+    public Context mContext;
     Queue<BluetoothGattCharacteristic> characteristicReadQueue = new LinkedList<>();
     Queue<BluetoothGattDescriptor> descriptorWriteQueue = new LinkedList<>();
     private android.bluetooth.BluetoothAdapter mBluetoothAdapter;
@@ -66,14 +71,18 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
     public static boolean isGemini = false;
 
+    //TODO: decouple this crap from the UI/MainActivity
     @Override
     public void init(MainActivity mainActivity, OWDevice mOWDevice) {
         this.mainActivity = mainActivity;
+        this.mContext = mainActivity.getApplicationContext();
         this.mOWDevice = mOWDevice;
 
-        final BluetoothManager manager = (BluetoothManager) mainActivity.getSystemService(Context.BLUETOOTH_SERVICE);
-        assert manager != null;
-        mBluetoothAdapter = manager.getAdapter();
+        this.mBluetoothAdapter = ((BluetoothManager) mContext.getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
+
+        //final BluetoothManager manager = (BluetoothManager) mainActivity.getSystemService(Context.BLUETOOTH_SERVICE);
+        //assert manager != null;
+        //mBluetoothAdapter = manager.getAdapter();
         mOWDevice.bluetoothLe.set("On");
     }
 
@@ -82,11 +91,16 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             Timber.d( "Bluetooth connection state change: address=" + gatt.getDevice().getAddress()+ " status=" + status + " newState=" + newState);
             if (newState == BluetoothProfile.STATE_CONNECTED) {
+                Timber.d("STATE_CONNECTED: name=" + gatt.getDevice().getName() + " address=" + gatt.getDevice().getAddress());
+                BluetoothUtilImpl.isOWFound.set("true");
                 gatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Timber.d("There was a BluetoothProfile.STATE_DISCONNECTED: name=" + gatt.getDevice().getName() + " address=" + gatt.getDevice().getAddress());
+                Timber.d("STATE_DISCONNECTED: name=" + gatt.getDevice().getName() + " address=" + gatt.getDevice().getAddress());
+                App.INSTANCE.getSharedPreferences().setStatusMode(0);
+                BluetoothUtilImpl.isOWFound.set("false");
                 if (gatt.getDevice().getAddress().equals(mOWDevice.deviceMacAddress.get())) {
-                    onOWStateChangedToDisconnected(gatt);
+                    BluetoothUtilImpl bluetoothUtilImpl = BluetoothUtilImpl.this;
+                    onOWStateChangedToDisconnected(gatt,bluetoothUtilImpl.mContext);
                 }
                 //updateLog("--> Closed " + gatt.getDevice().getAddress());
                 //Timber.d( "Disconnect:" + gatt.getDevice().getAddress());
@@ -123,14 +137,18 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                     mOWDevice.deviceMacAddress.get(),
                     mOWDevice.deviceMacName.get()
             );
-
-
-            scanLeDevice(false); // We can stop scanning...
-
+            scanLeDevice(false);
 
             // Stability updates per https://github.com/ponewheel/android-ponewheel/issues/86#issuecomment-460033659
             // Step 1: In OnServicesDiscovered, JUST read the firmware version.
             Timber.d("Stability Step 1: Only reading the firmware version!");
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                public void run() {
+                    BluetoothUtilImpl.this.mGatt.readCharacteristic(BluetoothUtilImpl.this.owGatService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicFirmwareRevision)));
+                }
+            }, 500);
+
+/*
             BluetoothGattCharacteristic c = owGatService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicFirmwareRevision));
             if (c != null) {
                 if (isCharacteristicReadable(c)) {
@@ -141,7 +159,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                     }
                 }
             }
-/*
+
             for(OWDevice.DeviceCharacteristic deviceCharacteristic: mOWDevice.getNotifyCharacteristics()) {
                 String uuid = deviceCharacteristic.uuid.get();
                 if (uuid != null && deviceCharacteristic.isNotifyCharacteristic) {
@@ -254,7 +272,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             }
 
             mOWDevice.processUUID(c);
+
             // Callback to make sure the queue is drained
+
             if (characteristicReadQueue.size() > 0) {
                 gatt.readCharacteristic(characteristicReadQueue.element());
             }
@@ -484,8 +504,11 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         gatt.connect();
     }
 
-    private void onOWStateChangedToDisconnected(BluetoothGatt gatt) {
+    private void onOWStateChangedToDisconnected(BluetoothGatt gatt, Context context) {
+        //TODO: we really should have a BluetoothService we kill and restart
         Timber.i("We got disconnected from our Device: " + gatt.getDevice().getAddress());
+        Toast.makeText(mainActivity, "We got disconnected from our device: " + gatt.getDevice().getAddress(), Toast.LENGTH_SHORT).show();
+
         mainActivity.deviceConnectedTimer(false);
         mOWDevice.isConnected.set(false);
         App.INSTANCE.releaseWakeLock();
@@ -530,8 +553,8 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         return (c.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0;
     }
 
-    public static ByteArrayOutputStream inkey = new ByteArrayOutputStream();
 
+/*
     public void unlockKeyGemini(BluetoothGatt gatt, byte[] c) {
         try {
             inkey.write(c);
@@ -595,6 +618,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         }
 
     }
+    */
 
 
     // Helpers
@@ -620,11 +644,14 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         return mBluetoothAdapter != null && mBluetoothAdapter.isEnabled();
     }
 
+    @Override
+    public boolean isGemini() {
+        return this.isGemini;
+    }
 
     @Override
     public void reconnect(MainActivity activity) {
-        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        activity.startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), 1);
     }
 
     @Override
@@ -644,7 +671,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         // Added more 3/12/2018
         this.characteristicReadQueue.clear();
         inkey.reset();
-        //isOWFound.set("false");
+        isOWFound.set("false");
         this.sendKey = true;
 
     }
@@ -676,7 +703,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         // Added stuff 10/23 to clean fix
         owGatService = null;
         inkey.reset();
-        //isOWFound.set("false");
+        isOWFound.set("false");
         this.sendKey = true;
     }
 
@@ -737,6 +764,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                 }
             }
         }
+
+        App.INSTANCE.getSharedPreferences().setStatusMode(2);
+
      /*
         for (DeviceCharacteristic dc : mOWDevice.getNotifyCharacteristics()) {
             String uuid = dc.uuid.get();

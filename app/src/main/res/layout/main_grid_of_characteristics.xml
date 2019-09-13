@@ -20,85 +20,50 @@
         android:columnCount="2"
         android:paddingBottom="0dp"
         android:paddingTop="0dp"
-        tools:showIn="@layout/activity_main"
-        >
+        tools:showIn="@layout/activity_main">
 
-        <!-- NOTIFY AND UPDATING CHARACTERISTICS, 0-50 -->
-        <TextView
-            android:text="@string/trip_connected_time"
-            style="@style/GridItemLeft"
-            />
+        <!-- NOTIFY AND UPDATING VALUES -->
+        <TextView android:text="@string/trip_connected_time" style="@style/GridItemLeft" />
+        <Chronometer android:id="@+id/chronometer" style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_SPEED_MAX).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_SPEED_MAX).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_ODOMETER).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_ODOMETER).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_ODOMETER_TIRE_REVS).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_ODOMETER_TIRE_REVS).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_TRIP_AMPS).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_TRIP_AMPS).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_TRIP_AMPS_REGEN).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_TRIP_AMPS_REGEN).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_SPEED_RPM).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_SPEED_RPM).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_BATTERY_VOLTAGE).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_BATTERY_VOLTAGE).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_BATTERY_CELLS).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_BATTERY_CELLS).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_CURRENT_AMPS).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_CURRENT_AMPS).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_TILT_ANGLE_PITCH).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_TILT_ANGLE_PITCH).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_TILT_ANGLE_ROLL).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_TILT_ANGLE_ROLL).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_CONTROLLER_TEMP).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_CONTROLLER_TEMP).value}' style="@style/GridItemRight" />
 
-        <Chronometer
-            android:id="@+id/chronometer"
-            style="@style/GridItemRight"
-            />
-
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(6).value}' style="@style/GridItemRight" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(6).ui_name}' style="@style/GridItemLeft" />
-
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(7).value}' style="@style/GridItemRight" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(7).ui_name}' style="@style/GridItemLeft" />
-
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(8).value}' style="@style/GridItemRight" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(8).ui_name}' style="@style/GridItemLeft" />
-
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(9).value}' style="@style/GridItemRight" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(9).ui_name}' style="@style/GridItemLeft" />
-        <!-- SPEED RPM 10 -->
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(10).value}' style="@style/GridItemRight" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(10).ui_name}' style="@style/GridItemLeft" />
-
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(11).value}' style="@style/GridItemRight" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(11).ui_name}' style="@style/GridItemLeft" />
-
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(12).value}' style="@style/GridItemRight" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(12).ui_name}' style="@style/GridItemLeft" />
-        <!-- CURRENT -->
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(13).value}' style="@style/GridItemRight" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(13).ui_name}' style="@style/GridItemLeft" />
-
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(14).ui_name}' style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(14).value}' style="@style/GridItemRight" />
-
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(15).ui_name}' style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(15).value}' style="@style/GridItemRight" />
-
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(16).ui_name}' style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(16).value}' style="@style/GridItemRight" />
-
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(17).ui_name}' style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(17).value}' style="@style/GridItemRight" />
-
-        <!--
-                            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(1).ui_name}' android:layout_row="39" android:layout_column="0"  android:textSize="@dimen/font_size_stats" android:textStyle="bold" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                            <TextView android:text='@{owdevice.deviceNotifyCharacteristics.get(1).value}' android:layout_row="39" android:layout_column="1"   android:textSize="@dimen/font_size_stats" android:gravity="right"   android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dip"  />
-                 -->
-
-
-        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(1).ui_name}" style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(1).value}' style="@style/GridItemRight" />
-
-        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(3).ui_name}" style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(3).value}' style="@style/GridItemRight" />
-
-        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(0).ui_name}' style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(0).value}' style="@style/GridItemRight" />
-<!--
-        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(1).ui_name}" style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(1).value}' style="@style/GridItemRight" />
--->
-        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(4).ui_name}" style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(4).value}' style="@style/GridItemRight" />
-
-        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(5).ui_name}" style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(5).value}' style="@style/GridItemRight" />
-
-        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(6).ui_name}" style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(6).value}' style="@style/GridItemRight" />
-
+        <!-- STATIC AND READ ONCE VALUES -->
         <TextView android:text="@string/onewheel_ble_name" style="@style/GridItemLeft" />
         <TextView android:text='@{owdevice.deviceMacName}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_HARDWARE_REVISION).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_HARDWARE_REVISION).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_LIFETIME_ODOMETER).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_LIFETIME_ODOMETER).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_BATTERY_INITIAL).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_BATTERY_INITIAL).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_RIDE_MODE).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_RIDE_MODE).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_LAST_ERROR_CODE).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_LAST_ERROR_CODE).value}' style="@style/GridItemRight" />
+
 
     </GridLayout>
 </layout>

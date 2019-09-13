@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Handler;
+import android.content.Context;
 
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.MainActivity;
@@ -28,12 +29,14 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     private OWDevice owDevice;
     Handler mockLoopHandler = new Handler();
     private boolean isScanning = false;
+    private boolean isGemini = false;
+
 
 
     @Override
-    public void init(MainActivity mainActivity, OWDevice mOWDevice) {
+    public void init(MainActivity activity, OWDevice mOWDevice) {
         Timber.d("init");
-        this.mainActivity = mainActivity;
+        this.mainActivity = activity;
         this.owDevice = mOWDevice;
     }
 
@@ -72,6 +75,11 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     public boolean isScanning() {
         Timber.d("isScanning " + isScanning);
         return isScanning;
+    }
+
+    @Override
+    public boolean isGemini() {
+        return this.isGemini;
     }
 
     @Override
