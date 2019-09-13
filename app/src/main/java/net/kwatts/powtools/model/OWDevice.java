@@ -122,8 +122,7 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
 
     public static final String OnewheelServiceUUID = "e659f300-ea98-11e3-ac10-0800200c9a66";
     public static final String OnewheelConfigUUID= "00002902-0000-1000-8000-00805f9b34fb";
-
-
+    
     // 00002a04-0000-1000-8000-00805f9b34fb
     public static final String OnewheelCharacteristicSerialNumber = "e659F301-ea98-11e3-ac10-0800200c9a66"; //2085
     public static final String OnewheelCharacteristicRidingMode = "e659f302-ea98-11e3-ac10-0800200c9a66";
