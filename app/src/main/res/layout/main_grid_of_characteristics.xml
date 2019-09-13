@@ -76,26 +76,26 @@
                  -->
 
 
-        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(2).ui_name}" style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(2).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(1).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(1).value}' style="@style/GridItemRight" />
 
-        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(4).ui_name}" style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(4).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(3).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(3).value}' style="@style/GridItemRight" />
 
         <TextView android:text='@{owdevice.deviceReadCharacteristics.get(0).ui_name}' style="@style/GridItemLeft" />
         <TextView android:text='@{owdevice.deviceReadCharacteristics.get(0).value}' style="@style/GridItemRight" />
-
+<!--
         <TextView android:text="@{owdevice.deviceReadCharacteristics.get(1).ui_name}" style="@style/GridItemLeft" />
         <TextView android:text='@{owdevice.deviceReadCharacteristics.get(1).value}' style="@style/GridItemRight" />
+-->
+        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(4).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(4).value}' style="@style/GridItemRight" />
 
         <TextView android:text="@{owdevice.deviceReadCharacteristics.get(5).ui_name}" style="@style/GridItemLeft" />
         <TextView android:text='@{owdevice.deviceReadCharacteristics.get(5).value}' style="@style/GridItemRight" />
 
         <TextView android:text="@{owdevice.deviceReadCharacteristics.get(6).ui_name}" style="@style/GridItemLeft" />
         <TextView android:text='@{owdevice.deviceReadCharacteristics.get(6).value}' style="@style/GridItemRight" />
-
-        <TextView android:text="@{owdevice.deviceReadCharacteristics.get(7).ui_name}" style="@style/GridItemLeft" />
-        <TextView android:text='@{owdevice.deviceReadCharacteristics.get(7).value}' style="@style/GridItemRight" />
 
         <TextView android:text="@string/onewheel_ble_name" style="@style/GridItemLeft" />
         <TextView android:text='@{owdevice.deviceMacName}' style="@style/GridItemRight" />

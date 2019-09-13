@@ -264,6 +264,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                         //Gemini unlocker, write firmware periodically (< 24 seconds) or disconnects
                         if (deltaTimeSeconds % 15L == 0) {
+                            Timber.d("Sending key challenge for Gemini!");
                             mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
                         }
                     }
@@ -527,8 +528,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             menu.findItem(R.id.menu_disconnect).setVisible(true);
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(false);
-            Timber.d("GEMINI Step #1: Connected to OW board, sending the key/challenge kickoff...");
-            mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
+            //Timber.d("GEMINI Step #1: Connected to OW board, sending the key/challenge kickoff...");
+            //mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
             //menu.findItem(R.id.menu_ow_light_on).setVisible(true);
             //menu.findItem(R.id.menu_ow_ridemode).setVisible(true);
         } else if (!getBluetoothUtil().isScanning()) {
@@ -578,7 +579,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             case R.id.menu_stop:
                 getBluetoothUtil().stopScanning();
                 this.invalidateOptionsMenu();
-
                 break;
             case R.id.menu_disconnect:
                 mOWDevice.isConnected.set(false);
