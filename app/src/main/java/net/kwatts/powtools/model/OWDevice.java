@@ -573,7 +573,15 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
     public void setFormattedSpeedWithMetricPreference(DeviceCharacteristic deviceCharacteristic, double speedRpm) {
         boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
-        deviceCharacteristic.value.set(String.format(Locale.getDefault(), "%3.2f", isMetric ? rpmToKilometersPerHour((double) speedRpm) : rpmToMilesPerHour((double) speedRpm)));
+        double currentSpeed = 0;
+        if (App.INSTANCE.getSharedPreferences().isMetric()) {
+            currentSpeed = rpmToKilometersPerHour(speedRpm);
+        } else {
+            currentSpeed = rpmToMilesPerHour(speedRpm);
+        }
+        // "%2.1f" will be in a format of decimal xx.x
+        String speed = String.format(Locale.getDefault(), "%2.0f", currentSpeed);
+        deviceCharacteristic.value.set(speed);
     }
 
     public void processBatteryTemp(BluetoothGattCharacteristic incomingCharacteristic, DeviceCharacteristic dc) {
