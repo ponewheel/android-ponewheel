@@ -26,6 +26,7 @@ public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPre
     public static final String DEVICE_RECONNECT = "deviceReconnect";
     public static final String OW_MAC_ADDRESS = "ow_mac_address";
     public static final String OW_MAC_NAME = "ow_mac_name";
+    public static final String STATUS_MODE = "status_mode";
     private static final String CHARGE_ALERT = "CHARGE_ALERT";
     public static final String SPEED_ALERT = "SPEED_ALERT";
     private static final String CHARGE_ALERT_ENABLED = "CHARGE_ALERT_ENABLED";
@@ -175,4 +176,15 @@ public class SharedPreferencesUtil implements net.kwatts.powtools.util.SharedPre
     public boolean getSpeedAlertEnabled() {
         return androidSharedPreferences.getBoolean(SPEED_ALERT_ENABLED, false);
     }
+
+    public void setStatusMode(int status) {
+        SharedPreferences.Editor editor = androidSharedPreferences.edit();
+        editor.putInt(STATUS_MODE, status);
+        editor.commit();
+    }
+
+    public int getStatusMode() {
+        return this.androidSharedPreferences.getInt(STATUS_MODE, 0);
+    }
+
 }

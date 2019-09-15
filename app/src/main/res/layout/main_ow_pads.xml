@@ -17,7 +17,7 @@
         android:id="@+id/header_ow_pads"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/border_ui_green : (safeUnbox(owdevice.isConnected) ? @drawable/border_ui_red : @drawable/border_ui)}'
+        android:background='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_RIDER_DETECTED).value.equals("true") ? @drawable/border_ui_green : (safeUnbox(owdevice.isConnected) ? @drawable/border_ui_red : @drawable/border_ui)}'
         tools:showIn="@layout/activity_main"
         >
 
@@ -35,9 +35,9 @@
 
         <TextView
             android:id="@id/header_rider_on"
-            android:background='@{owdevice.deviceNotifyCharacteristics.get(2).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
+            android:background='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_RIDER_DETECTED).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
             android:gravity="center"
-            android:text='@{owdevice.deviceNotifyCharacteristics.get(2).ui_name}'
+            android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_RIDER_DETECTED).ui_name}'
             android:textColor="#FFFFFF"
             android:textSize="10.0sp"
             android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
@@ -48,9 +48,9 @@
         <TextView
             android:id="@id/header_rider_pad1"
             android:layout_below="@id/header_rider_on"
-            android:background='@{owdevice.deviceNotifyCharacteristics.get(3).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
+            android:background='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_RIDER_DETECTED_PAD_1).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
             android:gravity="center"
-            android:text='@{owdevice.deviceNotifyCharacteristics.get(3).ui_name}'
+            android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_RIDER_DETECTED_PAD_1).ui_name}'
             android:textColor="#FFFFFF"
             android:textSize="5.0sp"
             android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
@@ -62,9 +62,9 @@
             android:id="@id/header_rider_pad2"
             android:layout_below="@id/header_rider_on"
             android:layout_toEndOf="@id/header_rider_pad1"
-            android:background='@{owdevice.deviceNotifyCharacteristics.get(4).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
+            android:background='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_RIDER_DETECTED_PAD_2).value.equals("true") ? @drawable/on_color : @drawable/off_color}'
             android:gravity="center"
-            android:text='@{owdevice.deviceNotifyCharacteristics.get(4).ui_name}'
+            android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_RIDER_DETECTED_PAD_2).ui_name}'
             android:textColor="#FFFFFF"
             android:textSize="5.0sp"
             android:visibility="@{safeUnbox(owdevice.isConnected) ? View.VISIBLE : View.GONE}"
