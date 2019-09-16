@@ -17,6 +17,7 @@
         android:padding="0dp">
 
         <!-- https://github.com/anastr/SpeedView/wiki/Style -->
+        <!-- CRASHES
         <com.github.anastr.speedviewlib.ProgressiveGauge
             android:id="@+id/speedbar"
             android:layout_width="wrap_content"
@@ -28,32 +29,43 @@
             app:sv_speedTextSize="75.0dp"
             app:sv_unitTextSize="10.0dp"
             app:sv_unitUnderSpeedText="false"
-            />
+            /> -->
+
+
 
         <RelativeLayout
             xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/speedRelativeLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
-
+            <TextView
+                android:id="@+id/speedbar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_SPEED).value}'
+                android:textSize="75.0dp"
+                android:textStyle="bold" />
             <TextView
                 android:id="@+id/header_speed_top_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingLeft="5dp"
                 android:layout_marginTop="5dp"
+                android:layout_below="@+id/speedbar"
                 android:gravity="left"
-                android:text="@string/trip_top_speed"
+                android:text="TOP SPEED"
                 android:textSize="15.0sp"
                 android:textStyle="bold" />
             <TextView
                 android:id="@+id/speed_top"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_toRightOf="@id/header_speed_top_label"
-                android:gravity="right"
-                android:text='@{owdevice.deviceNotifyCharacteristics.get(5).value}'
-                android:textSize="15.0sp"
+                android:layout_marginTop="5dp"
+                android:layout_below="@id/header_speed_top_label"
+                android:layout_marginLeft="5dp"
+                android:gravity="left"
+                android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_SPEED_MAX).value}'
+                android:textSize="20.0sp"
                 android:textStyle="bold" />
         </RelativeLayout>
     </LinearLayout>

@@ -52,7 +52,7 @@ import net.kwatts.powtools.database.entities.Ride;
 import net.kwatts.powtools.events.NotificationEvent;
 import net.kwatts.powtools.events.VibrateEvent;
 import net.kwatts.powtools.model.OWDevice;
-import net.kwatts.powtools.services.VibrateService;
+//import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
 import net.kwatts.powtools.util.BluetoothUtilImpl;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
@@ -117,7 +117,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     int mRideModePosition;
     boolean mRideModePositionSetOnceFlag;
 
-    public VibrateService mVibrateService;
+    //Removing for stability
+    //public VibrateService mVibrateService;
+
     private android.os.Handler mLoggingHandler = new Handler();
     private SpeedAlertResolver speedAlertResolver = new SpeedAlertResolver(App.INSTANCE.getSharedPreferences());
 
@@ -136,8 +138,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     Ride ride;
     private DisposableObserver<Address> rxLocationObserver;
     private AlertsMvpController alertsController;
-    //private SpeedView mSpeedBar;
-    public ProgressiveGauge mProgressiveGauge;
+
+    //public ProgressiveGauge mProgressiveGauge;
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event){
         Timber.d( event.message + ":" + event.title);
@@ -224,19 +227,19 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     if (!(batteryAlertLevels.get(percent))) {
                         switch (percent) {
                             case 75:
-                                EventBus.getDefault().post(new VibrateEvent(1000,1));
+                                //EventBus.getDefault().post(new VibrateEvent(1000,1));
                                 onEvent(new NotificationEvent("OW Battery", "75%"));
                                 break;
                             case 50:
-                                EventBus.getDefault().post(new VibrateEvent(1000,2));
+                                //EventBus.getDefault().post(new VibrateEvent(1000,2));
                                 onEvent(new NotificationEvent("OW Battery", "50%"));
                                 break;
                             case 25:
-                                EventBus.getDefault().post(new VibrateEvent(1000,3));
+                                //EventBus.getDefault().post(new VibrateEvent(1000,3));
                                 onEvent(new NotificationEvent("OW Battery", "25%"));
                                 break;
                             case 5:
-                                EventBus.getDefault().post(new VibrateEvent(1000,4));
+                                //EventBus.getDefault().post(new VibrateEvent(1000,4));
                                 onEvent(new NotificationEvent("OW Battery", "5%"));
                                 break;
                             default:
@@ -255,6 +258,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public void deviceConnectedTimer(final boolean start) {
         runOnUiThread(() -> {
             if (start) {
+                final Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    public void run() {
+                        if (App.INSTANCE.getSharedPreferences().getStatusMode() == 2) {
+                            mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
+                            handler.postDelayed(this, 15000);
+                        }
+                    }
+                }, 15000);
+
                 mChronometer.setOnChronometerTickListener(new Chronometer.OnChronometerTickListener() {
                     @Override
                     public void onChronometerTick(Chronometer chronometer) {
@@ -264,7 +277,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                         //Gemini unlocker, write firmware periodically (< 24 seconds) or disconnects
                         if (deltaTimeSeconds % 15L == 0) {
-                            mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
+                            //mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
                         }
                     }
                 });
@@ -290,7 +303,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         EventBus.getDefault().register(this);
         // TODO unbind in onPause or whatever is recommended by goog
-        bindService(new Intent(this, VibrateService.class), mVibrateConnection, Context.BIND_AUTO_CREATE);
+        // Disabling for now...
+        //bindService(new Intent(this, VibrateService.class), mVibrateConnection, Context.BIND_AUTO_CREATE);
 
         initWakelock();
 
@@ -307,7 +321,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             showEula();
         }
 
-        startService(new Intent(getApplicationContext(), VibrateService.class));
+        //Disabling for stability
+        //startService(new Intent(getApplicationContext(), VibrateService.class));
 
         setupOWDevice();
 
@@ -321,8 +336,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mChronometer = findViewById(R.id.chronometer);
 
-        mProgressiveGauge = findViewById(R.id.speedbar);
-        initSpeedBar();
+        //mProgressiveGauge = findViewById(R.id.speedbar);
+        //initSpeedBar();
+
         initBatteryChart();
         initLightSettings();
         initRideModeButtons();
@@ -415,7 +431,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             public void onPropertyChanged(Observable observable, int i) {
                 String speedString = mOWDevice.characteristics.get(MockOnewheelCharacteristicSpeed).value.get();
                 alertsController.handleSpeed(speedString);
-                updateGaugeOnSpeedChange(mProgressiveGauge, speedString);
+                //updateGaugeOnSpeedChange(mProgressiveGauge, speedString);
             }
         });
         getBluetoothUtil().init(MainActivity.this, mOWDevice);
@@ -511,9 +527,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
     @Override
     public void onDestroy() {
+        //Removing for stability
+        /*
         if (mVibrateService != null) {
             unbindService(mVibrateConnection);
-        }
+        } */
         App.INSTANCE.getSharedPreferences().removeListener(this);
         stopStatusNotification();
         super.onDestroy();
@@ -527,8 +545,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             menu.findItem(R.id.menu_disconnect).setVisible(true);
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(false);
-            Timber.d("GEMINI Step #1: Connected to OW board, sending the key/challenge kickoff...");
-            mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
+            //Timber.d("GEMINI Step #1: Connected to OW board, sending the key/challenge kickoff...");
+            //mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
             //menu.findItem(R.id.menu_ow_light_on).setVisible(true);
             //menu.findItem(R.id.menu_ow_ridemode).setVisible(true);
         } else if (!getBluetoothUtil().isScanning()) {
@@ -578,7 +596,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             case R.id.menu_stop:
                 getBluetoothUtil().stopScanning();
                 this.invalidateOptionsMenu();
-
                 break;
             case R.id.menu_disconnect:
                 mOWDevice.isConnected.set(false);
@@ -721,7 +738,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         // TODO Auto convert the speed alert for the user or meh?
     }
 
-    // Services
+    //Removing for stability until it's done correctly, suspect it's causing stability issues
+    /*
     private ServiceConnection mVibrateConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder binder) {
             mVibrateService = ((VibrateService.MyBinder) binder).getService();
@@ -730,7 +748,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         public void onServiceDisconnected(ComponentName className) {
             mVibrateService = null;
         }
-    };
+    }; */
 
 
 
@@ -786,6 +804,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         });
     }
 
+    /*
     private static final int SPEED_ANIMATION_DURATION = 0;
     private void initSpeedBar() {
         mOWDevice.speedRpm.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
@@ -811,7 +830,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 });
             }
         });
-    }
+    } */
 
 
     SwitchCompat mMasterLight;
