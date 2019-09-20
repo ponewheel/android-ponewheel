@@ -280,7 +280,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             }
 
             if (!App.INSTANCE.getSharedPreferences().isRemainDefault()) {
-                BatteryMods.updateBatteryModsRemaining(mainActivity);
+                mOWDevice.setBatteryRemaining(mainActivity);
             }
 
         }
@@ -354,7 +354,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
 
 
-
+            //TODO: Try to simplify by always calling setBatteryRemain after processUUID
             if(c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
                 if (App.INSTANCE.getSharedPreferences().isRemainDefault()) {
                     mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
@@ -363,7 +363,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             mOWDevice.processUUID(bluetoothGattCharacteristic);
 
             if (!App.INSTANCE.getSharedPreferences().isRemainDefault()) {
-                BatteryMods.updateBatteryModsRemaining(mainActivity);
+                mOWDevice.setBatteryRemaining(mainActivity);
             }
         }
 
