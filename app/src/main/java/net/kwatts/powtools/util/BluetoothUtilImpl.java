@@ -242,10 +242,6 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                     isGemini = false;
                     whenActuallyConnected();
                 }
-            } else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
-                if(App.INSTANCE.getSharedPreferences().isRemainDefault()) {
-                    mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-                }
             } else if (characteristic_uuid.equals(OWDevice.OnewheelCharacteristicRidingMode)) {
                  Timber.d( "Got ride mode from the main UI thread:" + c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
             }
@@ -273,14 +269,12 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
             mOWDevice.processUUID(c);
 
+            mOWDevice.setBatteryRemaining(mainActivity);
+
             // Callback to make sure the queue is drained
 
             if (characteristicReadQueue.size() > 0) {
                 gatt.readCharacteristic(characteristicReadQueue.element());
-            }
-
-            if (!App.INSTANCE.getSharedPreferences().isRemainDefault()) {
-                BatteryMods.updateBatteryModsRemaining(mainActivity);
             }
 
         }
@@ -353,18 +347,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             }
 
 
-
-
-            if(c.getUuid().toString().equals(OWDevice.OnewheelCharacteristicBatteryRemaining)) {
-                if (App.INSTANCE.getSharedPreferences().isRemainDefault()) {
-                    mainActivity.updateBatteryRemaining(c.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1));
-                }
-            }
             mOWDevice.processUUID(bluetoothGattCharacteristic);
 
-            if (!App.INSTANCE.getSharedPreferences().isRemainDefault()) {
-                BatteryMods.updateBatteryModsRemaining(mainActivity);
-            }
+            mOWDevice.setBatteryRemaining(mainActivity);
         }
 
 
