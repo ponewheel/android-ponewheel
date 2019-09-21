@@ -39,11 +39,11 @@
             </intent-filter>
         </activity>
         <activity android:name=".MainPreferencesActivity" />
-<!-- Disabling for stability
+
         <service
             android:name=".services.VibrateService"
-            android:enabled="true" />
--->
+            android:exported="false" />
+
         <activity
             android:name=".RidesListActivity"
             android:screenOrientation="portrait" />
