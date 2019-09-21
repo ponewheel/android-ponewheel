@@ -18,10 +18,13 @@ import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
+import android.content.pm.PackageManager;
 import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -34,7 +37,6 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.Theme;
-import com.github.anastr.speedviewlib.ProgressiveGauge;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.Legend;
@@ -108,9 +110,12 @@ import static net.kwatts.powtools.util.Util.rpmToMilesPerHour;
 // - Consumed power total
 // 12.8V 6.9Ah 88.32Wh
 
-public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class MainActivity extends AppCompatActivity implements
+        SharedPreferences.OnSharedPreferenceChangeListener, ActivityCompat.OnRequestPermissionsResultCallback  {
 
     private static final boolean ONEWHEEL_LOGGING = true;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+    private static final int WRITE_EXTERNAL_STORAGE_PERMS = 2;
 
 
     MultiStateToggleButton mRideModeToggleButton;
@@ -297,6 +302,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         Timber.d( "Starting...");
         super.onCreate(savedInstanceState);
 
+        //Permission to write to storage
+        enableWritingToStorage();
+
         mContext = this;
 
         startStatusNotification();
@@ -437,13 +445,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         getBluetoothUtil().init(MainActivity.this, mOWDevice);
     }
 
+    /*
     private void updateGaugeOnSpeedChange(ProgressiveGauge gauge, @NonNull String speedString) {
         if (speedAlertResolver.isAlertThresholdExceeded(speedString)) {
             gauge.setSpeedometerColor(ColorTemplate.rgb("#800000"));
         } else {
             gauge.setSpeedometerColor(ColorTemplate.rgb("#2E7D32"));
         }
-    }
+    } */
 
     private void logOnChange(OWDevice.DeviceCharacteristic deviceCharacteristic) {
         deviceCharacteristic.value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
@@ -573,8 +582,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 startActivity(new Intent(MainActivity.this, RidesListActivity.class));
                 break;
             case R.id.menu_scan:
-                //mLeDeviceListAdapter.clear();
-//                mTracker.send(new HitBuilders.EventBuilder().setCategory("Actions").setAction("Scan").build());
+
 
                 getPermissions().subscribe(new DisposableSingleObserver<Boolean>() {
                            @Override
@@ -1035,5 +1043,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
 
+    }
+
+    private void enableWritingToStorage() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Request permission without stopping activity
+            PermissionUtils.requestPermission(this, WRITE_EXTERNAL_STORAGE_PERMS,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE, false);
+        } else {
+            Timber.d("We already have permission for writing to storage.");
+        }
     }
 }
