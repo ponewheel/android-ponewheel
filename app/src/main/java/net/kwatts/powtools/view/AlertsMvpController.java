@@ -2,7 +2,6 @@ package net.kwatts.powtools.view;
 
 import android.app.Activity;
 
-import com.github.anastr.speedviewlib.ProgressiveGauge;
 
 import net.kwatts.powtools.App;
 import net.kwatts.powtools.util.SpeedAlertResolver;

@@ -132,7 +132,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                             && attribute.getValue() != null
                             && !attribute.getValue().equals("")) {
                         String value = attribute.getValue();
-                        Timber.d("value" + value + " key " + attribute.getKey());
+                        //Timber.d("key: " + attribute.getKey() + "value: " + value);
                         if (OWDevice.KEY_SPEED.equals(attribute.getKey())) {
                             timeSpeedMap.add(new Entry(time, Float.valueOf(value)));
                         } else if (OWDevice.KEY_RIDER_DETECTED_PAD_1.equals(attribute.getKey())) {
