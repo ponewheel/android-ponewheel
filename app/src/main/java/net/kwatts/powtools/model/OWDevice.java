@@ -14,7 +14,9 @@ import net.kwatts.powtools.App;
 import net.kwatts.powtools.DeviceInterface;
 import net.kwatts.powtools.events.DeviceStatusEvent;
 import net.kwatts.powtools.util.BluetoothUtil;
-import net.kwatts.powtools.util.BatteryMods;
+import net.kwatts.powtools.MainActivity;
+import net.kwatts.powtools.util.Battery;
+import net.kwatts.powtools.util.SharedPreferencesUtil;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -118,6 +120,8 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     private double[] ampCells = new double[16];
     private double[] batteryVoltageCells = new double[16];
 
+    private static boolean updateBatteryChanges = true;
+    private static String updateBatteryMethod = "";
 
 
     public static final String OnewheelServiceUUID = "e659f300-ea98-11e3-ac10-0800200c9a66";
@@ -398,7 +402,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                 case OnewheelCharacteristicHardwareRevision:
                     int hver = unsignedShort(incomingValue);
                     dc.value.set(Integer.toString(hver));
-                    BatteryMods.setHardware(hver);
+                    Battery.setHardware(hver);
                     break;
                 case OnewheelCharacteristicFirmwareRevision:
                     int fver = unsignedShort(incomingValue);
@@ -481,7 +485,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         int d_volts = unsignedShort(incomingValue);
         double d_value = Double.valueOf((double) d_volts / 10.0D);
         dc.value.set(Double.toString(d_value));
-        net.kwatts.powtools.util.BatteryMods.setVoltage(d_value);
+        updateBatteryChanges |= Battery.setOutput(d_value);
     }
 
     public void processBatteryRemaining(BluetoothGattCharacteristic incomingCharacteristic, DeviceCharacteristic dc) {
@@ -489,7 +493,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
         //EventBus.getDefault().post(new DeviceBatteryRemainingEvent(batteryLevel));
         dc.value.set(Integer.toString(batteryLevel));
-        net.kwatts.powtools.util.BatteryMods.setRemaining(batteryLevel);
+        updateBatteryChanges |= Battery.setRemaining(batteryLevel);
     }
 
     public void processPitch(byte[] incomingValue, DeviceCharacteristic dc) {
@@ -548,6 +552,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         int i_speedRpm = unsignedShort(incomingValue);
         speedRpm.set(i_speedRpm);
         dc.value.set(Integer.toString(i_speedRpm));
+        updateBatteryChanges |= Battery.setSpeedRpm(i_speedRpm);
         DeviceCharacteristic speedCharacteristic = characteristics.get(MockOnewheelCharacteristicSpeed);
         DeviceCharacteristic maxSpeedCharacteristic = characteristics.get(MockOnewheelCharacteristicMaxSpeed);
         setFormattedSpeedWithMetricPreference(speedCharacteristic, i_speedRpm);
@@ -608,6 +613,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         int i_tripregenamp = unsignedShort(incomingValue);
         double d_tripregenamp = Double.valueOf((double) i_tripregenamp / 50.0D);
         dc.value.set(Double.toString(d_tripregenamp));
+        updateBatteryChanges |= Battery.setRegenAmpHrs(d_tripregenamp);
     }
 
     public void processTripTotalAmpHours(byte[] incomingValue, DeviceCharacteristic dc) {
@@ -620,6 +626,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         int i_amphours = unsignedShort(incomingValue);
         double d_amphours = Double.valueOf((double) i_amphours / 50.0D);
         dc.value.set(Double.toString(d_amphours));
+        updateBatteryChanges |= Battery.setUsedAmpHrs(d_amphours);
     }
 
     private void processRidingMode(byte[] incomingValue, DeviceCharacteristic dc, BluetoothGattCharacteristic incomingCharacteristic) {
@@ -688,16 +695,20 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                     batteryVoltageCells[i]));
             }
 
-            if ((i+1) % 4 == 0) {
-                stringBuilder.append("\n");
-            } else if(i != batteryVoltageCells.length - 1) {
-                stringBuilder.append(',');
+            if ((i+1) != batteryVoltageCells.length) {
+                if ((i+1) % 4 == 0) {
+                    stringBuilder.append("\n");
+                } else {
+                    stringBuilder.append(',');
+                }
             }
 
         }
         String batteryCellsVoltage = stringBuilder.toString();
         dc.value.set(batteryCellsVoltage);
-        net.kwatts.powtools.util.BatteryMods.setCells(volts, count);
+        if (count == batteryVoltageCells.length) { //valid on XR and pint?
+            updateBatteryChanges |= Battery.setCells(volts);
+        }
     }
 
     public void processCurrentAmps(byte[] incomingValue, DeviceCharacteristic dc) {
@@ -711,6 +722,36 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         }
         final float amps = incoming / 1000.0f * multiplier;
         dc.value.set(String.format(Locale.ENGLISH, "%.2f",amps));
+        updateBatteryChanges |= Battery.setAmps(amps);
+    }
+
+    public void setBatteryRemaining(MainActivity mainActivity) {
+        SharedPreferencesUtil prefs = App.INSTANCE.getSharedPreferences();
+
+        if (! prefs.getBatteryMethod().equals(updateBatteryMethod)) {
+            updateBatteryMethod=prefs.getBatteryMethod();
+            updateBatteryChanges=true;
+        }
+
+        if (updateBatteryChanges) {
+            DeviceCharacteristic dc = characteristics.get(OnewheelCharacteristicBatteryRemaining);
+            int remaining = 0;
+
+            if (prefs.isRemainOutput()) {
+                remaining = Battery.getRemainingOutput();
+            } else if (prefs.isRemainCells()) {
+                remaining = Battery.getRemainingCells();
+            } else if (prefs.isRemainTwoX()) {
+                remaining = Battery.getRemainingTwoX();
+            } else {
+                remaining = Battery.getRemainingDefault();
+            }
+
+            dc.value.set(Integer.toString(remaining));
+            mainActivity.updateBatteryRemaining(remaining);
+
+            updateBatteryChanges = false;
+        }
     }
 
 
