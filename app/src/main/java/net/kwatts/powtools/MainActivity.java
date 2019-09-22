@@ -2,10 +2,8 @@ package net.kwatts.powtools;
 
 import android.Manifest;
 import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.databinding.Observable;
@@ -14,9 +12,7 @@ import android.location.Address;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -52,14 +48,13 @@ import net.kwatts.powtools.database.entities.Attribute;
 import net.kwatts.powtools.database.entities.Moment;
 import net.kwatts.powtools.database.entities.Ride;
 import net.kwatts.powtools.events.NotificationEvent;
-import net.kwatts.powtools.events.VibrateEvent;
 import net.kwatts.powtools.model.OWDevice;
 //import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
 import net.kwatts.powtools.util.BluetoothUtilImpl;
+import net.kwatts.powtools.util.PermissionUtil;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 import net.kwatts.powtools.util.SpeedAlertResolver;
-import net.kwatts.powtools.util.Util;
 import net.kwatts.powtools.util.debugdrawer.DebugDrawerMockBle;
 import net.kwatts.powtools.view.AlertsMvpController;
 
@@ -87,8 +82,6 @@ import timber.log.Timber;
 
 import static net.kwatts.powtools.model.OWDevice.KEY_RIDE_MODE;
 import static net.kwatts.powtools.model.OWDevice.MockOnewheelCharacteristicSpeed;
-import static net.kwatts.powtools.util.Util.rpmToKilometersPerHour;
-import static net.kwatts.powtools.util.Util.rpmToMilesPerHour;
 
 
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
@@ -799,8 +792,13 @@ public class MainActivity extends AppCompatActivity implements
             for (OWDevice.DeviceCharacteristic deviceReadCharacteristic : mOWDevice.getNotifyCharacteristics()) {
                 Attribute attribute = new Attribute();
                 attribute.setMomentId(momentId);
-                attribute.setValue(deviceReadCharacteristic.value.get());
-                attribute.setKey(deviceReadCharacteristic.key.get());
+
+                String k = deviceReadCharacteristic.key.get();
+                String v = deviceReadCharacteristic.value.get();
+
+
+                attribute.setValue(v);
+                attribute.setKey(k);
 
                 attributes.add(attribute);
             }
@@ -1049,7 +1047,7 @@ public class MainActivity extends AppCompatActivity implements
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
             // Request permission without stopping activity
-            PermissionUtils.requestPermission(this, WRITE_EXTERNAL_STORAGE_PERMS,
+            PermissionUtil.requestPermission(this, WRITE_EXTERNAL_STORAGE_PERMS,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE, false);
         } else {
             Timber.d("We already have permission for writing to storage.");
