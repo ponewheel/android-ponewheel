@@ -13,9 +13,9 @@ android {
         applicationId "net.kwatts.powtools"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         minSdkVersion 21
-        targetSdkVersion 26
-        versionCode 34
-        versionName "3.4"
+        targetSdkVersion 28
+        versionCode 40
+        versionName "4.0"
     }
     buildTypes {
         release {
