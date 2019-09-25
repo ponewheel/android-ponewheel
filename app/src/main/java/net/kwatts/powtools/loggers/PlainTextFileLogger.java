@@ -86,7 +86,7 @@ public class PlainTextFileLogger  {
                 for (Attribute attribute : attributes) {
                     String k = attribute.getKey();
                     String v = attribute.getValue();
-                    if ( k.equals(OWDevice.KEY_BATTERY_CELLS) && v != null) {
+                    if ( k.equals("battery_cells") && v != null) {
                         keyValueOrderKeeper.put(k, "\"" + v.replaceAll("\n",",") + "\"");
                     } else {
                         keyValueOrderKeeper.put(k, v);

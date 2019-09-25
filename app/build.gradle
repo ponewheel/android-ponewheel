@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 28
     buildToolsVersion '28.0.3'
     // https://developer.android.com/tools/data-binding/guide.html
     dataBinding {
@@ -14,8 +14,8 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode 40
-        versionName "4.0"
+        versionCode 41
+        versionName "4.1"
     }
     buildTypes {
         release {
