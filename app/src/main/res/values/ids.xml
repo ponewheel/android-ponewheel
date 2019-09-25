@@ -54,7 +54,6 @@
     <item type="id" name="menu_stop"/>
     <item type="id" name="menu_about"/>
     <item type="id" name="menu_settings"/>
-    <item type="id" name="menu_donate"/>
     <item type="id" name="menu_debug_logs"/>
     <item type="id" name="owFirmwareRevision"/>
     <item type="id" name="owBatteryRemaining"/>
