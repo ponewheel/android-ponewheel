@@ -481,7 +481,7 @@ public class MainActivity extends AppCompatActivity implements
         new MaterialDialog.Builder(this)
                 .theme(Theme.LIGHT)
                 .title("WARNING")
-                .content(R.string.eula)
+                .content(getResources().getString(R.string.eula, BuildConfig.VERSION_NAME))
                 .positiveText("AGREE")
                 .onPositive((dialog, which) ->
                         App.INSTANCE.getSharedPreferences().setEulaAgreed(true))
