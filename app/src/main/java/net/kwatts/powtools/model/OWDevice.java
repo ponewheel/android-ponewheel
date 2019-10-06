@@ -493,7 +493,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         int batteryLevel  = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
 
         //EventBus.getDefault().post(new DeviceBatteryRemainingEvent(batteryLevel));
-        dc.value.set(Integer.toString(batteryLevel));
+        //dc.value.set(Integer.toString(batteryLevel));
         updateBatteryChanges |= Battery.setRemaining(batteryLevel);
     }
 
