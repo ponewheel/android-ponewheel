@@ -9,7 +9,7 @@ import timber.log.Timber;
 
 public class Battery {
     // Tunable Variables (use these to tweak the output)
-    private static final double LiFePO4_16_OUTPUT  = 52.1;
+    private static final double LiFePO4_16_OUTPUT  = 52.3;
     private static final double LiFePO4_16_CELLS   = 51.9;
     private static final double NMC_15_OUTPUT      = 55.9;
     private static final double NMC_15_CELLS       = 55.5;
@@ -17,19 +17,20 @@ public class Battery {
     private static final int    FM_LIMIT_PERCENT   = 44;
     private static final int    TX_EXTRA_PERCENT   = 100-FM_LIMIT_PERCENT;
     private static final int    OW_REMAIN_MIN      = 3;
-    private static final int    AMP_REMAIN_MIN     = 5+OW_REMAIN_MIN;
+    private static final int    AMP_REMAIN_MIN     = 3+OW_REMAIN_MIN;
     private static final double AMP_SMOOTH_OUTPUT  = 9;
     private static final double AMP_SMOOTH_CELLS   = 10;
     private static final double DECAY_NEW_STEP     = 0.02;
     private static final double DECAY_OLD_STEP     = 1.0-DECAY_NEW_STEP;
-    private static final double VCURVE_OUTPUT_LOW  = 7;
+    private static final double VCURVE_OUTPUT_LOW  = 6;
     private static final double VCURVE_OUTPUT_HIGH = 5;
-    private static final double VCURVE_CELLS_LOW   = 5;
+    private static final double VCURVE_CELLS_LOW   = 3;
     private static final double VCURVE_CELLS_HIGH  = 13;
     private static final int    MOVING_RPMS        = 10;
 
     // State Variables
     private static int    owPercent = 0;
+    private static int    owRemaining = 0;
     private static double fmLimitPercent = FM_LIMIT_PERCENT;
     private static double txExtraPercent = TX_EXTRA_PERCENT;
     private static double medianOutput = LiFePO4_16_OUTPUT;
@@ -109,6 +110,10 @@ public class Battery {
         return(owPercent);
     }
 
+    public static int getRemainingOW() {
+        return(owRemaining);
+    }
+
     public static int getRemainingAmps() {
         return(ampsRemaining);
     }
@@ -140,7 +145,7 @@ public class Battery {
         double remaining;
 
         if (owPercent >= OW_REMAIN_MIN) {
-            remaining = convertRatioTwoX(owPercent)+txExtraPercent;
+            remaining = owRemaining;
         //TODO: be more conservative at the bottom?
         //} else if (ampsRemaining > AMP_REMAIN_MIN) {
         } else if (ampsRemaining > OW_REMAIN_MIN) {
@@ -151,7 +156,7 @@ public class Battery {
             remaining = Math.min((int)avgRemainCells, txExtraPercent+OW_REMAIN_MIN);
         }
 
-        Timber.v( "TwoX:%.2f, ow:%d, amphrs:%d, output:%.2f, cells:%.2f, avgVoltsCells:%.2f", remaining, owPercent, ampsRemaining, avgRemainOut, avgRemainCells, avgVoltsCells);
+        Timber.v( "TwoX:%.2f, ow:%d, amphrs:%d, output:%.2f, cells:%.2f", remaining, owPercent, ampsRemaining, avgRemainOut, avgRemainCells);
 
         return((int)remaining);
     }
@@ -196,7 +201,7 @@ public class Battery {
         //!fmLimitPercent = FM_LIMIT_PERCENT-percent;
         //!txExtraPercent = TX_EXTRA_PERCENT+percent;
 
-        //!Timber.v( "setBatteryTemp:%d, tempCurveRatio:%.2f", temp, tempCurveRatio );
+        //!Timber.d( "setBatteryTemp:%d, tempCurveRatio:%.2f", temp, tempCurveRatio );
         return(false);
     }
 
@@ -205,27 +210,23 @@ public class Battery {
     // calculations do their best to make that number as accurate as possible.
     public static boolean setUsedAmpHrs(double amphrs) {
         int change = ampsRemaining;
-        double ampsUsedDiff, travelPct;
 
-        if (amphrs < 1 || amphrs < ampsUsed) {
-            ampsRemainBase = -1.0;
-            ampsRemainStart = -1.0;
-            ampsUsedStart = -1.0;
-            ampsRegen = 0.0;
-        } else if (owPercent <= OW_REMAIN_MIN && ampsRemainBase > 0 && ampsRegen < amphrs) {
-            if (ampsConvert < 1) {
-                ampsUsedDiff = (amphrs-ampsUsedStart)-(ampsRegen-ampsRegenStart);
-                travelPct = (ampsRemainStart-owPercent);
-
-                ampsConvert = ampsUsedDiff / travelPct;
-            } else {
+        if (amphrs > 0.5) {
+            if (amphrs < 1 || amphrs < ampsUsed) {
+                ampsRemainBase = -1.0;
+                ampsRemainStart = -1.0;
+                ampsUsedStart = -1.0;
+                ampsRegen = 0.0;
+            } else if (ampsRemainBase > 0 && ampsConvert > 0) {
                 ampsRemaining = (int)Math.floor(ampsRemainBase - convertRatioTwoX((amphrs-ampsRegen)/ampsConvert));
-            }
+            } else {
+                ampsRemaining = 0;
+	       }
+
+            ampsUsed = amphrs;
+
+            //Timber.d( "setUsedAmpHrs:%.2f, ampsRegen:%.2f, ampsConvert:%.2f, ampsBase:%.2f, ampsRemain:%d", ampsUsed, ampsRegen, ampsConvert, ampsRemainBase, ampsRemaining );
         }
-
-        ampsUsed = amphrs;
-
-        //Timber.v( "setUsedAmpHrs:%.2f, ampsRegen:%.2f, ampsConvert:%.2f, ampsBase:%.2f, ampsRemain:%d", ampsUsed, ampsRegen, ampsConvert, ampsRemainBase, ampsRemaining );
 
         change -= ampsRemaining;
         return((int)change != 0);
@@ -241,16 +242,28 @@ public class Battery {
         return(false);
     }
 
+    // Set everything up to monitor batter based on the OneWheel's belief,
+    // which simply is the value for the Default.
+    // Also, setup and make everything work for battery mods to continute
+    // drawing the percentage down based on an amp hours calculation.
     public static boolean setRemaining(int level) {
+        double ampsUsedDiff, travelPct;
+
         if (owPercent != level) {
             owPercent = level;
+            owRemaining = (int)(convertRatioTwoX(owPercent)+txExtraPercent);
 
             // We want to capture the starting AmpHrs at the turn of a percent
             // to ensure we get a full percentage AmpHrs change.
-            if (owPercent > AMP_REMAIN_MIN && ampsRemainStart < owPercent ) {
+            if (owPercent > AMP_REMAIN_MIN && ampsRemainStart < owPercent) {
                 ampsRemainBase = convertRatioTwoX(owPercent)+txExtraPercent;
                 ampsRemainStart = owPercent;
                 ampsUsedStart = ampsUsed;
+            } else if (owPercent >= OW_REMAIN_MIN && ampsRemainBase > 0 && ampsRegen < ampsUsed) {
+                ampsUsedDiff = (ampsUsed-ampsUsedStart)-(ampsRegen-ampsRegenStart);
+                travelPct = (ampsRemainStart-owPercent);
+
+                ampsConvert = ampsUsedDiff / travelPct;
             }
 
             return(true);
@@ -281,7 +294,7 @@ public class Battery {
         remaining = calcRemain(volt_curve, medianOutput, avgVoltsOut);
         avgRemainOut = remainDecay(avgRemainOut, remaining);
 
-        //Timber.v( "avgRemainOut:%.2f, curve:%.1f", avgRemainOut, volt_curve);
+        //Timber.d( "avgRemainOut:%.2f, curve:%.1f", avgRemainOut, volt_curve);
 
         change -= (int)avgRemainOut;
         return(change != 0);
@@ -310,7 +323,7 @@ public class Battery {
         remaining = calcRemain(volt_curve, medianCells, avgVoltsCells);
         avgRemainCells = remainDecay(avgRemainCells, remaining);
 
-        //Timber.v( "avgRemainCells:%.2f, avgVoltsCells:%.2f, volts:%.2f, ampAdjust:%.2f, idleAdjust:%.2f, median:%.2f, curve:%.1f",avgRemainCells, avgVoltsCells, volts, ampAdjust, idleAdjust, medianCells, volt_curve);
+        //Timber.d( "avgRemainCells:%.2f, avgVoltsCells:%.2f, volts:%.2f, ampAdjust:%.2f, idleAdjust:%.2f, median:%.2f, curve:%.1f",avgRemainCells, avgVoltsCells, volts, ampAdjust, idleAdjust, medianCells, volt_curve);
 
         change -= (int)avgRemainCells;
         return(change != 0);
