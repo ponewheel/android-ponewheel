@@ -708,7 +708,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         }
         String batteryCellsVoltage = stringBuilder.toString();
         dc.value.set(batteryCellsVoltage);
-        if (count == batteryVoltageCells.length) { //valid on XR and pint?
+        if (Battery.checkCells(count)) {
             updateBatteryChanges |= Battery.setCells(volts);
         }
     }

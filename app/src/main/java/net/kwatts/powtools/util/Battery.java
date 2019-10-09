@@ -1,9 +1,5 @@
 package net.kwatts.powtools.util;
 
-import net.kwatts.powtools.App;
-import net.kwatts.powtools.MainActivity;
-import net.kwatts.powtools.model.OWDevice;
-
 import timber.log.Timber;
 
 
@@ -31,6 +27,7 @@ public class Battery {
     // State Variables
     private static int    owPercent = 0;
     private static int    owRemaining = 0;
+    private static int    cellCount = 16;
     private static double fmLimitPercent = FM_LIMIT_PERCENT;
     private static double txExtraPercent = TX_EXTRA_PERCENT;
     private static double medianOutput = LiFePO4_16_OUTPUT;
@@ -153,7 +150,7 @@ public class Battery {
         } else if (ampsRemaining > 0) {
             remaining = Math.min(ampsRemaining, (int)avgRemainCells);
         } else {
-            remaining = Math.min((int)avgRemainCells, txExtraPercent+OW_REMAIN_MIN);
+            remaining = Math.min((int)avgRemainCells, txExtraPercent);
         }
 
         Timber.v( "TwoX:%.2f, ow:%d, amphrs:%d, output:%.2f, cells:%.2f", remaining, owPercent, ampsRemaining, avgRemainOut, avgRemainCells);
@@ -161,14 +158,20 @@ public class Battery {
         return((int)remaining);
     }
 
+    public static boolean checkCells(int count) {
+        return( count == cellCount );
+    }
+
     // Use the hardware version to set hardware specific values
     public static void setHardware(int hver) {
         if (hver<4000) {
             medianOutput = LiFePO4_16_OUTPUT;
             medianCells = LiFePO4_16_CELLS;
+            cellCount = 16;
         } else {
             medianOutput = NMC_15_OUTPUT;
             medianCells = NMC_15_CELLS;
+            cellCount = 15;
         }
     }
 
@@ -211,8 +214,8 @@ public class Battery {
     public static boolean setUsedAmpHrs(double amphrs) {
         int change = ampsRemaining;
 
-        if (amphrs > 0.5) {
-            if (amphrs < 1 || amphrs < ampsUsed) {
+        if (amphrs > 0.1) {
+            if (amphrs < 0.5 || amphrs < ampsUsed) {
                 ampsRemainBase = -1.0;
                 ampsRemainStart = -1.0;
                 ampsUsedStart = -1.0;
@@ -255,7 +258,7 @@ public class Battery {
 
             // We want to capture the starting AmpHrs at the turn of a percent
             // to ensure we get a full percentage AmpHrs change.
-            if (owPercent > AMP_REMAIN_MIN && ampsRemainStart < owPercent) {
+            if (owPercent >= AMP_REMAIN_MIN && ampsRemainStart < owPercent) {
                 ampsRemainBase = convertRatioTwoX(owPercent)+txExtraPercent;
                 ampsRemainStart = owPercent;
                 ampsUsedStart = ampsUsed;
@@ -264,6 +267,7 @@ public class Battery {
                 travelPct = (ampsRemainStart-owPercent);
 
                 ampsConvert = ampsUsedDiff / travelPct;
+                Timber.d("ampsConvert:%.2f = ampsUsedDiff:%.2f / travelPct:%.2f", ampsConvert, ampsUsedDiff, travelPct);
             }
 
             return(true);
