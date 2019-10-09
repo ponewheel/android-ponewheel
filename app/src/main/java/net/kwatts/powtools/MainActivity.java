@@ -215,6 +215,7 @@ public class MainActivity extends AppCompatActivity implements
                 mColors.add(ColorTemplate.rgb("#2E7D32")); //green
                 mColors.add(ColorTemplate.rgb("#C62828")); //red
                 dataSet.setColors(mColors);
+                dataSet.setDrawValues(false);
 
                 PieData newPieData = new PieData( dataSet);
                 mBatteryChart.setCenterText(percent + "%");
