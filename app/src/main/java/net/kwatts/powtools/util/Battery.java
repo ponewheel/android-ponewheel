@@ -12,7 +12,7 @@ public class Battery {
     private static final double NMC_15_OUTPUT      = 55.9;
     private static final double NMC_15_CELLS       = 55.5;
     private static final double MIN_VIABLE_VOLTAGE = 43.0;
-    private static final int    FM_LIMIT_PERCENT   = 44;
+    private static final int    FM_LIMIT_PERCENT   = 45;
     private static final int    TX_EXTRA_PERCENT   = 100-FM_LIMIT_PERCENT;
     private static final int    OW_REMAIN_MIN      = 3;
     private static final int    AMP_REMAIN_MIN     = 3+OW_REMAIN_MIN;
@@ -277,10 +277,9 @@ public class Battery {
         //These are not tested
         //!tempCurveRatio = 1+(temp-30)/100;
 
-        //TODO: do we need this, or can we take it out (so far, take it out)
-        //percent=(temp-20)/10;  //Valid as a difference from 45?? No idea!
-        //!fmLimitPercent = FM_LIMIT_PERCENT-percent;
-        //!txExtraPercent = TX_EXTRA_PERCENT+percent;
+        percent=(temp-30)/5;
+        fmLimitPercent = FM_LIMIT_PERCENT-percent;
+        txExtraPercent = TX_EXTRA_PERCENT+percent;
 
         //!Timber.d( "setBatteryTemp:%d, tempCurveRatio:%.2f", temp, tempCurveRatio );
         return(false);
