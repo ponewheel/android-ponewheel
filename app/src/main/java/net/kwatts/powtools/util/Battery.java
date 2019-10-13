@@ -1,5 +1,7 @@
 package net.kwatts.powtools.util;
 
+import java.util.Date;
+import org.json.JSONObject;
 import timber.log.Timber;
 
 
@@ -20,7 +22,7 @@ public class Battery {
     private static final double DECAY_OLD_STEP     = 1.0-DECAY_NEW_STEP;
     private static final double VCURVE_OUTPUT_LOW  = 6;
     private static final double VCURVE_OUTPUT_HIGH = 5;
-    private static final double VCURVE_CELLS_LOW   = 3;
+    private static final double VCURVE_CELLS_LOW   = 2.8;
     private static final double VCURVE_CELLS_HIGH  = 13;
     private static final int    MOVING_RPMS        = 10;
 
@@ -49,6 +51,67 @@ public class Battery {
     private static double ampsConvert = 0.0;
     private static int    ampsRemaining = 0;
 
+
+    public static void resetStateTwoX() {
+        ampsRemainBase = -1.0;
+        ampsRemainStart = -1.0;
+        ampsUsedStart = -1.0;
+        ampsRegenStart = -1.0;
+        ampsUsed = -1.0;
+        ampsRegen = -1.0;
+        ampsConvert = 0.0;
+    }
+
+    // Apps aren't perfect, sometimes they crash or loose connection,
+    // especially when dealing with the bluetooth chips Future Motion
+    // uses.  So, we save state periodically by serializing the variables
+    // into JSON, then stashing them into SharedPreferences.
+    public static void saveStateTwoX(SharedPreferencesUtil prefs) {
+        Date date = new Date();
+        JSONObject state = new JSONObject();
+
+        try {
+            state.put("expire", date.getTime()/1000 + 7200); //good for 2hrs
+            state.put("ampsRemainBase", ampsRemainBase);
+            state.put("ampsRemainStart", ampsRemainStart);
+            state.put("ampsUsedStart", ampsUsedStart);
+            state.put("ampsRegenStart", ampsRegenStart);
+            state.put("ampsUsed", ampsUsed);
+            state.put("ampsRegen", ampsRegen);
+            state.put("ampsConvert", ampsConvert);
+
+            prefs.setTripBatteryState(state.toString());
+        }catch (Exception e){
+            prefs.setTripBatteryState("{}");
+        }
+
+    }
+
+    // When we reconnect to a onewheel, pull the most recent state from
+    // SharedPreferences and try to continue with that.
+    public static void initStateTwoX(SharedPreferencesUtil prefs) {
+        Date date = new Date();
+        double now = date.getTime()/1000;
+        JSONObject state;
+
+        try {
+            state = new JSONObject(prefs.getTripBatteryState());
+
+            if (state.has("expire") && state.getDouble("expire") < now) {
+                ampsRemainBase  = state.getDouble("ampsRemainBase");
+                ampsRemainStart = state.getDouble("ampsRemainStart");
+                ampsUsedStart   = state.getDouble("ampsUsedStart");
+                ampsRegenStart  = state.getDouble("ampsRegenStart");
+                ampsUsed        = state.getDouble("ampsUsed");
+                ampsRegen       = state.getDouble("ampsRegen");
+                ampsConvert     = state.getDouble("ampsConvert");
+            } else {
+                resetStateTwoX();
+            }
+        }catch (Exception e){
+            resetStateTwoX();
+        }
+    }
 
     // The first filter to apply to any voltage read is to try and update
     // it based on the current Amp Hrs draw.  Voltage swings are higher
@@ -216,10 +279,7 @@ public class Battery {
 
         if (amphrs > 0.1) {
             if (amphrs < 0.5 || amphrs < ampsUsed) {
-                ampsRemainBase = -1.0;
-                ampsRemainStart = -1.0;
-                ampsUsedStart = -1.0;
-                ampsRegen = 0.0;
+                resetStateTwoX();
             } else if (ampsRemainBase > 0 && ampsConvert > 0) {
                 ampsRemaining = (int)Math.floor(ampsRemainBase - convertRatioTwoX((amphrs-ampsRegen)/ampsConvert));
             } else {
@@ -262,12 +322,12 @@ public class Battery {
                 ampsRemainBase = convertRatioTwoX(owPercent)+txExtraPercent;
                 ampsRemainStart = owPercent;
                 ampsUsedStart = ampsUsed;
-            } else if (owPercent >= OW_REMAIN_MIN && ampsRemainBase > 0 && ampsRegen < ampsUsed) {
+            } else if (owPercent >= OW_REMAIN_MIN && ampsRemainStart > owPercent && ampsRegen < ampsUsed) {
                 ampsUsedDiff = (ampsUsed-ampsUsedStart)-(ampsRegen-ampsRegenStart);
                 travelPct = (ampsRemainStart-owPercent);
 
                 ampsConvert = ampsUsedDiff / travelPct;
-                Timber.d("ampsConvert:%.2f = ampsUsedDiff:%.2f / travelPct:%.2f", ampsConvert, ampsUsedDiff, travelPct);
+                //Timber.d("ampsConvert:%.2f = ampsUsedDiff:%.2f / travelPct:%.2f", ampsConvert, ampsUsedDiff, travelPct);
             }
 
             return(true);

@@ -727,13 +727,12 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         updateBatteryChanges |= Battery.setAmps(amps);
     }
 
+    public void forceBatteryRemaining() {
+        updateBatteryChanges=true;
+    }
+
     public void setBatteryRemaining(MainActivity mainActivity) {
         SharedPreferencesUtil prefs = App.INSTANCE.getSharedPreferences();
-
-        if (! prefs.getBatteryMethod().equals(updateBatteryMethod)) {
-            updateBatteryMethod=prefs.getBatteryMethod();
-            updateBatteryChanges=true;
-        }
 
         if (updateBatteryChanges) {
             DeviceCharacteristic dc = characteristics.get(OnewheelCharacteristicBatteryRemaining);
@@ -745,6 +744,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                 remaining = Battery.getRemainingCells();
             } else if (prefs.isRemainTwoX()) {
                 remaining = Battery.getRemainingTwoX();
+                Battery.saveStateTwoX(prefs);
             } else {
                 remaining = Battery.getRemainingDefault();
             }
