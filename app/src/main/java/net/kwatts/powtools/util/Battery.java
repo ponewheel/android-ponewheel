@@ -60,6 +60,7 @@ public class Battery {
         ampsUsed = -1.0;
         ampsRegen = -1.0;
         ampsConvert = 0.0;
+        ampsRemaining = 0;
     }
 
     // Apps aren't perfect, sometimes they crash or loose connection,
@@ -68,21 +69,29 @@ public class Battery {
     // into JSON, then stashing them into SharedPreferences.
     public static void saveStateTwoX(SharedPreferencesUtil prefs) {
         Date date = new Date();
+        String jsonString;
         JSONObject state = new JSONObject();
 
-        try {
-            state.put("expire", date.getTime()/1000 + 7200); //good for 2hrs
-            state.put("ampsRemainBase", ampsRemainBase);
-            state.put("ampsRemainStart", ampsRemainStart);
-            state.put("ampsUsedStart", ampsUsedStart);
-            state.put("ampsRegenStart", ampsRegenStart);
-            state.put("ampsUsed", ampsUsed);
-            state.put("ampsRegen", ampsRegen);
-            state.put("ampsConvert", ampsConvert);
+        if (owPercent>0) {
+            try {
+                state.put("expire", date.getTime()/1000 + 3600); //good for 1hr
+                state.put("ampsRemainBase", ampsRemainBase);
+                state.put("ampsRemainStart", ampsRemainStart);
+                state.put("ampsUsedStart", ampsUsedStart);
+                state.put("ampsRegenStart", ampsRegenStart);
+                state.put("ampsUsed", ampsUsed);
+                state.put("ampsRegen", ampsRegen);
+                state.put("ampsConvert", ampsConvert);
+                state.put("ampsRemaining", ampsRemaining);
 
-            prefs.setTripBatteryState(state.toString());
-        }catch (Exception e){
-            prefs.setTripBatteryState("{}");
+                jsonString = state.toString();
+                prefs.setTripBatteryState(jsonString);
+
+                Timber.v("saveStateTwoX %s", jsonString);
+            }catch (Exception e){
+                Timber.d("saveStateTwoX %s", e.toString());
+                prefs.setTripBatteryState("{}");
+            }
         }
 
     }
@@ -92,12 +101,14 @@ public class Battery {
     public static void initStateTwoX(SharedPreferencesUtil prefs) {
         Date date = new Date();
         double now = date.getTime()/1000;
+        String jsonString;
         JSONObject state;
 
         try {
-            state = new JSONObject(prefs.getTripBatteryState());
+            jsonString = prefs.getTripBatteryState();
+            state = new JSONObject(jsonString);
 
-            if (state.has("expire") && state.getDouble("expire") < now) {
+            if (state.has("expire") && state.getDouble("expire") > now) {
                 ampsRemainBase  = state.getDouble("ampsRemainBase");
                 ampsRemainStart = state.getDouble("ampsRemainStart");
                 ampsUsedStart   = state.getDouble("ampsUsedStart");
@@ -105,10 +116,14 @@ public class Battery {
                 ampsUsed        = state.getDouble("ampsUsed");
                 ampsRegen       = state.getDouble("ampsRegen");
                 ampsConvert     = state.getDouble("ampsConvert");
+                ampsRemaining   = state.getInt("ampsRemaining");
+
+                Timber.v("initStateTwoX %s", jsonString);
             } else {
                 resetStateTwoX();
             }
         }catch (Exception e){
+            Timber.d("initStateTwoX %s", e.toString());
             resetStateTwoX();
         }
     }
@@ -277,7 +292,7 @@ public class Battery {
     public static boolean setUsedAmpHrs(double amphrs) {
         int change = ampsRemaining;
 
-        if (amphrs > 0.1) {
+        if (owPercent > 0 && amphrs > 0.1) {
             if (amphrs < 0.5 || amphrs < ampsUsed) {
                 resetStateTwoX();
             } else if (ampsRemainBase > 0 && ampsConvert > 0) {
@@ -312,7 +327,7 @@ public class Battery {
     public static boolean setRemaining(int level) {
         double ampsUsedDiff, travelPct;
 
-        if (owPercent != level) {
+        if (level > 0 && owPercent != level) {
             owPercent = level;
             owRemaining = (int)(convertRatioTwoX(owPercent)+txExtraPercent);
 
