@@ -699,6 +699,12 @@ public class MainActivity extends AppCompatActivity implements
                 }
                 break;
 
+            case SharedPreferencesUtil.REMAIN_METHOD:
+                if (mOWDevice != null) {
+                    mOWDevice.forceBatteryRemaining();
+                }
+                break;
+
             default:
                 Timber.d( "onSharedPreferenceChanged: " + key);
         }
