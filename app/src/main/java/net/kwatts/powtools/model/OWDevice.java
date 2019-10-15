@@ -311,6 +311,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTiltAngleRoll,    KEY_TILT_ANGLE_ROLL,     "TILT ANGLE ROLL",0,true));           // 15
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTemperature,      KEY_CONTROLLER_TEMP,     "",0,true));                          // 16
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMotorTemp,    KEY_MOTOR_TEMP,          "", 0,false));// 17
+        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP",0,true));                 // 18
 
 /*
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -492,7 +493,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         int batteryLevel  = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
 
         //EventBus.getDefault().post(new DeviceBatteryRemainingEvent(batteryLevel));
-        dc.value.set(Integer.toString(batteryLevel));
+        //dc.value.set(Integer.toString(batteryLevel));
         updateBatteryChanges |= Battery.setRemaining(batteryLevel);
     }
 
@@ -590,11 +591,12 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
     public void processBatteryTemp(BluetoothGattCharacteristic incomingCharacteristic, DeviceCharacteristic dc) {
-        int batteryTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+        int batteryTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
 
         Timber.d("batteryTemp = " + batteryTemp);
 
         setFormattedTempWithMetricPreference(dc, batteryTemp);
+        updateBatteryChanges |= Battery.setBatteryTemp(batteryTemp);
     }
 
     public void processUnknownUuid(String incomingUuid, byte[] incomingValue) {
@@ -706,7 +708,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         }
         String batteryCellsVoltage = stringBuilder.toString();
         dc.value.set(batteryCellsVoltage);
-        if (count == batteryVoltageCells.length) { //valid on XR and pint?
+        if (Battery.checkCells(count)) {
             updateBatteryChanges |= Battery.setCells(volts);
         }
     }
@@ -725,13 +727,12 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         updateBatteryChanges |= Battery.setAmps(amps);
     }
 
+    public void forceBatteryRemaining() {
+        updateBatteryChanges=true;
+    }
+
     public void setBatteryRemaining(MainActivity mainActivity) {
         SharedPreferencesUtil prefs = App.INSTANCE.getSharedPreferences();
-
-        if (! prefs.getBatteryMethod().equals(updateBatteryMethod)) {
-            updateBatteryMethod=prefs.getBatteryMethod();
-            updateBatteryChanges=true;
-        }
 
         if (updateBatteryChanges) {
             DeviceCharacteristic dc = characteristics.get(OnewheelCharacteristicBatteryRemaining);
@@ -743,6 +744,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                 remaining = Battery.getRemainingCells();
             } else if (prefs.isRemainTwoX()) {
                 remaining = Battery.getRemainingTwoX();
+                Battery.saveStateTwoX(prefs);
             } else {
                 remaining = Battery.getRemainingDefault();
             }

@@ -1,4 +1,4 @@
-package net.kwatts.powtools;
+package net.kwatts.powtools.util;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -14,7 +14,7 @@ import android.widget.Toast;
 /**
  * Utility class for access to runtime permissions.
  */
-public abstract class PermissionUtils {
+public abstract class PermissionUtil {
 
     /**
      * Requests the fine location permission. If a rationale with an additional explanation should
@@ -24,7 +24,7 @@ public abstract class PermissionUtils {
                                          String permission, boolean finishActivity) {
         if (ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)) {
             // Display a dialog with rationale.
-            PermissionUtils.RationaleDialog.newInstance(requestId, finishActivity)
+            PermissionUtil.RationaleDialog.newInstance(requestId, finishActivity)
                     .show(activity.getSupportFragmentManager(), "dialog");
         } else {
             // Location permission has not been granted yet, request it.

@@ -94,6 +94,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                 Timber.d("STATE_CONNECTED: name=" + gatt.getDevice().getName() + " address=" + gatt.getDevice().getAddress());
                 BluetoothUtilImpl.isOWFound.set("true");
                 gatt.discoverServices();
+                Battery.initStateTwoX(App.INSTANCE.getSharedPreferences());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Timber.d("STATE_DISCONNECTED: name=" + gatt.getDevice().getName() + " address=" + gatt.getDevice().getAddress());
                 App.INSTANCE.getSharedPreferences().setStatusMode(0);

@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import net.kwatts.powtools.database.Database;
 import net.kwatts.powtools.database.entities.Attribute;
 import net.kwatts.powtools.database.entities.Moment;
+import net.kwatts.powtools.model.OWDevice;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -83,7 +84,13 @@ public class PlainTextFileLogger  {
 
                 List<Attribute> attributes = database.attributeDao().getFromMoment(moment.id);
                 for (Attribute attribute : attributes) {
-                    keyValueOrderKeeper.put(attribute.getKey(), attribute.getValue());
+                    String k = attribute.getKey();
+                    String v = attribute.getValue();
+                    if ( k.equals("battery_cells") && v != null) {
+                        keyValueOrderKeeper.put(k, "\"" + v.replaceAll("\n",",") + "\"");
+                    } else {
+                        keyValueOrderKeeper.put(k, v);
+                    }
                 }
                 keyValueOrderKeeper.put("gps_lat", moment.getGpsLat());
                 keyValueOrderKeeper.put("gps_long", moment.getGpsLong());

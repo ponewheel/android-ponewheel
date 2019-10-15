@@ -1,23 +1,24 @@
 package net.kwatts.powtools;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.databinding.Observable;
 import android.graphics.Typeface;
+import android.graphics.Color;
 import android.location.Address;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
@@ -52,14 +53,12 @@ import net.kwatts.powtools.database.entities.Attribute;
 import net.kwatts.powtools.database.entities.Moment;
 import net.kwatts.powtools.database.entities.Ride;
 import net.kwatts.powtools.events.NotificationEvent;
-import net.kwatts.powtools.events.VibrateEvent;
 import net.kwatts.powtools.model.OWDevice;
-//import net.kwatts.powtools.services.VibrateService;
 import net.kwatts.powtools.util.BluetoothUtil;
 import net.kwatts.powtools.util.BluetoothUtilImpl;
+import net.kwatts.powtools.util.PermissionUtil;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 import net.kwatts.powtools.util.SpeedAlertResolver;
-import net.kwatts.powtools.util.Util;
 import net.kwatts.powtools.util.debugdrawer.DebugDrawerMockBle;
 import net.kwatts.powtools.view.AlertsMvpController;
 
@@ -87,8 +86,6 @@ import timber.log.Timber;
 
 import static net.kwatts.powtools.model.OWDevice.KEY_RIDE_MODE;
 import static net.kwatts.powtools.model.OWDevice.MockOnewheelCharacteristicSpeed;
-import static net.kwatts.powtools.util.Util.rpmToKilometersPerHour;
-import static net.kwatts.powtools.util.Util.rpmToMilesPerHour;
 
 
 // http://blog.davidvassallo.me/2015/09/02/ble-health-devices-first-steps-with-android/
@@ -122,9 +119,6 @@ public class MainActivity extends AppCompatActivity implements
     int mRideModePosition;
     boolean mRideModePositionSetOnceFlag;
 
-    //Removing for stability
-    //public VibrateService mVibrateService;
-
     private android.os.Handler mLoggingHandler = new Handler();
     private SpeedAlertResolver speedAlertResolver = new SpeedAlertResolver(App.INSTANCE.getSharedPreferences());
 
@@ -136,15 +130,18 @@ public class MainActivity extends AppCompatActivity implements
     BluetoothUtil bluetoothUtil;
 
     private NotificationCompat.Builder mStatusNotificationBuilder;
-    private static final String POW_NOTIF_CHANNEL_STATUS = "pow_status";
+    private static final String POW_NOTIF_CHANNEL_ID = "pow_status";
     private static final String POW_NOTIF_TAG_STATUS = "statusNotificationTag";
+
+    public static NotificationCompat.Builder mNotificationBuilder;
+    public static NotificationManagerCompat mNotificationManager;
+
 
     PieChart mBatteryChart;
     Ride ride;
     private DisposableObserver<Address> rxLocationObserver;
     private AlertsMvpController alertsController;
 
-    //public ProgressiveGauge mProgressiveGauge;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEvent(NotificationEvent event){
@@ -163,9 +160,7 @@ public class MainActivity extends AppCompatActivity implements
                     new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
             mBuilder.setContentIntent(contentIntent);
 
-            android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            assert mNotifyMgr != null;
-            mNotifyMgr.notify(message,0, mBuilder.build());
+            mNotificationManager.notify(message,1, mBuilder.build());
         });
     }
 
@@ -201,9 +196,9 @@ public class MainActivity extends AppCompatActivity implements
 
     public void updateBatteryRemaining(final int percent) {
         // Update ongoing notification
-        mStatusNotificationBuilder.setContentText("battery: " + percent + "%");
-        android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        mNotifyMgr.notify(POW_NOTIF_TAG_STATUS, 0, mStatusNotificationBuilder.build());
+        mStatusNotificationBuilder.setContentText("Battery: " + percent + "%");
+        mNotificationManager.notify(POW_NOTIF_TAG_STATUS,1, mStatusNotificationBuilder.build());
+
 
         runOnUiThread(() -> {
             try {
@@ -232,20 +227,16 @@ public class MainActivity extends AppCompatActivity implements
                     if (!(batteryAlertLevels.get(percent))) {
                         switch (percent) {
                             case 75:
-                                //EventBus.getDefault().post(new VibrateEvent(1000,1));
-                                onEvent(new NotificationEvent("OW Battery", "75%"));
+                                sendNotificationVibrate("75%", "Battery",1);
                                 break;
                             case 50:
-                                //EventBus.getDefault().post(new VibrateEvent(1000,2));
-                                onEvent(new NotificationEvent("OW Battery", "50%"));
+                                sendNotificationVibrate("50%", "Battery",2);
                                 break;
                             case 25:
-                                //EventBus.getDefault().post(new VibrateEvent(1000,3));
-                                onEvent(new NotificationEvent("OW Battery", "25%"));
+                                sendNotificationVibrate("25%", "Battery",3);
                                 break;
                             case 5:
-                                //EventBus.getDefault().post(new VibrateEvent(1000,4));
-                                onEvent(new NotificationEvent("OW Battery", "5%"));
+                                sendNotificationVibrate("5%", "Battery",4);
                                 break;
                             default:
                         }
@@ -272,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements
                         }
                     }
                 }, 15000);
-
+/*
                 mChronometer.setOnChronometerTickListener(new Chronometer.OnChronometerTickListener() {
                     @Override
                     public void onChronometerTick(Chronometer chronometer) {
@@ -281,12 +272,12 @@ public class MainActivity extends AppCompatActivity implements
                         long deltaTimeSeconds = TimeUnit.MILLISECONDS.toSeconds(systemCurrTime - chronometerBaseTime);
 
                         //Gemini unlocker, write firmware periodically (< 24 seconds) or disconnects
-                        if (deltaTimeSeconds % 15L == 0) {
+                        //if (deltaTimeSeconds % 15L == 0) {
                             //mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
-                        }
+                        //}
                     }
                 });
-
+*/
                 mChronometer.setBase(SystemClock.elapsedRealtime());
                 mChronometer.start();
             } else {
@@ -307,12 +298,11 @@ public class MainActivity extends AppCompatActivity implements
 
         mContext = this;
 
+        createNotificationChannel();
+        mNotificationManager = NotificationManagerCompat.from(this);
         startStatusNotification();
 
         EventBus.getDefault().register(this);
-        // TODO unbind in onPause or whatever is recommended by goog
-        // Disabling for now...
-        //bindService(new Intent(this, VibrateService.class), mVibrateConnection, Context.BIND_AUTO_CREATE);
 
         initWakelock();
 
@@ -329,8 +319,6 @@ public class MainActivity extends AppCompatActivity implements
             showEula();
         }
 
-        //Disabling for stability
-        //startService(new Intent(getApplicationContext(), VibrateService.class));
 
         setupOWDevice();
 
@@ -344,9 +332,6 @@ public class MainActivity extends AppCompatActivity implements
 
         mChronometer = findViewById(R.id.chronometer);
 
-        //mProgressiveGauge = findViewById(R.id.speedbar);
-        //initSpeedBar();
-
         initBatteryChart();
         initLightSettings();
         initRideModeButtons();
@@ -359,25 +344,56 @@ public class MainActivity extends AppCompatActivity implements
                 ).build();
     }
 
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "notify";
+            String description = "show status for onewheel";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(POW_NOTIF_CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
     private void startStatusNotification() {
         mStatusNotificationBuilder =
-                new NotificationCompat.Builder(mContext, POW_NOTIF_CHANNEL_STATUS)
+                new NotificationCompat.Builder(mContext, POW_NOTIF_CHANNEL_ID)
                         .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Onewheel Status")
-                        .setColor(0x008000)
+                        .setColor(Color.parseColor("#fcb103"))
                         .setContentText("Waiting for connection...")
                         .setOngoing(true)
                         .setAutoCancel(true);
-        android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        assert mNotifyMgr != null;
-        mNotifyMgr.notify(POW_NOTIF_TAG_STATUS,0, mStatusNotificationBuilder.build());
+        mNotificationManager.notify(POW_NOTIF_TAG_STATUS,1, mStatusNotificationBuilder.build());
     }
 
     private void stopStatusNotification() {
-        android.app.NotificationManager mNotifyMgr = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        assert mNotifyMgr != null;
-        mNotifyMgr.cancel(POW_NOTIF_TAG_STATUS, 0);
+        NotificationManagerCompat nmgr = NotificationManagerCompat.from(this);
+        nmgr.cancelAll();
     }
+
+    private void sendNotificationVibrate(String message, String title, int count) {
+        ArrayList<Long> lArrayList = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            lArrayList.add(1000L); // number of ms to wait before turning vibrator on
+            lArrayList.add(1000L); // number of ms to wait before turning it off
+        }
+
+        long[] vibrate = new long[lArrayList.size()];
+        for (int i = 0; i < lArrayList.size(); i++) {
+            vibrate[i] = lArrayList.get(i);
+        }
+
+        mStatusNotificationBuilder.setContentText(message);
+        mStatusNotificationBuilder.setContentTitle(title);
+        mStatusNotificationBuilder.setVibrate(vibrate);
+        NotificationManagerCompat nmgr = NotificationManagerCompat.from(this);
+        nmgr.notify(POW_NOTIF_TAG_STATUS,1, mStatusNotificationBuilder.build());
+    }
+
 
     public BluetoothUtil getBluetoothUtil() {
         if (bluetoothUtil == null) {
@@ -409,15 +425,6 @@ public class MainActivity extends AppCompatActivity implements
 
         mOWDevice.showDebugWindow.set(App.INSTANCE.getSharedPreferences().isDebugging());
         mOWDevice.isOneWheelPlus.set(App.INSTANCE.getSharedPreferences().isOneWheelPlus());
-
-//        mOWDevice.isConnected.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
-//            @Override
-//            public void onPropertyChanged(Observable observable, int i) {
-//                Timber.d( "onPropertyChanged: " + mOWDevice.isConnected.get());
-//                Timber.d( "onPropertyChanged: " + observable.toString() + "i" + i);
-//            }
-//        });
-
         mOWDevice.setupCharacteristics();
         mOWDevice.isConnected.set(false);
 
@@ -445,14 +452,6 @@ public class MainActivity extends AppCompatActivity implements
         getBluetoothUtil().init(MainActivity.this, mOWDevice);
     }
 
-    /*
-    private void updateGaugeOnSpeedChange(ProgressiveGauge gauge, @NonNull String speedString) {
-        if (speedAlertResolver.isAlertThresholdExceeded(speedString)) {
-            gauge.setSpeedometerColor(ColorTemplate.rgb("#800000"));
-        } else {
-            gauge.setSpeedometerColor(ColorTemplate.rgb("#2E7D32"));
-        }
-    } */
 
     private void logOnChange(OWDevice.DeviceCharacteristic deviceCharacteristic) {
         deviceCharacteristic.value.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
@@ -489,26 +488,6 @@ public class MainActivity extends AppCompatActivity implements
                 .show();
     }
 
-    private void showDonation() {
-        new MaterialDialog.Builder(this)
-                .theme(Theme.LIGHT)
-                .title("Donate")
-                .content("This app is openly developed and maintained by contributors in their spare time. Show support and help fuel their OneWheel addictions :)")
-                .items(R.array.donation_options)
-                .itemsCallback(new MaterialDialog.ListCallback() {
-                    @Override
-                    public void onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
-                        if (which == 0) {
-                            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kwatkins%40gmail%2ecom&lc=US&item_name=pOneWheel%20Android%20App&no_note=1&no_shipping=1&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted"));
-                            startActivity(browserIntent);
-                        } else if (which == 1) {
-                            //TODO: Google Play
-                        }
-
-                    }
-                })
-                .show();
-    }
     private void setupDarkModes(Bundle savedInstanceState) {
         if (App.INSTANCE.getSharedPreferences().isDayNightMode()) {
             if (savedInstanceState == null) {
@@ -536,11 +515,6 @@ public class MainActivity extends AppCompatActivity implements
     }
     @Override
     public void onDestroy() {
-        //Removing for stability
-        /*
-        if (mVibrateService != null) {
-            unbindService(mVibrateConnection);
-        } */
         App.INSTANCE.getSharedPreferences().removeListener(this);
         stopStatusNotification();
         super.onDestroy();
@@ -554,24 +528,16 @@ public class MainActivity extends AppCompatActivity implements
             menu.findItem(R.id.menu_disconnect).setVisible(true);
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(false);
-            //Timber.d("GEMINI Step #1: Connected to OW board, sending the key/challenge kickoff...");
-            //mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
-            //menu.findItem(R.id.menu_ow_light_on).setVisible(true);
-            //menu.findItem(R.id.menu_ow_ridemode).setVisible(true);
         } else if (!getBluetoothUtil().isScanning()) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
             menu.findItem(R.id.menu_disconnect).setVisible(false);
             menu.findItem(R.id.menu_refresh).setActionView(null);
-            //menu.findItem(R.id.menu_ow_light_on).setVisible(false);
-            //menu.findItem(R.id.menu_ow_ridemode).setVisible(false);
         } else {
             menu.findItem(R.id.menu_stop).setVisible(true);
             menu.findItem(R.id.menu_scan).setVisible(false);
             menu.findItem(R.id.menu_disconnect).setVisible(false);
             menu.findItem(R.id.menu_refresh).setActionView(R.layout.actionbar_progress_indeterminate);
-            //menu.findItem(R.id.menu_ow_light_on).setVisible(false);
-            //menu.findItem(R.id.menu_ow_ridemode).setVisible(false);
         }
         return true;
     }
@@ -615,9 +581,6 @@ public class MainActivity extends AppCompatActivity implements
                 break;
             case R.id.menu_about:
                 showEula();
-                break;
-            case R.id.menu_donate:
-                showDonation();
                 break;
             case R.id.menu_settings:
                 Intent i = new Intent(this, MainPreferencesActivity.class);
@@ -736,6 +699,12 @@ public class MainActivity extends AppCompatActivity implements
                 }
                 break;
 
+            case SharedPreferencesUtil.REMAIN_METHOD:
+                if (mOWDevice != null) {
+                    mOWDevice.forceBatteryRemaining();
+                }
+                break;
+
             default:
                 Timber.d( "onSharedPreferenceChanged: " + key);
         }
@@ -745,20 +714,6 @@ public class MainActivity extends AppCompatActivity implements
     private void refreshMetricViews() {
         // TODO Auto convert the speed alert for the user or meh?
     }
-
-    //Removing for stability until it's done correctly, suspect it's causing stability issues
-    /*
-    private ServiceConnection mVibrateConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className, IBinder binder) {
-            mVibrateService = ((VibrateService.MyBinder) binder).getService();
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            mVibrateService = null;
-        }
-    }; */
-
-
 
     public void initLogging() {
         if (ONEWHEEL_LOGGING) {
@@ -799,8 +754,13 @@ public class MainActivity extends AppCompatActivity implements
             for (OWDevice.DeviceCharacteristic deviceReadCharacteristic : mOWDevice.getNotifyCharacteristics()) {
                 Attribute attribute = new Attribute();
                 attribute.setMomentId(momentId);
-                attribute.setValue(deviceReadCharacteristic.value.get());
-                attribute.setKey(deviceReadCharacteristic.key.get());
+
+                String k = deviceReadCharacteristic.key.get();
+                String v = deviceReadCharacteristic.value.get();
+
+
+                attribute.setValue(v);
+                attribute.setKey(k);
 
                 attributes.add(attribute);
             }
@@ -811,35 +771,6 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
     }
-
-    /*
-    private static final int SPEED_ANIMATION_DURATION = 0;
-    private void initSpeedBar() {
-        mOWDevice.speedRpm.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
-            @Override
-            public void onPropertyChanged(Observable observable, int i) {
-                runOnUiThread(() -> {
-                    try {
-                        //TODO: add notes for things like top speed https://github.com/anastr/SpeedView/wiki/Notes
-                        double speed = (double) mOWDevice.speedRpm.get();
-                        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
-                        if (isMetric) {
-                            mProgressiveGauge.setMaxSpeed(25);
-                            mProgressiveGauge.setUnit("km/h");
-                            mProgressiveGauge.speedTo((float) Util.round(rpmToKilometersPerHour(speed),1),SPEED_ANIMATION_DURATION);
-                        } else {
-                            mProgressiveGauge.setMaxSpeed(20);
-                            mProgressiveGauge.setUnit("mph");
-                            mProgressiveGauge.speedTo((float) Util.round(rpmToMilesPerHour(speed),1),SPEED_ANIMATION_DURATION);
-                        }
-                    } catch (Exception e) {
-                        Timber.e("Got an exception updating speed:" + e.getMessage());
-                    }
-                });
-            }
-        });
-    } */
-
 
     SwitchCompat mMasterLight;
     SwitchCompat mCustomLight;
@@ -1046,10 +977,9 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void enableWritingToStorage() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
-            // Request permission without stopping activity
-            PermissionUtils.requestPermission(this, WRITE_EXTERNAL_STORAGE_PERMS,
+            PermissionUtil.requestPermission(this, WRITE_EXTERNAL_STORAGE_PERMS,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE, false);
         } else {
             Timber.d("We already have permission for writing to storage.");
