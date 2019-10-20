@@ -16,6 +16,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
@@ -254,15 +255,6 @@ public class MainActivity extends AppCompatActivity implements
     public void deviceConnectedTimer(final boolean start) {
         runOnUiThread(() -> {
             if (start) {
-                final Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    public void run() {
-                        if (App.INSTANCE.getSharedPreferences().getStatusMode() == 2) {
-                            mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
-                            handler.postDelayed(this, 15000);
-                        }
-                    }
-                }, 15000);
 /*
                 mChronometer.setOnChronometerTickListener(new Chronometer.OnChronometerTickListener() {
                     @Override
@@ -342,6 +334,16 @@ public class MainActivity extends AppCompatActivity implements
                         new SettingsModule(this),
                         new TimberModule()
                 ).build();
+
+        final Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                if (App.INSTANCE.getSharedPreferences().getStatusMode() == 2) {
+                    mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
+                }
+                handler.postDelayed(this, 15000);
+            }
+        }, 15000);
     }
 
     private void createNotificationChannel() {
@@ -573,6 +575,7 @@ public class MainActivity extends AppCompatActivity implements
                 break;
             case R.id.menu_disconnect:
                 mOWDevice.isConnected.set(false);
+                App.INSTANCE.getSharedPreferences().setStatusMode(0);
                 getBluetoothUtil().disconnect();
                 Timber.i("Disconnected from device by user.");
                 deviceConnectedTimer(false);

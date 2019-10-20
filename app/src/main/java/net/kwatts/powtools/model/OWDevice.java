@@ -121,7 +121,6 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     private double[] batteryVoltageCells = new double[16];
 
     private static boolean updateBatteryChanges = true;
-    private static String updateBatteryMethod = "";
 
 
     public static final String OnewheelServiceUUID = "e659f300-ea98-11e3-ac10-0800200c9a66";
@@ -288,8 +287,8 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLifetimeOdometer, KEY_LIFETIME_ODOMETER,   "",0,false));                             // 2
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLightingMode,     KEY_LIGHTING_MODE,       "LIGHTS",0,false));                       // 3
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY_INITIAL,     "BATTERY AT START (%)",0,false));         // 4
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLastErrorCode,    KEY_LAST_ERROR_CODE,     "LAST ERROR CODE",0,false));              // 5
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP",0,false));                 // 6
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLastErrorCode,    KEY_LAST_ERROR_CODE,     "LAST ERROR CODE",1,false));              // 5
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP",1,false));                 // 6
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,       KEY_RIDE_MODE,           "RIDING MODE",0,false));                  // 7
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicUartSerialRead,   KEY_SERIAL_READ,         "",0,false));// 18
@@ -395,6 +394,10 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         byte[] incomingValue = incomingCharacteristic.getValue();
 
         DeviceCharacteristic dc = characteristics.get(incomingUuid);
+
+        if (dc == null) {
+            return;
+        }
 
         String dev_uuid = dc.uuid.get();
 
@@ -749,8 +752,10 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                 remaining = Battery.getRemainingDefault();
             }
 
-            dc.value.set(Integer.toString(remaining));
-            mainActivity.updateBatteryRemaining(remaining);
+            if (Integer.toString(remaining) != dc.value.get()) {
+                dc.value.set(Integer.toString(remaining));
+                mainActivity.updateBatteryRemaining(remaining);
+            }
 
             updateBatteryChanges = false;
         }
