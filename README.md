@@ -13,7 +13,7 @@ We plan to get a new release with all the new features, bug fixes, etc on the Go
 
 > How can I help?
 
-We'd love for you to test the open beta! Sign up at [Google Play Beta]. For questions, to report bugs, or suggestions and feature requests, head over to the [Github Ponewheel Issues] page. If you'd like to contribute, please fork this repository and contribute back using pull requests. Join the [discussion on slack].
+We'd love for you to test the open beta! Sign up at [Google Play Beta]. For questions, to report bugs, or suggestions and feature requests, head over to the [Github Ponewheel Issues] page. If you'd like to contribute, please fork this repository and contribute back using pull requests.
 
 
 Special thanks to,
@@ -30,4 +30,4 @@ Special thanks to,
 [OneWheel]: https://onewheel.com/
 [Google Play]: https://play.google.com/store/apps/details?id=net.kwatts.powtools
 [Google Play Beta]: https://play.google.com/apps/testing/net.kwatts.powtools
-[discussion on slack]: https://join.slack.com/t/ponewheel/shared_invite/enQtMjk5Nzg0NzAzMzAzLTRmMDY1YWVlN2NlYThhMDRkNzEyMTIwOWRmM2Y3YzcyNDRkMmRkM2I1Zjc3MWQ4ODc1OTNiMjAwZGZhZjYxOTA
+
