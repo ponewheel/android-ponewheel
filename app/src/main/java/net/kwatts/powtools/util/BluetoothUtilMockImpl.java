@@ -30,6 +30,7 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     Handler mockLoopHandler = new Handler();
     private boolean isScanning = false;
     private boolean isGemini = false;
+    private int statusMode = 0;
 
 
 
@@ -169,6 +170,11 @@ public class BluetoothUtilMockImpl implements BluetoothUtil{
     @Override
     public void writeCharacteristic(BluetoothGattCharacteristic lc) {
         Timber.d("writeChar" + lc);
+    }
+
+    @Override
+    public int getStatusMode() {
+        return statusMode;
     }
 
     private void updateLog(String s) {

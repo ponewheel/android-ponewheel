@@ -310,7 +310,6 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTiltAngleRoll,    KEY_TILT_ANGLE_ROLL,     "TILT ANGLE ROLL",0,true));           // 15
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTemperature,      KEY_CONTROLLER_TEMP,     "",0,true));                          // 16
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMotorTemp,    KEY_MOTOR_TEMP,          "", 0,false));// 17
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP",0,true));                 // 18
 
 /*
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -497,7 +496,10 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
         //EventBus.getDefault().post(new DeviceBatteryRemainingEvent(batteryLevel));
         //dc.value.set(Integer.toString(batteryLevel));
-        updateBatteryChanges |= Battery.setRemaining(batteryLevel);
+        if (Battery.setRemaining(batteryLevel)) {
+            updateBatteryChanges = true;
+            Battery.saveStateTwoX(App.INSTANCE.getSharedPreferences());
+        }
     }
 
     public void processPitch(byte[] incomingValue, DeviceCharacteristic dc) {
@@ -747,7 +749,6 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                 remaining = Battery.getRemainingCells();
             } else if (prefs.isRemainTwoX()) {
                 remaining = Battery.getRemainingTwoX();
-                Battery.saveStateTwoX(prefs);
             } else {
                 remaining = Battery.getRemainingDefault();
             }

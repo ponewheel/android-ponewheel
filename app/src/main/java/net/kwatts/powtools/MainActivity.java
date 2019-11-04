@@ -130,9 +130,12 @@ public class MainActivity extends AppCompatActivity implements
     net.kwatts.powtools.databinding.ActivityMainBinding mBinding;
     BluetoothUtil bluetoothUtil;
 
-    private NotificationCompat.Builder mStatusNotificationBuilder;
+    private NotificationCompat.Builder mStatusNotificationAlert;
+    private NotificationCompat.Builder mStatusNotificationQuiet;
+    private static final String POW_NOTIF_GROUP_KEY = "pow_status_group";
     private static final String POW_NOTIF_CHANNEL_ID = "pow_status";
     private static final String POW_NOTIF_TAG_STATUS = "statusNotificationTag";
+    private static final String POW_NOTIF_TAG_ALERTS = "alertsNotificationTag";
 
     public static NotificationCompat.Builder mNotificationBuilder;
     public static NotificationManagerCompat mNotificationManager;
@@ -197,15 +200,17 @@ public class MainActivity extends AppCompatActivity implements
 
     public void updateBatteryRemaining(final int percent) {
         // Update ongoing notification
-        mStatusNotificationBuilder.setContentText("Battery: " + percent + "%");
-        mNotificationManager.notify(POW_NOTIF_TAG_STATUS,1, mStatusNotificationBuilder.build());
+        Timber.v("batteryAlertLevels:" + percent);
+	   mNotificationManager.cancelAll();
+        mStatusNotificationQuiet.setContentText("Battery: " + percent + "%");
+        mNotificationManager.notify(POW_NOTIF_TAG_STATUS,1, mStatusNotificationQuiet.build());
 
 
         runOnUiThread(() -> {
             try {
                 ArrayList<PieEntry> entries = new ArrayList<>();
-                entries.add(new PieEntry(percent, 0));
-                entries.add(new PieEntry(100 - percent, 1));
+                entries.add(new PieEntry((int)percent, (int)0));
+                entries.add(new PieEntry((int)100 - percent, (int)1));
                 PieDataSet dataSet = new PieDataSet(entries, "battery percentage");
                 ArrayList<Integer> mColors = new ArrayList<>();
                 mColors.add(ColorTemplate.rgb("#2E7D32")); //green
@@ -222,7 +227,6 @@ public class MainActivity extends AppCompatActivity implements
                 mBatteryChart.setData(newPieData);
                 mBatteryChart.notifyDataSetChanged();
                 mBatteryChart.invalidate();
-
 
                 if (batteryAlertLevels.indexOfKey(percent) > -1) {
                     if (!(batteryAlertLevels.get(percent))) {
@@ -280,6 +284,7 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
+    private static int ccc=0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Timber.d( "Starting...");
@@ -338,7 +343,7 @@ public class MainActivity extends AppCompatActivity implements
         final Handler handler = new Handler(Looper.getMainLooper());
         handler.postDelayed(new Runnable() {
             public void run() {
-                if (App.INSTANCE.getSharedPreferences().getStatusMode() == 2) {
+                if (getBluetoothUtil().isGemini() && mOWDevice != null && getBluetoothUtil().getStatusMode() == 2) {
                     mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
                 }
                 handler.postDelayed(this, 15000);
@@ -350,8 +355,8 @@ public class MainActivity extends AppCompatActivity implements
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "notify";
-            String description = "show status for onewheel";
+            CharSequence name = "Battery Status";
+            String description = "Show battery status for onewheel";
             int importance = NotificationManager.IMPORTANCE_DEFAULT;
             NotificationChannel channel = new NotificationChannel(POW_NOTIF_CHANNEL_ID, name, importance);
             channel.setDescription(description);
@@ -361,20 +366,33 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void startStatusNotification() {
-        mStatusNotificationBuilder =
+        mStatusNotificationQuiet =
                 new NotificationCompat.Builder(mContext, POW_NOTIF_CHANNEL_ID)
+                        .setGroup(POW_NOTIF_GROUP_KEY)
+                        .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+                        .setGroupSummary(true)
                         .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Onewheel Status")
                         .setColor(Color.parseColor("#fcb103"))
                         .setContentText("Waiting for connection...")
                         .setOngoing(true)
                         .setAutoCancel(true);
-        mNotificationManager.notify(POW_NOTIF_TAG_STATUS,1, mStatusNotificationBuilder.build());
+
+        mStatusNotificationAlert =
+                new NotificationCompat.Builder(mContext, POW_NOTIF_CHANNEL_ID)
+                        .setGroup(POW_NOTIF_GROUP_KEY)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle("Onewheel Status")
+                        .setColor(Color.parseColor("#fcb103"))
+                        .setContentText("Waiting for connection...")
+                        .setOngoing(true)
+                        .setAutoCancel(true);
+
+        mNotificationManager.notify(POW_NOTIF_TAG_STATUS,1, mStatusNotificationQuiet.build());
     }
 
     private void stopStatusNotification() {
-        NotificationManagerCompat nmgr = NotificationManagerCompat.from(this);
-        nmgr.cancelAll();
+	   mNotificationManager.cancelAll();
     }
 
     private void sendNotificationVibrate(String message, String title, int count) {
@@ -389,11 +407,10 @@ public class MainActivity extends AppCompatActivity implements
             vibrate[i] = lArrayList.get(i);
         }
 
-        mStatusNotificationBuilder.setContentText(message);
-        mStatusNotificationBuilder.setContentTitle(title);
-        mStatusNotificationBuilder.setVibrate(vibrate);
-        NotificationManagerCompat nmgr = NotificationManagerCompat.from(this);
-        nmgr.notify(POW_NOTIF_TAG_STATUS,1, mStatusNotificationBuilder.build());
+        mStatusNotificationAlert.setContentText(message);
+        mStatusNotificationAlert.setContentTitle(title);
+        //mStatusNotificationAlert.setVibrate(vibrate);
+        mNotificationManager.notify(POW_NOTIF_TAG_ALERTS,1, mStatusNotificationAlert.build());
     }
 
 
@@ -575,7 +592,6 @@ public class MainActivity extends AppCompatActivity implements
                 break;
             case R.id.menu_disconnect:
                 mOWDevice.isConnected.set(false);
-                App.INSTANCE.getSharedPreferences().setStatusMode(0);
                 getBluetoothUtil().disconnect();
                 Timber.i("Disconnected from device by user.");
                 deviceConnectedTimer(false);

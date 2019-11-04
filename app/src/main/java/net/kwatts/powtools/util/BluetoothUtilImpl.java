@@ -67,6 +67,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     private boolean mScanning;
     private long mDisconnected_time;
     private int mRetryCount = 0;
+    private int statusMode = 0;
 
     private Handler handler;
 
@@ -88,11 +89,11 @@ public class BluetoothUtilImpl implements BluetoothUtil{
 
         handler = new Handler(Looper.getMainLooper());
 
-        final int repeatTime = 120000; //every 2 minutes
+        final int repeatTime = 60000; //every minute
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (App.INSTANCE.getSharedPreferences().getStatusMode() == 2) {
+                if (statusMode == 2) {
                     walkReadQueue(1);
                 }
                 handler.postDelayed(this, repeatTime);
@@ -111,7 +112,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                 Battery.initStateTwoX(App.INSTANCE.getSharedPreferences());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Timber.d("STATE_DISCONNECTED: name=" + gatt.getDevice().getName() + " address=" + gatt.getDevice().getAddress());
-                App.INSTANCE.getSharedPreferences().setStatusMode(0);
+                statusMode = 0;
                 BluetoothUtilImpl.isOWFound.set("false");
                 if (gatt.getDevice().getAddress().equals(mOWDevice.deviceMacAddress.get())) {
                     BluetoothUtilImpl bluetoothUtilImpl = BluetoothUtilImpl.this;
@@ -508,8 +509,8 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     private void onOWStateChangedToDisconnected(BluetoothGatt gatt, Context context) {
         //TODO: we really should have a BluetoothService we kill and restart
         Timber.i("We got disconnected from our Device: " + gatt.getDevice().getAddress());
-	   if (Looper.myLooper() == null) {
-	       Looper.prepare();
+        if (Looper.myLooper() == null) {
+            Looper.prepare();
         }
         Toast.makeText(mainActivity, "We got disconnected from our device: " + gatt.getDevice().getAddress(), Toast.LENGTH_SHORT).show();
 
@@ -709,6 +710,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         inkey.reset();
         isOWFound.set("false");
         this.sendKey = true;
+        statusMode = 0;
     }
 
     @Override
@@ -719,6 +721,11 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     @Override
     public void writeCharacteristic(BluetoothGattCharacteristic bluetoothGattCharacteristic) {
         mGatt.writeCharacteristic(bluetoothGattCharacteristic);
+    }
+
+    @Override
+    public int getStatusMode() {
+        return statusMode;
     }
 
     private void walkNotifyQueue(int state) {
@@ -773,7 +780,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         walkReadQueue(0);
         walkReadQueue(1);
 
-        App.INSTANCE.getSharedPreferences().setStatusMode(2);
+        statusMode = 2;
 
      /*
         for (DeviceCharacteristic dc : mOWDevice.getNotifyCharacteristics()) {
