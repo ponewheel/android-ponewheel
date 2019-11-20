@@ -9,8 +9,7 @@
     <string name="off">Off</string>
     <string name="on">On</string>
     <string name="supported">Supported</string>
-    <string name="eula">"This application is not affiliated with OneWheel in any way. Use at your own risk! Send all questions, feedback, etc to kwatkins@gmail.com. Hit \'scan\' to connect to the OneWheel and look for logs on the sdcard. It\'s still on the rough side so watch yourself out there.")
-          </string>
+    <string name="eula">"This application is not affiliated with OneWheel in any way. Use at your own risk! Send all questions, feedback, etc to kwatkins@gmail.com. Hit \'scan\' to connect to the OneWheel and look for logs on the sdcard. It\'s still on the rough side so watch yourself out there.\n\nv%1$s"</string>
     <string name="formatter_item_count">Items: %s</string>
 
     <string name="menu_about">About</string>
