@@ -53,6 +53,11 @@ public class Notify {
     private android.os.Handler clearHandler;
     private Context mContext;
 
+    private int lastPercent = -1;
+    private boolean alert75 = true;
+    private boolean alert50 = true;
+    private boolean alert25 = true;
+    private boolean alert05 = true;
     
     public void init(MainActivity mainActivity) {
         mContext = mainActivity.getApplicationContext();
@@ -175,6 +180,10 @@ public class Notify {
     public void waiting() {
         notifyStatus.setContentText("Waiting for connection...");
         notifyManager.notify(REMAINING_ID, notifyStatus.build());
+        alert75 = true;
+        alert50 = true;
+        alert25 = true;
+        alert05 = true;
     }
 
     public void status(int percent) {
@@ -183,39 +192,36 @@ public class Notify {
     }
 
     public void alert(int percent) {
-        final int alert_id;
-        NotificationCompat.Builder notify_alert = notifyStatus;
+        final int clear_id;
 
-        switch(percent) {
-            case 75:
-                alert_id = ALERT_75_ID;
-                notify_alert = notifyAlert75;
-                break;
-            case 50:
-                alert_id = ALERT_50_ID;
-                notify_alert = notifyAlert50;
-                break;
-            case 25:
-                alert_id = ALERT_25_ID;
-                notify_alert = notifyAlert25;
-                break;
-            case 5:
-                alert_id = ALERT_05_ID;
-                notify_alert = notifyAlert05;
-                break;
-            default:
-                alert_id = 0;
-                Timber.d("alert percentage:" + percent);
+        if (alert75 && lastPercent > 75 && percent <= 75) {
+            notifyManager.notify(ALERT_75_ID, notifyAlert75.build());
+            clear_id = ALERT_75_ID;
+            alert75 = false;
+        } else if (alert50 && lastPercent > 50 && percent <= 50) {
+            notifyManager.notify(ALERT_50_ID, notifyAlert50.build());
+            clear_id = ALERT_50_ID;
+            alert50 = false;
+        } else if (alert25 && lastPercent > 25 && percent <= 25) {
+            notifyManager.notify(ALERT_25_ID, notifyAlert25.build());
+            clear_id = ALERT_25_ID;
+            alert25 = false;
+        } else if (alert05 && lastPercent > 5 && percent <= 5) {
+            notifyManager.notify(ALERT_05_ID, notifyAlert05.build());
+            clear_id = ALERT_05_ID;
+            alert05 = false;
+        } else {
+            clear_id = -1;
         }
 
-        if (alert_id > 0) {
-            notifyManager.notify(alert_id, notify_alert.build());
+        lastPercent = percent;
 
+        if (clear_id > 0) {
             // These don't really need to stick around, cancel after 10s
             clearHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    notifyManager.cancel(alert_id);
+                    notifyManager.cancel(clear_id);
                 }
             }, 10000);
         }
