@@ -470,11 +470,13 @@ public class MainActivity extends AppCompatActivity implements
                 break;
             case R.id.menu_stop:
                 getBluetoothUtil().stopScanning();
+                notify.waiting();
                 this.invalidateOptionsMenu();
                 break;
             case R.id.menu_disconnect:
                 mOWDevice.isConnected.set(false);
                 getBluetoothUtil().disconnect();
+                notify.waiting();
                 Timber.i("Disconnected from device by user.");
                 deviceConnectedTimer(false);
                 mLoggingHandler.removeCallbacksAndMessages(null);

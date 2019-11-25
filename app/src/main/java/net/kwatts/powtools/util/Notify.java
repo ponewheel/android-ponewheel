@@ -5,22 +5,15 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.graphics.Color;
 import android.location.Address;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.AppCompatDelegate;
-import android.support.v4.content.ContextCompat;
 
 import net.kwatts.powtools.MainActivity;
 import net.kwatts.powtools.R;
@@ -28,13 +21,10 @@ import net.kwatts.powtools.R;
 import timber.log.Timber;
 
 public class Notify {
-    private static final String TAG_STATUS   = "powStatusNotificationTag";
     private static final int    REMAINING_ID = 101;
     private static final String REMAINING_CN = "Battery Status";
     private static final String REMAINING_CD = "Show battery status for Onewheel";
 
-    private static final String TAG_ALERT    = "powAlertNotificationTag";
-    private static final String ALERT_GR_KEY = "pow_alert_group";
     private static final int    ALERT_75_ID  = 201;
     private static final String ALERT_75_CN  = "Battery 75% Remaining";
     private static final String ALERT_75_CD  = "Alarm when battery is 75%";
@@ -70,6 +60,7 @@ public class Notify {
         createNotificationChannels();
         notifyManager = NotificationManagerCompat.from(mContext);
         startStatusNotification();
+	   waiting();
     }
 
 
@@ -126,10 +117,8 @@ public class Notify {
                         .setContentText("Waiting for connection...")
                         .setOngoing(true)
                         .setAutoCancel(true);
-        notifyManager.notify(REMAINING_ID, notifyStatus.build());
 
         notifyAlert75 = new NotificationCompat.Builder(mContext, ALERT_75_ID+"")
-                        .setGroup(ALERT_GR_KEY)
                         .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Onewheel Alerts")
                         .setColor(Color.parseColor("#fcb103"))
@@ -138,7 +127,6 @@ public class Notify {
                         .setAutoCancel(true);
 
         notifyAlert50 = new NotificationCompat.Builder(mContext, ALERT_50_ID+"")
-                        .setGroup(ALERT_GR_KEY)
                         .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Onewheel Alerts")
                         .setColor(Color.parseColor("#fcb103"))
@@ -147,7 +135,6 @@ public class Notify {
                         .setAutoCancel(true);
 
         notifyAlert25 = new NotificationCompat.Builder(mContext, ALERT_25_ID+"")
-                        .setGroup(ALERT_GR_KEY)
                         .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Onewheel Alerts")
                         .setColor(Color.parseColor("#fcb103"))
@@ -156,7 +143,6 @@ public class Notify {
                         .setAutoCancel(true);
 
         notifyAlert05 = new NotificationCompat.Builder(mContext, ALERT_05_ID+"")
-                        .setGroup(ALERT_GR_KEY)
                         .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Onewheel Alerts")
                         .setColor(Color.parseColor("#fcb103"))
@@ -183,6 +169,11 @@ public class Notify {
         mBuilder.setContentIntent(contentIntent);
 
         notifyManager.notify(message, 1, mBuilder.build());
+    }
+
+    public void waiting() {
+        notifyStatus.setContentText("Waiting for connection...");
+        notifyManager.notify(REMAINING_ID, notifyStatus.build());
     }
 
     public void status(int percent) {
