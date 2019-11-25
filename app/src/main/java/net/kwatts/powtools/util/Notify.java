@@ -41,6 +41,7 @@ public class Notify {
     private static final String ALERT_05_CN  = "Battery 5% Remaining";
     private static final String ALERT_05_CD  = "Alarm when battery is 5%";
 
+    // Breaking these up allows for individual notify settings
     private NotificationCompat.Builder notifyStatus;
     private NotificationCompat.Builder notifyAlert75;
     private NotificationCompat.Builder notifyAlert50;
@@ -60,7 +61,7 @@ public class Notify {
         createNotificationChannels();
         notifyManager = NotificationManagerCompat.from(mContext);
         startStatusNotification();
-	   waiting();
+        waiting();
     }
 
 
@@ -153,7 +154,7 @@ public class Notify {
 
 
     public void stopStatusNotification() {
-	   notifyManager.cancelAll();
+       notifyManager.cancelAll();
     }
 
     public void event(String title, String message) {
@@ -210,6 +211,7 @@ public class Notify {
         if (alert_id > 0) {
             notifyManager.notify(alert_id, notify_alert.build());
 
+            // These don't really need to stick around, cancel after 10s
             clearHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
