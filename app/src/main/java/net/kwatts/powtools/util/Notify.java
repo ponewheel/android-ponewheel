@@ -125,21 +125,27 @@ public class Notify {
     }
 
     private void startStatusNotification() {
+        Intent intent = new Intent(mContext, MainActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(
+                mContext, 0, intent, 0);
+
         notifyStatus = new NotificationCompat.Builder(mContext, OW_STATUS_ID+"")
                         .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Onewheel Status")
                         .setColor(Color.parseColor("#fcb103"))
                         .setContentText("Waiting for connection...")
+                        .setContentIntent(contentIntent)
                         .setOngoing(true)
-                        .setAutoCancel(true);
+                        .setAutoCancel(false);
 
         notifyRemain = new NotificationCompat.Builder(mContext, REMAINING_ID+"")
                         .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Battery:")
                         .setColor(Color.parseColor("#fcb103"))
                         .setContentText("-%")
+                        .setContentIntent(contentIntent)
                         .setOngoing(true)
-                        .setAutoCancel(true);
+                        .setAutoCancel(false);
         notifyRemain.setProgress(100, 0, false);
 
         notifyAlert75 = new NotificationCompat.Builder(mContext, ALERT_75_ID+"")
