@@ -119,6 +119,9 @@ public class MainActivity extends AppCompatActivity implements
     private android.os.Handler mLoggingHandler = new Handler();
     private SpeedAlertResolver speedAlertResolver = new SpeedAlertResolver(App.INSTANCE.getSharedPreferences());
 
+    private Handler handler;
+    private static int periodicChallengeCount = 0;
+
     private Context mContext;
     ScrollView mScrollView;
     Chronometer mChronometer;
@@ -126,7 +129,6 @@ public class MainActivity extends AppCompatActivity implements
     net.kwatts.powtools.databinding.ActivityMainBinding mBinding;
     BluetoothUtil bluetoothUtil;
     Notify notify;
-
 
     PieChart mBatteryChart;
     Ride ride;
@@ -227,6 +229,25 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
+    private void periodicChallenge() {
+        final int repeatTime = 15000;
+
+        periodicChallengeCount++;
+
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                if (getBluetoothUtil().isGemini() && mOWDevice != null && getBluetoothUtil().getStatusMode() == 2) {
+                    mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
+                }
+                if (periodicChallengeCount == 1) {
+                    handler.postDelayed(this, repeatTime);
+                } else {
+                    periodicChallengeCount--;
+                }
+            }
+        }, repeatTime);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Timber.d( "Starting...");
@@ -281,15 +302,8 @@ public class MainActivity extends AppCompatActivity implements
                         new TimberModule()
                 ).build();
 
-        final Handler handler = new Handler(Looper.getMainLooper());
-        handler.postDelayed(new Runnable() {
-            public void run() {
-                if (getBluetoothUtil().isGemini() && mOWDevice != null && getBluetoothUtil().getStatusMode() == 2) {
-                    mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
-                }
-                handler.postDelayed(this, 15000);
-            }
-        }, 15000);
+        handler = new Handler(Looper.getMainLooper());
+        periodicChallenge();
     }
 
     public BluetoothUtil getBluetoothUtil() {

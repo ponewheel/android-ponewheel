@@ -70,6 +70,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     private int statusMode = 0;
 
     private Handler handler;
+    private static int periodicSchedulerCount = 0;
 
     public static boolean isGemini = false;
 
@@ -88,17 +89,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         mOWDevice.bluetoothLe.set("On");
 
         handler = new Handler(Looper.getMainLooper());
-
-        final int repeatTime = 60000; //every minute
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (statusMode == 2) {
-                    walkReadQueue(1);
-                }
-                handler.postDelayed(this, repeatTime);
-            }
-        }, repeatTime);
+        periodicCharacteristics();
     }
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
@@ -726,6 +717,30 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     @Override
     public int getStatusMode() {
         return statusMode;
+    }
+
+    private void periodicCharacteristics() {
+        final int repeatTime = 60000; //every minute
+
+        periodicSchedulerCount++;
+
+        if (statusMode == 2) {
+            walkReadQueue(1);
+        }
+
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (statusMode == 2) {
+                    walkReadQueue(1);
+                }
+                if (periodicSchedulerCount == 1) {
+                    handler.postDelayed(this, repeatTime);
+                } else {
+                    periodicSchedulerCount--;
+                }
+            }
+        }, repeatTime);
     }
 
     private void walkNotifyQueue(int state) {
