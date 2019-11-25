@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity implements
         final String title = event.title;
         final String message = event.message;
         runOnUiThread(() -> {
-            notify.event(title, message);
+            notify.status(title, message);
         });
     }
 
@@ -167,19 +167,20 @@ public class MainActivity extends AppCompatActivity implements
 
     public void updateBatteryRemaining(final int percent) {
         // Update ongoing notification
-        notify.status(percent);
+        notify.remain(percent);
         notify.alert(percent);
 
         runOnUiThread(() -> {
             try {
                 ArrayList<PieEntry> entries = new ArrayList<>();
-                entries.add(new PieEntry((int)percent, (int)0));
-                entries.add(new PieEntry((int)100 - percent, (int)1));
+                entries.add(new PieEntry(percent, 0));
+                entries.add(new PieEntry(100 - percent, 1));
                 PieDataSet dataSet = new PieDataSet(entries, "battery percentage");
                 ArrayList<Integer> mColors = new ArrayList<>();
                 mColors.add(ColorTemplate.rgb("#2E7D32")); //green
                 mColors.add(ColorTemplate.rgb("#C62828")); //red
                 dataSet.setColors(mColors);
+                dataSet.setDrawValues(false);
 
                 PieData newPieData = new PieData( dataSet);
                 mBatteryChart.setCenterText(percent + "%");

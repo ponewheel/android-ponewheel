@@ -21,9 +21,13 @@ import net.kwatts.powtools.R;
 import timber.log.Timber;
 
 public class Notify {
-    private static final int    REMAINING_ID = 101;
-    private static final String REMAINING_CN = "Battery Status";
-    private static final String REMAINING_CD = "Show battery status for Onewheel";
+    private static final int    OW_STATUS_ID = 101;
+    private static final String OW_STATUS_CN = "Onewheel Status";
+    private static final String OW_STATUS_CD = "Show status updates";
+
+    private static final int    REMAINING_ID = 102;
+    private static final String REMAINING_CN = "Battery Remaining";
+    private static final String REMAINING_CD = "Show battery remaining";
 
     private static final int    ALERT_75_ID  = 201;
     private static final String ALERT_75_CN  = "Battery 75% Remaining";
@@ -43,6 +47,7 @@ public class Notify {
 
     // Breaking these up allows for individual notify settings
     private NotificationCompat.Builder notifyStatus;
+    private NotificationCompat.Builder notifyRemain;
     private NotificationCompat.Builder notifyAlert75;
     private NotificationCompat.Builder notifyAlert50;
     private NotificationCompat.Builder notifyAlert25;
@@ -58,7 +63,7 @@ public class Notify {
     private boolean alert50 = true;
     private boolean alert25 = true;
     private boolean alert05 = true;
-    
+
     public void init(MainActivity mainActivity) {
         mContext = mainActivity.getApplicationContext();
         clearHandler = new Handler(Looper.getMainLooper());
@@ -80,6 +85,10 @@ public class Notify {
 
             //Status
             importance = NotificationManager.IMPORTANCE_DEFAULT;
+
+            channel = new NotificationChannel(OW_STATUS_ID+"", OW_STATUS_CN, importance);
+            channel.setDescription(OW_STATUS_CD);
+            notificationManager.createNotificationChannel(channel);
 
             channel = new NotificationChannel(REMAINING_ID+"", REMAINING_CN, importance);
             channel.setDescription(REMAINING_CD);
@@ -116,13 +125,22 @@ public class Notify {
     }
 
     private void startStatusNotification() {
-        notifyStatus = new NotificationCompat.Builder(mContext, REMAINING_ID+"")
+        notifyStatus = new NotificationCompat.Builder(mContext, OW_STATUS_ID+"")
                         .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Onewheel Status")
                         .setColor(Color.parseColor("#fcb103"))
                         .setContentText("Waiting for connection...")
                         .setOngoing(true)
                         .setAutoCancel(true);
+
+        notifyRemain = new NotificationCompat.Builder(mContext, REMAINING_ID+"")
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle("Battery:")
+                        .setColor(Color.parseColor("#fcb103"))
+                        .setContentText("-%")
+                        .setOngoing(true)
+                        .setAutoCancel(true);
+        notifyRemain.setProgress(100, 0, false);
 
         notifyAlert75 = new NotificationCompat.Builder(mContext, ALERT_75_ID+"")
                         .setSmallIcon(R.mipmap.ic_launcher)
@@ -162,19 +180,9 @@ public class Notify {
        notifyManager.cancelAll();
     }
 
-    public void event(String title, String message) {
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(mContext, "ponewheel")
-                        .setSmallIcon(R.mipmap.ic_launcher)
-                        .setContentTitle(title)
-                        .setColor(0x008000)
-                        .setContentText(message);
-
-        PendingIntent contentIntent = PendingIntent.getActivity(mContext, 0,
-                new Intent(mContext, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
-        mBuilder.setContentIntent(contentIntent);
-
-        notifyManager.notify(message, 1, mBuilder.build());
+    public void status(String title, String message) {
+        notifyStatus.setContentText(title + ": " + message);
+        notifyManager.notify(OW_STATUS_ID, notifyStatus.build());
     }
 
     public void waiting() {
@@ -186,30 +194,31 @@ public class Notify {
         alert05 = true;
     }
 
-    public void status(int percent) {
-        notifyStatus.setContentText(percent+"%");
-        notifyManager.notify(REMAINING_ID, notifyStatus.build());
+    public void remain(int percent) {
+        notifyRemain.setContentText(percent+"%");
+        notifyRemain.setProgress(100, percent, false);
+        notifyManager.notify(REMAINING_ID, notifyRemain.build());
     }
 
     public void alert(int percent) {
         final int clear_id;
 
-        if (alert75 && lastPercent > 75 && percent <= 75) {
-            notifyManager.notify(ALERT_75_ID, notifyAlert75.build());
-            clear_id = ALERT_75_ID;
-            alert75 = false;
-        } else if (alert50 && lastPercent > 50 && percent <= 50) {
-            notifyManager.notify(ALERT_50_ID, notifyAlert50.build());
-            clear_id = ALERT_50_ID;
-            alert50 = false;
+        if (alert05 && lastPercent > 5 && percent <= 5) {
+            notifyManager.notify(ALERT_05_ID, notifyAlert05.build());
+            clear_id = ALERT_05_ID;
+            alert05 = false;
         } else if (alert25 && lastPercent > 25 && percent <= 25) {
             notifyManager.notify(ALERT_25_ID, notifyAlert25.build());
             clear_id = ALERT_25_ID;
             alert25 = false;
-        } else if (alert05 && lastPercent > 5 && percent <= 5) {
-            notifyManager.notify(ALERT_05_ID, notifyAlert05.build());
-            clear_id = ALERT_05_ID;
-            alert05 = false;
+        } else if (alert50 && lastPercent > 50 && percent <= 50) {
+            notifyManager.notify(ALERT_50_ID, notifyAlert50.build());
+            clear_id = ALERT_50_ID;
+            alert50 = false;
+        } else if (alert75 && lastPercent > 75 && percent <= 75) {
+            notifyManager.notify(ALERT_75_ID, notifyAlert75.build());
+            clear_id = ALERT_75_ID;
+            alert75 = false;
         } else {
             clear_id = -1;
         }
