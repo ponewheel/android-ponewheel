@@ -67,7 +67,10 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     private boolean mScanning;
     private long mDisconnected_time;
     private int mRetryCount = 0;
+    private int statusMode = 0;
 
+    private Handler handler;
+    private static int periodicSchedulerCount = 0;
 
     public static boolean isGemini = false;
 
@@ -84,6 +87,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         //assert manager != null;
         //mBluetoothAdapter = manager.getAdapter();
         mOWDevice.bluetoothLe.set("On");
+
+        handler = new Handler(Looper.getMainLooper());
+        periodicCharacteristics();
     }
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
@@ -97,7 +103,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                 Battery.initStateTwoX(App.INSTANCE.getSharedPreferences());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Timber.d("STATE_DISCONNECTED: name=" + gatt.getDevice().getName() + " address=" + gatt.getDevice().getAddress());
-                App.INSTANCE.getSharedPreferences().setStatusMode(0);
+                statusMode = 0;
                 BluetoothUtilImpl.isOWFound.set("false");
                 if (gatt.getDevice().getAddress().equals(mOWDevice.deviceMacAddress.get())) {
                     BluetoothUtilImpl bluetoothUtilImpl = BluetoothUtilImpl.this;
@@ -143,7 +149,8 @@ public class BluetoothUtilImpl implements BluetoothUtil{
             // Stability updates per https://github.com/ponewheel/android-ponewheel/issues/86#issuecomment-460033659
             // Step 1: In OnServicesDiscovered, JUST read the firmware version.
             Timber.d("Stability Step 1: Only reading the firmware version!");
-            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            //new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            handler.postDelayed(new Runnable() {
                 public void run() {
                     BluetoothUtilImpl.this.mGatt.readCharacteristic(BluetoothUtilImpl.this.owGatService.getCharacteristic(UUID.fromString(OWDevice.OnewheelCharacteristicFirmwareRevision)));
                 }
@@ -493,6 +500,9 @@ public class BluetoothUtilImpl implements BluetoothUtil{
     private void onOWStateChangedToDisconnected(BluetoothGatt gatt, Context context) {
         //TODO: we really should have a BluetoothService we kill and restart
         Timber.i("We got disconnected from our Device: " + gatt.getDevice().getAddress());
+        if (Looper.myLooper() == null) {
+            Looper.prepare();
+        }
         Toast.makeText(mainActivity, "We got disconnected from our device: " + gatt.getDevice().getAddress(), Toast.LENGTH_SHORT).show();
 
         mainActivity.deviceConnectedTimer(false);
@@ -691,6 +701,7 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         inkey.reset();
         isOWFound.set("false");
         this.sendKey = true;
+        statusMode = 0;
     }
 
     @Override
@@ -703,16 +714,42 @@ public class BluetoothUtilImpl implements BluetoothUtil{
         mGatt.writeCharacteristic(bluetoothGattCharacteristic);
     }
 
+    @Override
+    public int getStatusMode() {
+        return statusMode;
+    }
 
-    public void whenActuallyConnected() {
+    private void periodicCharacteristics() {
+        final int repeatTime = 60000; //every minute
 
+        periodicSchedulerCount++;
 
-        for(OWDevice.DeviceCharacteristic deviceCharacteristic: mOWDevice.getNotifyCharacteristics()) {
-            String uuid = deviceCharacteristic.uuid.get();
-            if (uuid != null && deviceCharacteristic.isNotifyCharacteristic) {
+        if (statusMode == 2) {
+            walkReadQueue(1);
+        }
+
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (statusMode == 2) {
+                    walkReadQueue(1);
+                }
+                if (periodicSchedulerCount == 1) {
+                    handler.postDelayed(this, repeatTime);
+                } else {
+                    periodicSchedulerCount--;
+                }
+            }
+        }, repeatTime);
+    }
+
+    private void walkNotifyQueue(int state) {
+        for(OWDevice.DeviceCharacteristic dc: mOWDevice.getNotifyCharacteristics()) {
+            String uuid = dc.uuid.get();
+            if (uuid != null && dc.isNotifyCharacteristic && dc.state == state) {
                 BluetoothGattCharacteristic localCharacteristic = owGatService.getCharacteristic(UUID.fromString(uuid));
                 if (localCharacteristic != null) {
-                    if (isCharacteristicNotifiable(localCharacteristic) && deviceCharacteristic.isNotifyCharacteristic) {
+                    if (isCharacteristicNotifiable(localCharacteristic) && dc.isNotifyCharacteristic) {
                         mGatt.setCharacteristicNotification(localCharacteristic, true);
                         BluetoothGattDescriptor descriptor = localCharacteristic.getDescriptor(UUID.fromString(OWDevice.OnewheelConfigUUID));
                         Timber.d( "descriptorWriteQueue.size:" + descriptorWriteQueue.size());
@@ -727,14 +764,15 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                             Timber.d( uuid + " has been set for notifications");
                         }
                     }
-
                 }
-
             }
         }
+    }
 
+    private void walkReadQueue(int state) {
         for(OWDevice.DeviceCharacteristic dc : mOWDevice.getReadCharacteristics()) {
-            if (dc.uuid.get() != null) {
+            if (dc.uuid.get() != null && !dc.isNotifyCharacteristic && dc.state == state) {
+                Timber.d("uuid:%s, state:%d", dc.uuid.get(), dc.state);
                 BluetoothGattCharacteristic c = owGatService.getCharacteristic(UUID.fromString(dc.uuid.get()));
                 if (c != null) {
                     if (isCharacteristicReadable(c)) {
@@ -750,8 +788,14 @@ public class BluetoothUtilImpl implements BluetoothUtil{
                 }
             }
         }
+    }
 
-        App.INSTANCE.getSharedPreferences().setStatusMode(2);
+    public void whenActuallyConnected() {
+        walkNotifyQueue(0);
+        walkReadQueue(0);
+        walkReadQueue(1);
+
+        statusMode = 2;
 
      /*
         for (DeviceCharacteristic dc : mOWDevice.getNotifyCharacteristics()) {

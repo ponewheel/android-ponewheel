@@ -1,9 +1,6 @@
 package net.kwatts.powtools;
 
 import android.Manifest;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,9 +13,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
@@ -56,6 +52,7 @@ import net.kwatts.powtools.events.NotificationEvent;
 import net.kwatts.powtools.model.OWDevice;
 import net.kwatts.powtools.util.BluetoothUtil;
 import net.kwatts.powtools.util.BluetoothUtilImpl;
+import net.kwatts.powtools.util.Notify;
 import net.kwatts.powtools.util.PermissionUtil;
 import net.kwatts.powtools.util.SharedPreferencesUtil;
 import net.kwatts.powtools.util.SpeedAlertResolver;
@@ -122,20 +119,16 @@ public class MainActivity extends AppCompatActivity implements
     private android.os.Handler mLoggingHandler = new Handler();
     private SpeedAlertResolver speedAlertResolver = new SpeedAlertResolver(App.INSTANCE.getSharedPreferences());
 
+    private Handler handler;
+    private static int periodicChallengeCount = 0;
+
     private Context mContext;
     ScrollView mScrollView;
     Chronometer mChronometer;
     OWDevice mOWDevice;
     net.kwatts.powtools.databinding.ActivityMainBinding mBinding;
     BluetoothUtil bluetoothUtil;
-
-    private NotificationCompat.Builder mStatusNotificationBuilder;
-    private static final String POW_NOTIF_CHANNEL_ID = "pow_status";
-    private static final String POW_NOTIF_TAG_STATUS = "statusNotificationTag";
-
-    public static NotificationCompat.Builder mNotificationBuilder;
-    public static NotificationManagerCompat mNotificationManager;
-
+    Notify notify;
 
     PieChart mBatteryChart;
     Ride ride;
@@ -149,18 +142,7 @@ public class MainActivity extends AppCompatActivity implements
         final String title = event.title;
         final String message = event.message;
         runOnUiThread(() -> {
-            NotificationCompat.Builder mBuilder =
-                    new NotificationCompat.Builder(mContext, "ponewheel")
-                            .setSmallIcon(R.mipmap.ic_launcher)
-                            .setContentTitle(title)
-                            .setColor(0x008000)
-                            .setContentText(message);
-
-            PendingIntent contentIntent = PendingIntent.getActivity(mContext, 0,
-                    new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
-            mBuilder.setContentIntent(contentIntent);
-
-            mNotificationManager.notify(message,1, mBuilder.build());
+            notify.status(title, message);
         });
     }
 
@@ -185,20 +167,10 @@ public class MainActivity extends AppCompatActivity implements
         legend.setEnabled(false);
     }
 
-    //battery level alerts
-    public static SparseBooleanArray batteryAlertLevels = new SparseBooleanArray(){{
-        put(75,false); //1
-        put(50, false); //2
-        put(25, false); //3
-        put(5, false); // 4
-    }};
-
-
     public void updateBatteryRemaining(final int percent) {
         // Update ongoing notification
-        mStatusNotificationBuilder.setContentText("Battery: " + percent + "%");
-        mNotificationManager.notify(POW_NOTIF_TAG_STATUS,1, mStatusNotificationBuilder.build());
-
+        notify.remain(percent);
+        notify.alert(percent);
 
         runOnUiThread(() -> {
             try {
@@ -222,29 +194,6 @@ public class MainActivity extends AppCompatActivity implements
                 mBatteryChart.setData(newPieData);
                 mBatteryChart.notifyDataSetChanged();
                 mBatteryChart.invalidate();
-
-
-                if (batteryAlertLevels.indexOfKey(percent) > -1) {
-                    if (!(batteryAlertLevels.get(percent))) {
-                        switch (percent) {
-                            case 75:
-                                sendNotificationVibrate("75%", "Battery",1);
-                                break;
-                            case 50:
-                                sendNotificationVibrate("50%", "Battery",2);
-                                break;
-                            case 25:
-                                sendNotificationVibrate("25%", "Battery",3);
-                                break;
-                            case 5:
-                                sendNotificationVibrate("5%", "Battery",4);
-                                break;
-                            default:
-                        }
-                        batteryAlertLevels.put(percent,true);
-                    }
-                }
-
             } catch (Exception e) {
                 Timber.e( "Got an exception updating battery:" + e.getMessage());
             }
@@ -255,15 +204,6 @@ public class MainActivity extends AppCompatActivity implements
     public void deviceConnectedTimer(final boolean start) {
         runOnUiThread(() -> {
             if (start) {
-                final Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    public void run() {
-                        if (App.INSTANCE.getSharedPreferences().getStatusMode() == 2) {
-                            mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
-                            handler.postDelayed(this, 15000);
-                        }
-                    }
-                }, 15000);
 /*
                 mChronometer.setOnChronometerTickListener(new Chronometer.OnChronometerTickListener() {
                     @Override
@@ -289,6 +229,25 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
+    private void periodicChallenge() {
+        final int repeatTime = 15000;
+
+        periodicChallengeCount++;
+
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                if (getBluetoothUtil().isGemini() && mOWDevice != null && getBluetoothUtil().getStatusMode() == 2) {
+                    mOWDevice.sendKeyChallengeForGemini(getBluetoothUtil());
+                }
+                if (periodicChallengeCount == 1) {
+                    handler.postDelayed(this, repeatTime);
+                } else {
+                    periodicChallengeCount--;
+                }
+            }
+        }, repeatTime);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Timber.d( "Starting...");
@@ -299,9 +258,8 @@ public class MainActivity extends AppCompatActivity implements
 
         mContext = this;
 
-        createNotificationChannel();
-        mNotificationManager = NotificationManagerCompat.from(this);
-        startStatusNotification();
+        notify = new Notify();
+        notify.init(MainActivity.this);
 
         EventBus.getDefault().register(this);
 
@@ -343,58 +301,10 @@ public class MainActivity extends AppCompatActivity implements
                         new SettingsModule(this),
                         new TimberModule()
                 ).build();
+
+        handler = new Handler(Looper.getMainLooper());
+        periodicChallenge();
     }
-
-    private void createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "notify";
-            String description = "show status for onewheel";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(POW_NOTIF_CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-    }
-
-    private void startStatusNotification() {
-        mStatusNotificationBuilder =
-                new NotificationCompat.Builder(mContext, POW_NOTIF_CHANNEL_ID)
-                        .setSmallIcon(R.mipmap.ic_launcher)
-                        .setContentTitle("Onewheel Status")
-                        .setColor(Color.parseColor("#fcb103"))
-                        .setContentText("Waiting for connection...")
-                        .setOngoing(true)
-                        .setAutoCancel(true);
-        mNotificationManager.notify(POW_NOTIF_TAG_STATUS,1, mStatusNotificationBuilder.build());
-    }
-
-    private void stopStatusNotification() {
-        NotificationManagerCompat nmgr = NotificationManagerCompat.from(this);
-        nmgr.cancelAll();
-    }
-
-    private void sendNotificationVibrate(String message, String title, int count) {
-        ArrayList<Long> lArrayList = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            lArrayList.add(1000L); // number of ms to wait before turning vibrator on
-            lArrayList.add(1000L); // number of ms to wait before turning it off
-        }
-
-        long[] vibrate = new long[lArrayList.size()];
-        for (int i = 0; i < lArrayList.size(); i++) {
-            vibrate[i] = lArrayList.get(i);
-        }
-
-        mStatusNotificationBuilder.setContentText(message);
-        mStatusNotificationBuilder.setContentTitle(title);
-        mStatusNotificationBuilder.setVibrate(vibrate);
-        NotificationManagerCompat nmgr = NotificationManagerCompat.from(this);
-        nmgr.notify(POW_NOTIF_TAG_STATUS,1, mStatusNotificationBuilder.build());
-    }
-
 
     public BluetoothUtil getBluetoothUtil() {
         if (bluetoothUtil == null) {
@@ -517,7 +427,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onDestroy() {
         App.INSTANCE.getSharedPreferences().removeListener(this);
-        stopStatusNotification();
+        notify.stopStatusNotification();
         super.onDestroy();
     }
 
@@ -570,11 +480,13 @@ public class MainActivity extends AppCompatActivity implements
                 break;
             case R.id.menu_stop:
                 getBluetoothUtil().stopScanning();
+                notify.waiting();
                 this.invalidateOptionsMenu();
                 break;
             case R.id.menu_disconnect:
                 mOWDevice.isConnected.set(false);
                 getBluetoothUtil().disconnect();
+                notify.waiting();
                 Timber.i("Disconnected from device by user.");
                 deviceConnectedTimer(false);
                 mLoggingHandler.removeCallbacksAndMessages(null);

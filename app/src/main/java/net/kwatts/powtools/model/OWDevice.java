@@ -121,7 +121,6 @@ public class OWDevice extends BaseObservable implements DeviceInterface {
     private double[] batteryVoltageCells = new double[16];
 
     private static boolean updateBatteryChanges = true;
-    private static String updateBatteryMethod = "";
 
 
     public static final String OnewheelServiceUUID = "e659f300-ea98-11e3-ac10-0800200c9a66";
@@ -288,8 +287,8 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLifetimeOdometer, KEY_LIFETIME_ODOMETER,   "",0,false));                             // 2
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLightingMode,     KEY_LIGHTING_MODE,       "LIGHTS",0,false));                       // 3
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryRemaining, KEY_BATTERY_INITIAL,     "BATTERY AT START (%)",0,false));         // 4
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLastErrorCode,    KEY_LAST_ERROR_CODE,     "LAST ERROR CODE",0,false));              // 5
-        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP",0,false));                 // 6
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicLastErrorCode,    KEY_LAST_ERROR_CODE,     "LAST ERROR CODE",1,false));              // 5
+        deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP",1,false));                 // 6
         deviceReadCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicRidingMode,       KEY_RIDE_MODE,           "RIDING MODE",0,false));                  // 7
 
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicUartSerialRead,   KEY_SERIAL_READ,         "",0,false));// 18
@@ -311,7 +310,6 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTiltAngleRoll,    KEY_TILT_ANGLE_ROLL,     "TILT ANGLE ROLL",0,true));           // 15
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicTemperature,      KEY_CONTROLLER_TEMP,     "",0,true));                          // 16
         deviceNotifyCharacteristics.add(new DeviceCharacteristic(MockOnewheelCharacteristicMotorTemp,    KEY_MOTOR_TEMP,          "", 0,false));// 17
-        deviceNotifyCharacteristics.add(new DeviceCharacteristic(OnewheelCharacteristicBatteryTemp,      KEY_BATTERY_TEMP,        "BATTERY TEMP",0,true));                 // 18
 
 /*
         deviceNotifyCharacteristics.add(new DeviceCharacteristic()
@@ -395,6 +393,10 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         byte[] incomingValue = incomingCharacteristic.getValue();
 
         DeviceCharacteristic dc = characteristics.get(incomingUuid);
+
+        if (dc == null) {
+            return;
+        }
 
         String dev_uuid = dc.uuid.get();
 
@@ -494,7 +496,10 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
         //EventBus.getDefault().post(new DeviceBatteryRemainingEvent(batteryLevel));
         //dc.value.set(Integer.toString(batteryLevel));
-        updateBatteryChanges |= Battery.setRemaining(batteryLevel);
+        if (Battery.setRemaining(batteryLevel)) {
+            updateBatteryChanges = true;
+            Battery.saveStateTwoX(App.INSTANCE.getSharedPreferences());
+        }
     }
 
     public void processPitch(byte[] incomingValue, DeviceCharacteristic dc) {
@@ -744,13 +749,14 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
                 remaining = Battery.getRemainingCells();
             } else if (prefs.isRemainTwoX()) {
                 remaining = Battery.getRemainingTwoX();
-                Battery.saveStateTwoX(prefs);
             } else {
                 remaining = Battery.getRemainingDefault();
             }
 
-            dc.value.set(Integer.toString(remaining));
-            mainActivity.updateBatteryRemaining(remaining);
+            if (Integer.toString(remaining) != dc.value.get()) {
+                dc.value.set(Integer.toString(remaining));
+                mainActivity.updateBatteryRemaining(remaining);
+            }
 
             updateBatteryChanges = false;
         }
