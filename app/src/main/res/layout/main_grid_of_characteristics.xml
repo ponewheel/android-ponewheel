@@ -49,6 +49,10 @@
         <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_TILT_ANGLE_ROLL).value}' style="@style/GridItemRight" />
         <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_CONTROLLER_TEMP).ui_name}" style="@style/GridItemLeft" />
         <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_CONTROLLER_TEMP).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_MOTOR_TEMP).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_MOTOR_TEMP).value}' style="@style/GridItemRight" />
+        <TextView android:text="@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_BATTERY_TEMP).ui_name}" style="@style/GridItemLeft" />
+        <TextView android:text='@{owdevice.getDeviceCharacteristicByKey(owdevice.KEY_BATTERY_TEMP).value}' style="@style/GridItemRight" />
 
         <!-- STATIC AND READ ONCE VALUES -->
         <TextView android:text="@string/onewheel_ble_name" style="@style/GridItemLeft" />
