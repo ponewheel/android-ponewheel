@@ -608,7 +608,7 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         Timber.d("batteryTemp = %d, %d", batteryTemp1, batteryTemp2);
 
         setFormattedTempWithMetricPreference(dc, batteryTemp1, batteryTemp2);
-        updateBatteryChanges |= Battery.setBatteryTemp(batteryTemp1);
+        updateBatteryChanges |= Battery.setBatteryTemp((batteryTemp1+batteryTemp2) / 2);
     }
 
     public void processUnknownUuid(String incomingUuid, byte[] incomingValue) {
