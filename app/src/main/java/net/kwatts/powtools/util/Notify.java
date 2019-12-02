@@ -1,5 +1,6 @@
 package net.kwatts.powtools.util;
 
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -143,6 +144,7 @@ public class Notify {
                         .setContentTitle("Battery:")
                         .setColor(Color.parseColor("#fcb103"))
                         .setContentText("-%")
+                        .setPriority(Notification.PRIORITY_MAX)
                         .setContentIntent(contentIntent)
                         .setOngoing(true)
                         .setAutoCancel(false);
