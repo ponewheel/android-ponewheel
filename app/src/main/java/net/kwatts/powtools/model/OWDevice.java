@@ -366,8 +366,9 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
         characteristics.get(MockOnewheelCharacteristicSpeed).ui_name.set(isMetric ? "(KMH)" : "(MPH)");
         characteristics.get(MockOnewheelCharacteristicOdometer).ui_name.set("TRIP ODOMETER " + (isMetric ? "(KM)" : "(MILES)"));
         characteristics.get(OnewheelCharacteristicLifetimeOdometer).ui_name.set("LIFETIME ODOMETER " + (isMetric ? "(KM)" : "(MILES)"));
-        characteristics.get(OnewheelCharacteristicTemperature).ui_name.set("CONTROLLER TEMP " + (isMetric ? "(C)" : "(F)"));
-        characteristics.get(MockOnewheelCharacteristicMotorTemp).ui_name.set("MOTOR TEMP " + (isMetric ? "(C)" : "(F)"));
+        characteristics.get(OnewheelCharacteristicTemperature).ui_name.set("CONTROLLER TEMP " + (isMetric ? "(°C)" : "(°F)"));
+        characteristics.get(MockOnewheelCharacteristicMotorTemp).ui_name.set("MOTOR TEMP " + (isMetric ? "(°C)" : "(°F)"));
+        characteristics.get(OnewheelCharacteristicBatteryTemp).ui_name.set("BATTERY TEMPS " + (isMetric ? "(°C)" : "(°F)"));
     }
 
 
@@ -579,7 +580,12 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
 
     public void setFormattedTempWithMetricPreference(DeviceCharacteristic deviceCharacteristic, int temp) {
         boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
-        deviceCharacteristic.value.set(String.format(Locale.getDefault(), "%.2f", isMetric ? (double) temp : cel2far(temp)));
+        deviceCharacteristic.value.set(String.format(Locale.getDefault(), "%.0f", isMetric ? (double) temp : cel2far(temp)));
+    }
+
+    public void setFormattedTempWithMetricPreference(DeviceCharacteristic deviceCharacteristic, int temp1, int temp2) {
+        boolean isMetric = App.INSTANCE.getSharedPreferences().isMetric();
+        deviceCharacteristic.value.set(String.format(Locale.getDefault(), "%.0f, %.0f", isMetric ? (double) temp1 : cel2far(temp1), isMetric ? (double) temp2 : cel2far(temp2)));
     }
 
     public void setFormattedSpeedWithMetricPreference(DeviceCharacteristic deviceCharacteristic, double speedRpm) {
@@ -596,12 +602,13 @@ gatttool --device=D0:39:72:BE:0A:32 --char-write-req --value=7500 --handle=0x004
     }
 
     public void processBatteryTemp(BluetoothGattCharacteristic incomingCharacteristic, DeviceCharacteristic dc) {
-        int batteryTemp = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+        int batteryTemp1 = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+        int batteryTemp2 = incomingCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
 
-        Timber.d("batteryTemp = " + batteryTemp);
+        Timber.d("batteryTemp = %d, %d", batteryTemp1, batteryTemp2);
 
-        setFormattedTempWithMetricPreference(dc, batteryTemp);
-        updateBatteryChanges |= Battery.setBatteryTemp(batteryTemp);
+        setFormattedTempWithMetricPreference(dc, batteryTemp1, batteryTemp2);
+        updateBatteryChanges |= Battery.setBatteryTemp((batteryTemp1+batteryTemp2) / 2);
     }
 
     public void processUnknownUuid(String incomingUuid, byte[] incomingValue) {

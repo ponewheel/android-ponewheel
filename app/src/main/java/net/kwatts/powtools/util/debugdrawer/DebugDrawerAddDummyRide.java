@@ -112,6 +112,12 @@ public class DebugDrawerAddDummyRide implements DebugModule, LifecycleObserver {
                 attribute.setValue("" + (Math.sin(i) * 20.0 + 90));
                 attributes.add(attribute);
 
+                attribute = new Attribute();
+                attribute.setMomentId(momentId);
+                attribute.setKey(OWDevice.KEY_BATTERY_TEMP);
+                attribute.setValue("" + (Math.sin(i) * 10.0 + 80));
+                attributes.add(attribute);
+
 
                 attribute = new Attribute();
                 attribute.setMomentId(momentId);
