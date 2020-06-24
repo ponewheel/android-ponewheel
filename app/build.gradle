@@ -14,8 +14,8 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode 43
-        versionName "4.3"
+        versionCode 44
+        versionName "4.4"
     }
     buildTypes {
         release {

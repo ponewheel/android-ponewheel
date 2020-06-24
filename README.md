@@ -1,4 +1,4 @@
-# pOneWheel  <a style="margin-bottom: 0;" href='https://play.google.com/store/apps/details?id=net.kwatts.powtools'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' height="80px"/></a>
+# pOneWheel 
 [![CircleCI](https://img.shields.io/circleci/project/github/ponewheel/android-ponewheel/master.svg)](https://circleci.com/gh/ponewheel/android-ponewheel) [![API](https://img.shields.io/badge/API-21%2B-green.svg?style=flat)](https://android-arsenal.com/api?level=21) [![MIT License](https://img.shields.io/github/license/ponewheel/android-ponewheel.svg)](https://opensource.org/licenses/mit-license.php)
 
 This repository contains the source code for the pOneWheel app.
@@ -13,7 +13,25 @@ We plan to get a new release with all the new features, bug fixes, etc on the Go
 
 > How can I help?
 
-We'd love for you to test the open beta! Sign up at [Google Play Beta]. For questions, to report bugs, or suggestions and feature requests, head over to the [Github Ponewheel Issues] page. If you'd like to contribute, please fork this repository and contribute back using pull requests.
+For questions, to report bugs, or suggestions and feature requests, head over to the [Github Ponewheel Issues] page. If you'd like to contribute, please fork this repository and contribute back using pull requests.
+
+> Where did it go? 
+
+Yeah, about that... https://github.com/ponewheel/android-ponewheel/issues/113
+
+> How can I build/install on my mobile device? 
+
+```
+git clone https://github.com/ponewheel/android-ponewheel.git
+cd android-ponewheel 
+./gradlew build -Dorg.gradle.java.home=/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home
+./gradlew installDebug -Dorg.gradle.java.home=/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home
+```
+
+> When will you support The Pint/4210 hardware/4142 firmware/etc?
+
+Head over to https://github.com/ponewheel/android-ponewheel/issues and jump in! We can always use the help. 
+
 
 
 Special thanks to,
